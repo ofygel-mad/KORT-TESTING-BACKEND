@@ -1,7 +1,8 @@
 import { memo, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Check, ChevronLeft, ChevronRight, LayoutGrid, Layers, List, Plus, Search, SlidersHorizontal, Trash2, X } from 'lucide-react';
-import { useOrders, useOrderWarehouseStates, useTrashOrder, useOrgManagers } from '../../../../entities/order/queries';
+import { Bell, Check, ChevronLeft, ChevronRight, FlaskConical, LayoutGrid, Layers, List, Plus, Search, SlidersHorizontal, Trash2, X } from 'lucide-react';
+import { useCreateOrder, useOrders, useOrderWarehouseStates, useTrashOrder, useOrgManagers } from '../../../../entities/order/queries';
+import { toast } from 'sonner';
 import type { ChapanOrder, OrderStatus, OrderWarehouseState } from '../../../../entities/order/types';
 import { useProductsAvailability } from '../../../../entities/warehouse/queries';
 import type { ProductsAvailabilityMap } from '../../../../entities/warehouse/types';
@@ -161,6 +162,8 @@ export default function ChapanOrdersPage() {
   const [grouped, setGroupedState] = useState(true);
   const [showViewMenu, setShowViewMenu] = useState(false);
   const [showAlertsPanel, setShowAlertsPanel] = useState(false);
+  const [isSeedingOrders, setIsSeedingOrders] = useState(false);
+  const createOrder = useCreateOrder();
   const viewPickerRef = useRef<HTMLDivElement>(null);
 
   // Calendar filter state
@@ -173,6 +176,80 @@ export default function ChapanOrdersPage() {
   const handleTrash = (id: string) => {
     if (window.confirm('Переместить заказ в корзину?')) {
       trashOrder.mutate(id);
+    }
+  };
+
+  const handleSeedOrders = async () => {
+    setIsSeedingOrders(true);
+    try {
+      const isoDate = (offsetDays: number): string => {
+        const d = new Date();
+        d.setDate(d.getDate() + offsetDays);
+        return d.toISOString().slice(0, 10);
+      };
+      const silent = { onSuccess: () => {}, onError: () => {} };
+
+      await Promise.all([
+        createOrder.mutateAsync({
+          idempotencyKey: crypto.randomUUID(),
+          clientName: 'Скарлетт Йоханссон',
+          clientPhone: '+77771111111',
+          priority: 'normal',
+          city: 'Алматы',
+          deliveryType: 'pickup',
+          source: 'instagram',
+          urgency: 'normal',
+          dueDate: isoDate(7),
+          prepayment: 45000,
+          paymentMethod: 'cash',
+          items: [
+            { productName: 'Пальто', size: 'M', gender: 'female', color: 'Чёрный', quantity: 1, unitPrice: 45000 },
+          ],
+        }, silent),
+
+        createOrder.mutateAsync({
+          idempotencyKey: crypto.randomUUID(),
+          clientName: 'Дженнифер Лопес',
+          clientPhone: '+77772222222',
+          priority: 'urgent',
+          city: 'Астана',
+          deliveryType: 'post',
+          deliveryFee: 2000,
+          source: 'whatsapp',
+          urgency: 'urgent',
+          dueDate: isoDate(5),
+          prepayment: 20000,
+          paymentMethod: 'kaspi_terminal',
+          items: [
+            { productName: 'Платье', size: 'S', gender: 'female', color: 'Красный', quantity: 1, unitPrice: 32000 },
+            { productName: 'Блуза', size: 'S', gender: 'female', color: 'Белый', quantity: 2, unitPrice: 8500 },
+          ],
+        }, silent),
+
+        createOrder.mutateAsync({
+          idempotencyKey: crypto.randomUUID(),
+          clientName: 'Леонардо ДиКаприо',
+          clientPhone: '+77773333333',
+          priority: 'normal',
+          city: 'Шымкент',
+          deliveryType: 'train',
+          deliveryFee: 3000,
+          source: 'call',
+          urgency: 'normal',
+          dueDate: isoDate(14),
+          items: [
+            { productName: 'Пиджак', size: 'L', gender: 'male', color: 'Серый', quantity: 1, unitPrice: 55000 },
+            { productName: 'Рубашка', size: 'L', gender: 'male', color: 'Белый', quantity: 2, unitPrice: 12000 },
+            { productName: 'Брюки', size: 'L', gender: 'male', color: 'Чёрный', quantity: 1, unitPrice: 28000 },
+          ],
+        }, silent),
+      ]);
+
+      toast.success('3 тестовых заказа созданы');
+    } catch {
+      toast.error('Не удалось создать тестовые заказы');
+    } finally {
+      setIsSeedingOrders(false);
     }
   };
 
@@ -388,6 +465,16 @@ const setViewMode = (mode: ViewMode) => {
           >
             <Bell size={13} />
             {alerts.length > 0 && <span>{alerts.length}</span>}
+          </button>
+
+          <button
+            className={styles.filterToggle}
+            onClick={handleSeedOrders}
+            disabled={isSeedingOrders}
+            title="Создать 3 тестовых заказа"
+          >
+            <FlaskConical size={13} />
+            <span>{isSeedingOrders ? '...' : 'Тест-данные'}</span>
           </button>
 
           {showToolbarCreateButton && (
