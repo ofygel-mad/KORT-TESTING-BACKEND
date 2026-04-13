@@ -1,0 +1,93 @@
+/* ── WorkspaceLock — Enterprise overlay ───────────────────────────────────── */
+
+.root {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  isolation: isolate;
+}
+
+/* Semi-transparent blurred backdrop — shows the workspace beneath, muted */
+.backdrop {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--bg-overlay) 56%, transparent);
+  backdrop-filter: blur(6px) saturate(0.7);
+  -webkit-backdrop-filter: blur(6px) saturate(0.7);
+}
+
+/* Centered status panel */
+.panel {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 28px 40px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  min-width: 280px;
+}
+
+/* Lock icon + label row */
+.statusRow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.lockIcon {
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.statusLabel {
+  font-size: var(--text-size-md);
+  font-weight: 500;
+  color: var(--text-secondary);
+  letter-spacing: -0.01em;
+}
+
+/* Primary unlock button — authoritative, not decorative */
+.unlockBtn {
+  min-height: 40px;
+  padding: 0 28px;
+  background: var(--fill-accent);
+  color: var(--text-on-accent);
+  border: none;
+  border-radius: var(--radius-md);
+  font: inherit;
+  font-size: var(--text-size-md);
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: -0.01em;
+  transition:
+    opacity var(--motion-fast) var(--motion-ease),
+    transform var(--motion-fast) var(--motion-ease);
+}
+
+.unlockBtn:hover {
+  opacity: 0.86;
+}
+
+.unlockBtn:active {
+  transform: scale(0.98);
+}
+
+.unlockBtn:focus-visible {
+  outline: none;
+  box-shadow: var(--brand-focus-ring);
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .panel {
+    padding: 22px 28px;
+    min-width: 240px;
+  }
+}

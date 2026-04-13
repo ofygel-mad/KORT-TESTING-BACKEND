@@ -1,0 +1,75 @@
+/* ═══════════════════════════════════════════════════════════════
+   SMART SUGGESTIONS — CSS Module
+   Стек тостов-подсказок в правом нижнем углу.
+   ═══════════════════════════════════════════════════════════════ */
+
+.stack {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 700;
+  max-width: 320px;
+}
+
+.card {
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cardEmoji {
+  font-size: 18px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.cardBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.cardText {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.cardAction {
+  margin-top: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fill-accent);
+  text-decoration: underline;
+  font-family: var(--font-body);
+  transition: opacity var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.cardAction:hover { opacity: 0.75; }
+
+.cardDismiss {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  display: flex;
+  padding: 2px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  transition:
+    background var(--motion-duration-fast) var(--motion-ease-standard),
+    color      var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.cardDismiss:hover { background: var(--bg-hover); color: var(--text-secondary); }

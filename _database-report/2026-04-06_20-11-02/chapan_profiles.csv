@@ -1,0 +1,4 @@
+id,orgId,displayName,descriptor,orderPrefix,orderCounter,invoiceCounter,requestCounter,publicIntakeTitle,publicIntakeDescription,publicIntakeEnabled,supportLabel,kazpostDeliveryFee,railDeliveryFee,airDeliveryFee,bankCommissionPercent
+cmn7eq5ic000duqlc084majbt,cmn7eq5g60009uqlcwpgnrybv,Чапан,,ЧП,0,0,0,Оставьте заявку на пошив,,true,,2000,3000,5000,0
+cmn7w6k8q0005uqksarg9hhvj,cmn7w6k870001uqkscdg4kksv,Чапан,,ЧП,0,0,0,Оставьте заявку на пошив,,true,,2000,3000,5000,0
+cmn5wgwdi0003uqm8tdknlcll,org-demo,Чапан Цех,Ателье национальной одежды,ЧП,18,1,0,Оставьте заявку на пошив,,true,,2000,3000,5000,18

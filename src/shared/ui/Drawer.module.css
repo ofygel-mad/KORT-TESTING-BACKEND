@@ -1,0 +1,209 @@
+/* ═══════════════════════════════════════════════════════════════
+   DRAWER — CSS Module
+   Drawer shell: overlay + panel + header + body + footer.
+   Runtime width/transform handled inline (framer-motion).
+   ═══════════════════════════════════════════════════════════════ */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-overlay);
+  z-index: var(--z-drawer);
+}
+
+/* ── Desktop centered modal (default) ───────────────────────── */
+.overlayModal {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-overlay);
+  z-index: var(--z-drawer);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.panelModal {
+  position: relative;
+  max-width: 100%;
+  max-height: 88dvh;
+  background: var(--brand-surface-3);
+  z-index: calc(var(--z-drawer) + 1);
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  border: 1px solid var(--brand-panel-border);
+  box-shadow: var(--brand-panel-shadow-strong);
+  overflow: hidden;
+}
+
+/* ── Desktop right-side panel (variant="panel") ──────────────── */
+.panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--brand-surface-3);
+  z-index: calc(var(--z-drawer) + 1);
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--brand-panel-shadow-strong);
+  border-left: 1px solid var(--brand-panel-border);
+}
+
+/* ── Mobile panel (sheet from bottom) ────────────────────────── */
+.panelMobile {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 92dvh;
+  background: var(--brand-surface-3);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  z-index: calc(var(--z-drawer) + 1);
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--brand-panel-shadow-strong);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ── Header ──────────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: var(--space-card-padding-compact) var(--space-card-padding);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+  gap: 12px;
+  background: color-mix(in srgb, var(--bg-surface-elevated) 84%, transparent);
+  backdrop-filter: blur(6px);
+}
+
+.titleBlock { flex: 1; min-width: 0; }
+
+.title {
+  font-size: var(--text-size-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+
+.subtitle {
+  font-size: var(--text-size-base);
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+
+.closeBtn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  transition:
+    background var(--motion-duration-fast) var(--motion-ease-standard),
+    color      var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.closeBtn:hover {
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+}
+
+/* ── Body ────────────────────────────────────────────────────── */
+.body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: auto;
+  touch-action: pan-y pinch-zoom;
+}
+
+/* Content padding — applied inside body for form-like drawers */
+.bodyPadded {
+  padding: var(--space-card-padding);
+}
+
+/* ── Footer ──────────────────────────────────────────────────── */
+.footer {
+  padding: 14px var(--space-card-padding);
+  border-top: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+  background: var(--drawer-footer-bg);
+  backdrop-filter: blur(6px);
+}
+
+.footer > * {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-height: 42px;
+}
+
+.footer::before {
+  content: "Review changes before saving";
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: 8px;
+}
+
+.panelMobile::before {
+  content: '';
+  width: 40px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--border-strong);
+  align-self: center;
+  margin: 10px auto 2px;
+  flex-shrink: 0;
+}
+
+.panel::before,
+.panelMobile::before {
+  box-shadow: 0 0 0 1px color-mix(in srgb, white 8%, transparent);
+}
+
+.closeBtn:active {
+  transform: var(--feedback-soft-press);
+}
+
+
+.panel,
+.panelMobile {
+  background: var(--brand-surface-3);
+}
+
+.footer {
+  border-top-color: var(--brand-panel-border);
+}
+
+.footer::before {
+  color: color-mix(in srgb, var(--text-tertiary) 88%, transparent);
+}
+
+.footer > * > :global(button:last-child) {
+  box-shadow: var(--brand-panel-shadow);
+}
+
+
+.footer {
+  box-shadow: 0 -1px 0 color-mix(in srgb, var(--brand-panel-border) 72%, transparent), 0 -12px 32px -24px rgba(0,0,0,0.22);
+}
+
+.footer > * > :global(button:first-child) {
+  background: color-mix(in srgb, var(--bg-surface) 90%, transparent);
+}

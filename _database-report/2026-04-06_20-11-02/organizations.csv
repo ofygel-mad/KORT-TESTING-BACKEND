@@ -1,0 +1,4 @@
+id,name,slug,mode,currency,industry,onboardingCompleted,legalName,bin,iin,legalForm,director,accountant,address,city,phone,email,website,bankName,bankBik,bankAccount,shipmentResponsibleName,shipmentResponsiblePosition,transportOrganization,attorneyNumber,attorneyDate,attorneyIssuedBy,createdAt,updatedAt
+org-demo,Demo Company,demo-company,industrial,KZT,Производство,true,Товарищество с ограниченной ответственностью «Demo Company»,,,ТОО,Арман Калиев,,,Алматы,,,,,,,,,,,,,2026-03-25T10:27:50.832Z,2026-04-06T14:46:32.388Z
+cmn7eq5g60009uqlcwpgnrybv,"ТОО ""Тестовая компания""",тоо-тестовая-компания,basic,KZT,production,true,,,,,,,,,,,,,,,,,,,,,2026-03-26T11:46:41.812Z,2026-03-26T11:49:12.125Z
+cmn7w6k870001uqkscdg4kksv,"ТОО ""Шарашка",тоо-шарашка,advanced,KZT,production,true,,,,,,,,,,,,,,,,,,,,,2026-03-26T19:55:20.935Z,2026-03-26T19:58:05.319Z

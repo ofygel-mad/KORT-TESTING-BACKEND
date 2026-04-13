@@ -1,0 +1,14 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.env
+*.db
+*.db-journal
+
+# DB reports — contain raw data including password hashes and tokens, NEVER commit
+../_database-report/
+
+# Playwright auth states and test artifacts
+tests/e2e/.auth/
+test-results/
+playwright-report/

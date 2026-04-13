@@ -1,0 +1,10 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+echo "🔍 Running pre-commit checks..."
+
+# Lint
+echo "📝 Linting code..."
+pnpm lint || exit 1
+
+echo "✅ Pre-commit checks passed!"

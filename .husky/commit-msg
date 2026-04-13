@@ -1,0 +1,18 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+commit_msg=$(cat "$1")
+
+# Check commit message format
+if ! echo "$commit_msg" | grep -qE '^(feat|fix|docs|style|refactor|perf|test|chore|ci)(\(.+\))?!?: .{1,}'; then
+  echo "❌ Invalid commit message format"
+  echo ""
+  echo "Commit message must follow this format:"
+  echo "  <type>(<scope>): <subject>"
+  echo ""
+  echo "Types: feat, fix, docs, style, refactor, perf, test, chore, ci"
+  echo "Example: feat(orders): add urgent order sorting"
+  exit 1
+fi
+
+echo "✅ Commit message format is valid"

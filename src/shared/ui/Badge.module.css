@@ -1,0 +1,35 @@
+/* ─── Badge ── Kort Design System ───────────────────────────────────────── */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-size-xs);
+  font-weight: 500;
+  white-space: nowrap;
+  font-family: var(--font-body);
+  line-height: 1.4;
+}
+
+/* ─── Dot indicator ───────────────────────────────────────────────────────── */
+.dot {
+  width:  5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ─── Variants ───────────────────────────────────────────────────────────── */
+.default { background: var(--badge-default-bg); color: var(--badge-default-color); }
+.success { background: var(--badge-success-bg); color: var(--badge-success-color); }
+.warning { background: var(--badge-warning-bg); color: var(--badge-warning-color); }
+.danger  { background: var(--badge-danger-bg);  color: var(--badge-danger-color);  }
+.info    { background: var(--badge-info-bg);    color: var(--badge-info-color);    }
+.accent  { background: var(--badge-accent-bg);  color: var(--badge-accent-color);  }
+
+/* ─── Sizes ───────────────────────────────────────────────────────────────── */
+.sm { font-size: var(--text-size-xs); padding: 1px 6px; }
+.md { font-size: var(--text-size-xs); padding: 2px 8px; }
+.lg { font-size: var(--text-size-sm); padding: 3px 10px; }

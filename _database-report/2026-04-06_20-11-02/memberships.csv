@@ -1,0 +1,11 @@
+id,userId,orgId,role,status,source,joinedAt,department,employeePermissions,addedById,addedByName,employeeAccountStatus,createdAt,updatedAt
+cmn5wgwcu0001uqm8y51bt3pn,u-owner,org-demo,owner,active,company_registration,2026-01-06T14:46:32.397Z,,[],,,active,2026-03-25T10:27:50.859Z,2026-04-06T14:46:32.399Z
+cmn5wgwij0005uqm8vdytfzmb,u-manager,org-demo,viewer,active,admin_added,2026-02-23T10:27:51.065Z,Продажи,"[""sales"",""observer""]",u-owner,Арман Калиев,active,2026-03-25T10:27:51.067Z,2026-03-25T10:27:51.067Z
+cmn5wgwny0007uqm8ei447hgc,u-finance,org-demo,viewer,active,admin_added,2026-03-27T14:46:32.423Z,Продажи,"[""sales""]",u-owner,Арман Калиев,pending_first_login,2026-03-25T10:27:51.262Z,2026-04-06T14:46:32.425Z
+cmn5wgwsu0009uqm8839p4gmb,u-production,org-demo,viewer,active,admin_added,2026-02-23T10:27:51.437Z,Производство,"[""production""]",u-owner,Арман Калиев,active,2026-03-25T10:27:51.439Z,2026-03-25T10:27:51.439Z
+cmn5wgwzb000buqm83aqsem6q,u-full,org-demo,viewer,active,admin_added,2026-02-23T10:27:51.670Z,Администрация,"[""full_access""]",u-owner,Арман Калиев,active,2026-03-25T10:27:51.671Z,2026-03-25T10:27:51.671Z
+cmn5wgx5h000duqm8jlgqjdvf,u-observer,org-demo,viewer,active,admin_added,2026-02-23T10:27:51.891Z,Маркетинг,"[""observer""]",u-owner,Арман Калиев,active,2026-03-25T10:27:51.893Z,2026-03-25T10:27:51.893Z
+cmn5wgxb4000fuqm8mlwyzfde,u-dismissed,org-demo,viewer,active,admin_added,2026-02-23T10:27:52.095Z,Продажи,"[""sales""]",u-owner,Арман Калиев,dismissed,2026-03-25T10:27:52.096Z,2026-03-25T10:27:52.096Z
+cmn7eq5gz000buqlcvc1ey0jp,cmn7eq5cg0008uqlchr2uwvu2,cmn7eq5g60009uqlcwpgnrybv,owner,active,company_registration,2026-03-26T11:46:41.835Z,,[],,,active,2026-03-26T11:46:41.840Z,2026-03-26T11:46:41.840Z
+cmn7w6k8f0003uqksmmuclbev,cmn7w6k7i0000uqksoa02hqax,cmn7w6k870001uqkscdg4kksv,owner,active,company_registration,2026-03-26T19:55:20.940Z,,[],,,active,2026-03-26T19:55:20.943Z,2026-03-26T19:55:20.943Z
+cmnaic23u0002uqt8q7eum1me,cmnaic23l0000uqt85g5d33jq,org-demo,viewer,active,admin_added,2026-03-28T15:51:01.288Z,Склад,"[""warehouse_manager""]",u-owner,Арман Калиев,active,2026-03-28T15:51:01.290Z,2026-03-28T15:56:57.565Z

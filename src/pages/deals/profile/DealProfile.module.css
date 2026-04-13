@@ -1,0 +1,528 @@
+/* ═══════════════════════════════════════════════════════════════
+   DEAL PROFILE — CSS Module
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Page ────────────────────────────────────────────────────── */
+.page {
+  padding: 24px 28px;
+  min-height: 100%;
+}
+
+/* ── Back button ─────────────────────────────────────────────── */
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  margin-bottom: 16px;
+  border-radius: var(--radius-sm);
+  transition: color var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.back:hover { color: var(--text-primary); }
+
+/* ── Header block ────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.headerLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.dealTitle {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.25;
+  font-family: var(--font-heading);
+}
+
+.headerBadges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.amountChip {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--fill-accent);
+  font-family: var(--font-heading);
+}
+
+.headerActions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+/* ── Pipeline progress ───────────────────────────────────────── */
+.pipelineSection {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--surface-radius);
+  padding: var(--space-card-padding-compact) var(--space-card-padding);
+  margin-bottom: 20px;
+  box-shadow: var(--surface-shadow-rest);
+}
+
+.pipelineLabel {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  margin-bottom: 12px;
+}
+
+.stageTrack {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+
+.stageTrack::-webkit-scrollbar { display: none; }
+
+.stageStep {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 64px;
+  cursor: pointer;
+}
+
+.stageBar {
+  height: 4px;
+  width: 100%;
+  border-radius: 2px;
+  background: var(--bg-surface-inset);
+  transition: background var(--motion-duration-base) var(--motion-ease-standard);
+}
+
+.stageBar.past   { background: var(--fill-positive); }
+.stageBar.active { background: var(--fill-accent); }
+
+.stageStepLabel {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  text-align: center;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.stageStep.active .stageStepLabel { color: var(--fill-accent); font-weight: 600; }
+.stageStep.past   .stageStepLabel { color: var(--fill-positive-text); }
+
+/* ── Body grid ───────────────────────────────────────────────── */
+.bodyGrid {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 16px;
+  align-items: start;
+}
+
+/* ── Content card ────────────────────────────────────────────── */
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--surface-radius);
+  overflow: hidden;
+  box-shadow: var(--surface-shadow-rest);
+}
+
+/* ── Tabs ────────────────────────────────────────────────────── */
+.tabBar {
+  display: flex;
+  gap: 2px;
+  padding: 6px 6px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: color-mix(in srgb, var(--bg-surface) 94%, transparent);
+  backdrop-filter: blur(6px);
+}
+
+.tab {
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--font-body);
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition:
+    color var(--motion-duration-fast) var(--motion-ease-standard),
+    border-color var(--motion-duration-fast) var(--motion-ease-standard);
+  margin-bottom: -1px;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+.tab:hover { color: var(--text-primary); }
+
+.tab.active {
+  color: var(--fill-accent);
+  border-bottom-color: var(--fill-accent);
+  font-weight: 600;
+}
+
+.tabContent {
+  padding: 20px;
+}
+
+/* ── Note form ───────────────────────────────────────────────── */
+.noteForm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.noteTextarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.noteActions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ── Note list ───────────────────────────────────────────────── */
+.noteItem {
+  padding: 12px 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.noteBody {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.55;
+  margin-bottom: 4px;
+}
+
+.noteMeta {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+/* ── Task list ───────────────────────────────────────────────── */
+.taskHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.taskHeaderTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.taskRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.taskRow.done { opacity: 0.5; }
+
+.taskCheck {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  cursor: pointer;
+  accent-color: var(--fill-accent);
+}
+
+.taskRowBody { flex: 1; min-width: 0; }
+
+.taskRowTitle {
+  font-size: 13px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.taskRow.done .taskRowTitle { text-decoration: line-through; color: var(--text-tertiary); }
+
+.taskRowDue {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-top: 1px;
+}
+
+/* ── Activity timeline ────────────────────────────────────────── */
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.timelineItem {
+  display: flex;
+  gap: 12px;
+  padding: 10px 0;
+  position: relative;
+}
+
+.timelineItem + .timelineItem::before {
+  content: '';
+  position: absolute;
+  left: 11px;
+  top: 0;
+  width: 1px;
+  height: 10px;
+  background: var(--border-subtle);
+}
+
+.timelineDot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--bg-surface-inset);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+  margin-top: 1px;
+}
+
+.timelineBody { flex: 1; min-width: 0; }
+
+.timelineText {
+  font-size: 12px;
+  color: var(--text-primary);
+  line-height: 1.45;
+}
+
+.timelineTime {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+
+/* ── Sidebar cards ────────────────────────────────────────────── */
+.sideCard {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--surface-radius);
+  padding: 14px 16px;
+}
+
+.sideCardLabel {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  margin-bottom: 12px;
+}
+
+/* Customer card ─────────────────────────────────────────────── */
+.customerCard {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  cursor: pointer;
+  transition: border-color var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.customerCard:hover {
+  border-color: var(--border-default);
+}
+
+.customerName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.customerCompany {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.customerLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.customerLink {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  padding: 4px 6px;
+  margin: 0 -6px;
+  transition: background var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.customerLink:hover {
+  background: var(--bg-hover);
+  color: var(--fill-accent);
+}
+
+.customerLink svg { color: var(--text-tertiary); flex-shrink: 0; }
+
+/* Meta rows ─────────────────────────────────────────────────── */
+.metaList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.metaRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.metaIcon {
+  color: var(--text-tertiary);
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+.metaValue {
+  flex: 1;
+  min-width: 0;
+}
+
+.metaValueLabel {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  line-height: 1.2;
+}
+
+.metaValueText {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-top: 1px;
+}
+
+.metaValueExtra {
+  font-size: 10px;
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+.metaValueExtra.overdue { color: var(--fill-negative); }
+.metaValueExtra.warning { color: var(--fill-warning); }
+.metaValueExtra.ok      { color: var(--fill-positive); }
+
+/* ── Form field ──────────────────────────────────────────────── */
+.formFields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.fieldLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+/* ── Mobile ──────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .page { padding: 14px 16px; }
+  .bodyGrid { grid-template-columns: 1fr; }
+  .stageStepLabel { display: none; }
+}
+
+
+.sidebarStack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.inlineCompanyIcon {
+  display: inline;
+  margin-right: 4px;
+}
+
+.drawerFooter {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+
+.page { padding: var(--space-page-y) var(--space-page-x); width: min(100%, 1140px); margin: 0 auto; display: flex; flex-direction: column; gap: var(--space-section-gap); min-height: 100%; }
+.back { margin-bottom: 0; }
+.header { margin-bottom: 0; }
+.headerCard, .infoCard, .notesCard, .tasksCard, .timelineCard, .sidebarCard, .stageRail { box-shadow: var(--surface-shadow-rest); }
+.tabs { margin-bottom: 0; }
+.tabBtn { transition: color var(--motion-duration-fast) var(--motion-ease-standard), border-color var(--motion-duration-fast) var(--motion-ease-standard), background var(--motion-duration-fast) var(--motion-ease-standard), transform var(--motion-duration-fast) var(--motion-ease-standard); }
+.tabBtn:hover { transform: translateY(-1px); }
+.tabBtn:active { transform: var(--feedback-soft-press); }
+
+
+.nextActionSurface {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding: 16px 18px;
+  border-radius: calc(var(--surface-radius-tight) + 2px);
+  border: 1px solid var(--detail-next-border);
+  background: var(--detail-next-bg);
+  box-shadow: var(--detail-next-shadow);
+}
+.nextActionCopy { display: grid; gap: 4px; max-width: 620px; }
+.nextActionEyebrow { color: var(--text-tertiary); font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.nextActionTitle { color: var(--text-primary); font-size: 14px; line-height: 1.35; }
+.nextActionText { color: var(--text-secondary); font-size: 13px; line-height: 1.55; }
+.nextActionButtons { display: flex; flex-wrap: wrap; gap: 8px; }
+.nextActionBtn { min-height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--journey-chip-border); background: var(--bg-surface); color: var(--text-secondary); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; transition: transform var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease), color var(--motion-fast) var(--motion-ease), box-shadow var(--motion-fast) var(--motion-ease); }
+.nextActionBtn:hover { transform: var(--feedback-raise-hover); border-color: var(--fill-accent); color: var(--text-primary); box-shadow: var(--shadow-sm); }
+.nextActionBtn:active { transform: var(--feedback-soft-press); }
+
+
+.nextActionSurface, .card, .pipelineSection { background: var(--rc-detail-surface-bg); border-color: var(--rc-detail-surface-border); }

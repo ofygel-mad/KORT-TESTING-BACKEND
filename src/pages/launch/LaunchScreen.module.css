@@ -1,0 +1,133 @@
+/* ═══════════════════════════════════════════════
+   LaunchScreen — кино-интро Kort
+   Вдохновение: torebentsen.com curtain reveal
+   ═══════════════════════════════════════════════ */
+
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top right, rgba(160, 104, 56, 0.18), transparent 30%),
+    linear-gradient(180deg, #0e0b07 0%, #141009 100%);
+}
+
+/* ── Noise — волнистые горизонтальные линии
+   Без SVG-фильтра: чистый CSS, всегда работает ── */
+.noise {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 17px,
+    rgba(255, 244, 232, 0.028) 17px,
+    rgba(255, 244, 232, 0.028) 18px
+  );
+  animation: noiseDrift 10s ease-in-out infinite alternate;
+}
+
+.vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 50%, rgba(25, 18, 8, 0.6) 0%, transparent 65%),
+    radial-gradient(ellipse 100% 55% at 50% 105%, rgba(0, 0, 0, 0.75) 0%, transparent 60%),
+    radial-gradient(ellipse 45% 38% at 85% 10%, rgba(0, 0, 0, 0.45) 0%, transparent 60%);
+}
+
+/* ── Шторка — z-index: 1, позади текста ── */
+.curtain {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: -90px;        /* запас для волнистого края */
+  background: #0f0d0a;
+  z-index: 1;           /* ниже текста */
+  transform: translateY(0%);
+  will-change: transform;
+}
+
+.curtainUp {
+  transform: translateY(-102%);
+  transition: transform 1.5s cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+/* Волнистый нижний край шторки */
+.curtainEdge {
+  position: absolute;
+  bottom: 90px;
+  left: 0;
+  width: 100%;
+  height: 90px;
+  display: block;
+}
+
+/* ── Текстовые слои — z-index: 2, поверх шторки ── */
+.titleWrap,
+.subtitleWrap {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 2;           /* поверх .curtain */
+}
+
+/* Появление */
+.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition:
+    opacity 1s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 1s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Исчезновение */
+.hidden {
+  opacity: 0;
+  transform: translateY(8px) scale(0.997);
+  transition:
+    opacity 0.6s cubic-bezier(0.4, 0, 1, 1),
+    transform 0.6s cubic-bezier(0.4, 0, 1, 1);
+}
+
+/* ── KORT — кино-заголовок ── */
+.titleKort {
+  font-family: 'Plus Jakarta Sans', 'DM Sans', 'Segoe UI', sans-serif;
+  font-size: clamp(80px, 13vw, 200px);
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  color: rgba(246, 237, 224, 0.92);
+  -webkit-text-stroke: 0.5px rgba(210, 165, 80, 0.24);
+  text-align: center;
+  line-height: 1;
+  user-select: none;
+  text-shadow:
+    0 0 32px rgba(184, 146, 92, 0.18),
+    0 12px 48px rgba(0, 0, 0, 0.42);
+}
+
+/* ── "Enterprise Resource Planning" — как titres ── */
+.subtitleText {
+  font-family: 'Plus Jakarta Sans', 'DM Sans', 'Segoe UI', sans-serif;
+  font-size: clamp(12px, 1.5vw, 20px);
+  font-weight: 600;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: rgba(232, 214, 190, 0.44);
+  text-align: center;
+  user-select: none;
+}
+
+@keyframes noiseDrift {
+  0%   { background-position: 0 0; }
+  100% { background-position: 0 34px; }
+}

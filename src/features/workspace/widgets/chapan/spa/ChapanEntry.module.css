@@ -1,0 +1,36 @@
+.denied {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 32px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.iconWrap {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--fill-negative) 18%, var(--border-subtle));
+  background: var(--rc-badge-danger-bg);
+  color: var(--fill-negative-text);
+  box-shadow: var(--shadow-sm);
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--text-primary);
+}
+
+.text {
+  max-width: 460px;
+  line-height: 1.65;
+  color: var(--text-secondary);
+}

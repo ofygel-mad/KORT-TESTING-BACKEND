@@ -1,0 +1,2 @@
+id,orderId,orderItemId,productName,fabric,size,quantity,status,assignedTo,startedAt,completedAt,notes,defects,isBlocked,blockReason
+cmnbm13xy0009uqk0gl4k5hts,cmnblxlv90003uqk0esycpq6o,cmnblxlva0004uqk0l9sagp1v,Чапан мужской,Темный,46,1,done,Арман Калиев,2026-03-31T10:08:14.386Z,2026-03-31T10:08:18.408Z,,,false,

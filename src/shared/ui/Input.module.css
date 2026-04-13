@@ -1,0 +1,125 @@
+/* ─── Input ── Kort Design System ────────────────────────────────────────── */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+}
+
+.label {
+  font-size: var(--text-size-base);
+  font-weight: 500;
+  color: var(--input-label-text);
+  font-family: var(--font-body);
+  line-height: 1.4;
+}
+
+.required {
+  color: var(--fill-negative);
+  margin-left: 3px;
+}
+
+.inputWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input {
+  height: var(--input-height);
+  width: 100%;
+  padding: 0 14px;
+  border: 1.5px solid var(--input-border);
+  border-radius: var(--radius-md);
+  background: var(--input-bg);
+  font-size: var(--text-size-md);
+  font-family: var(--font-body);
+  color: var(--input-text);
+  outline: none;
+  transition:
+    border-color var(--motion-fast) var(--motion-ease),
+    box-shadow var(--motion-fast) var(--motion-ease);
+  appearance: none;
+}
+
+.input::placeholder {
+  color: color-mix(in srgb, var(--input-text) 50%, var(--input-placeholder));
+  opacity: 1;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.input:hover:not(:disabled):not(.error) { border-color: var(--input-border-hover); }
+.input:focus:not(.error) { border-color: var(--input-border-focus); box-shadow: var(--shadow-focus); }
+.input:disabled { opacity: 0.5; cursor: not-allowed; background: var(--bg-muted); }
+
+/* error state */
+.input.hasError { border-color: var(--input-border-error); }
+.input.hasError:focus { box-shadow: 0 0 0 3px rgba(239,68,68,0.14); }
+
+/* with prefix icon */
+.input.withPrefix { padding-left: 38px; }
+/* with suffix icon */
+.input.withSuffix { padding-right: 38px; }
+
+/* sizes */
+.sm .input,
+.input.inputSm {
+  height: var(--input-height-sm);
+  font-size: var(--text-size-base);
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+}
+
+.lg .input,
+.input.inputLg {
+  height: 48px;
+  font-size: var(--text-size-lg);
+  padding: 0 16px;
+}
+
+/* prefix / suffix icons */
+.prefix,
+.suffix {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  pointer-events: none;
+  flex-shrink: 0;
+}
+.prefix { left: 11px; }
+.suffix { right: 11px; }
+
+/* clickable suffix (e.g. clear button) */
+.suffix.clickable {
+  pointer-events: auto;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  padding: 2px;
+  transition: color var(--motion-fast) var(--motion-ease),
+              background var(--motion-fast) var(--motion-ease);
+}
+.suffix.clickable:hover { color: var(--text-primary); background: var(--bg-hover); }
+
+/* hint */
+.hint {
+  font-size: var(--text-size-sm);
+  color: var(--input-hint-text);
+  font-family: var(--font-body);
+  line-height: 1.4;
+}
+
+/* error message */
+.errorMsg {
+  font-size: var(--text-size-sm);
+  color: var(--input-error-text);
+  font-family: var(--font-body);
+  line-height: 1.4;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}

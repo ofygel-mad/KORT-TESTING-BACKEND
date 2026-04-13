@@ -1,0 +1,16 @@
+node_modules
+server/node_modules
+server/dist
+.git
+.gitignore
+.env
+.env.*
+server/.env
+server/.env.*
+coverage
+playwright-report
+test-results
+*.tsbuildinfo
+npm-debug.log
+pnpm-debug.log
+*.log

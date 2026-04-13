@@ -1,0 +1,15 @@
+id,orderId,type,content,authorId,authorName,createdAt
+cmnblxlva0006uqk07dkh2man,cmnblxlv90003uqk0esycpq6o,system,Заказ создан,u-owner,Арман Калиев,2026-03-29T10:19:31.700Z
+cmnblxlva0007uqk0rar4lmyl,cmnblxlv90003uqk0esycpq6o,payment,Предоплата 27 000 ₸ (Kaspi QR),u-owner,Арман Калиев,2026-03-29T10:19:31.700Z
+cmnbm13z9000buqk0jjc4gs3c,cmnblxlv90003uqk0esycpq6o,status_change,Новый → Подтверждён,u-owner,Арман Калиев,2026-03-29T10:22:15.141Z
+cmnbm13zl000duqk0xuorqq09,cmnblxlv90003uqk0esycpq6o,system,"Маршрут позиций: на склад 0, в производство 1.",u-owner,Арман Калиев,2026-03-29T10:22:15.153Z
+cmnbm22p0000fuqk0pddk6p3o,cmnblxlv90003uqk0esycpq6o,status_change,Подтверждён → Отменён,u-owner,Арман Калиев,2026-03-29T10:23:00.132Z
+cmnbm2a2g000huqk07qkfkudh,cmnblxlv90003uqk0esycpq6o,status_change,Отменён → Новый,u-owner,Арман Калиев,2026-03-29T10:23:09.688Z
+cmnbm2b4x000luqk0su8x46x8,cmnblxlv90003uqk0esycpq6o,status_change,Новый → Подтверждён,u-owner,Арман Калиев,2026-03-29T10:23:11.073Z
+cmnbm2b56000nuqk0q7i3g15c,cmnblxlv90003uqk0esycpq6o,system,"Маршрут позиций: на склад 0, в производство 1.",u-owner,Арман Калиев,2026-03-29T10:23:11.082Z
+cmneg2t9e0001uqkwvootqch8,cmnblxlv90003uqk0esycpq6o,edit,Заказ перемещён в корзину,u-owner,Арман Калиев,2026-03-31T09:58:55.393Z
+cmneg49tj0003uqkwyl6n7kfx,cmnblxlv90003uqk0esycpq6o,edit,Заказ восстановлен из корзины,u-owner,Арман Калиев,2026-03-31T10:00:03.511Z
+cmnegesl40005uqkw0dnuntx4,cmnblxlv90003uqk0esycpq6o,production_update,Чапан мужской: взято в работу,u-owner,Арман Калиев,2026-03-31T10:08:14.390Z
+cmnegeslr0007uqkwpme29o58,cmnblxlv90003uqk0esycpq6o,status_change,Подтвержден → В производстве,u-owner,Арман Калиев,2026-03-31T10:08:14.414Z
+cmnegevor0009uqkwnpqmg8f3,cmnblxlv90003uqk0esycpq6o,production_update,Чапан мужской: В работе → Готово,u-owner,Арман Калиев,2026-03-31T10:08:18.410Z
+cmnegevpb000buqkwb6w9amm4,cmnblxlv90003uqk0esycpq6o,status_change,В производстве → Готово,u-owner,Арман Калиев,2026-03-31T10:08:18.430Z

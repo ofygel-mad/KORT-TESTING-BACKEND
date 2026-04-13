@@ -1,0 +1,36 @@
+DB Report
+Generated: 2026-04-06T15:11:03.370Z
+Duration:  0.55s
+
+Table                                Rows
+--------------------------------------------
+users                                10
+refresh_tokens                       6
+organizations                        3
+memberships                          10
+invites                              0
+membership_requests                  0
+customers                            4
+leads                                0
+lead_history                         0
+deals                                0
+deal_activities                      0
+tasks                                0
+task_subtasks                        0
+task_activities                      0
+chapan_profiles                      3
+chapan_workers                       5
+chapan_catalog_products              5
+chapan_catalog_fabrics               6
+chapan_catalog_sizes                 12
+chapan_clients                       1
+chapan_requests                      0
+chapan_request_items                 0
+chapan_orders                        1
+chapan_order_items                   1
+chapan_production_tasks              1
+chapan_payments                      1
+chapan_transfers                     0
+chapan_activities                    14
+--------------------------------------------
+TOTAL                                83 rows across 28 tables

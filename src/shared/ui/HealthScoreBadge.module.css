@@ -1,0 +1,38 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: default;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.green {
+  background: var(--fill-positive-soft);
+  color: var(--fill-positive-text);
+}
+
+.green .dot { background: var(--fill-positive); }
+
+.yellow {
+  background: var(--fill-warning-soft);
+  color: var(--fill-warning-text);
+}
+
+.yellow .dot { background: var(--fill-warning); }
+
+.red {
+  background: var(--fill-negative-soft);
+  color: var(--fill-negative-text);
+}
+
+.red .dot { background: var(--fill-negative); }

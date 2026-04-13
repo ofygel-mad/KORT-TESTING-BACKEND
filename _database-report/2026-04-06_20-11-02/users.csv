@@ -1,0 +1,11 @@
+id,email,phone,fullName,avatarUrl,password,status,createdAt,updatedAt
+u-owner,admin@kort.local,+77010000001,Арман Калиев,,$2a$10$EdNbZ2MyzFRk70jMgdHDleYFxqCzXtyZeJCWBpK.TGCimqUBky57C,active,2026-03-25T10:27:50.794Z,2026-04-06T14:46:32.362Z
+u-manager,,+77010000002,Дана Оспанова,,$2a$10$g0RSNTDUMvW796TsGSEnOuh0ZFjnjHb4/MneNZeCbAynKZa2oDuRS,active,2026-03-25T10:27:51.047Z,2026-03-25T10:27:51.047Z
+u-finance,,+77010000003,Дана Оспанова,,$2a$10$dzzEbyDnij4vYaQ2pYBgBentJ.8yvR3wBqtL77JZ0QShOVU4hFW7W,pending,2026-03-25T10:27:51.247Z,2026-04-06T14:46:32.417Z
+u-production,,+77010000004,Айгуль Муканова,,$2a$10$g0RSNTDUMvW796TsGSEnOuh0ZFjnjHb4/MneNZeCbAynKZa2oDuRS,active,2026-03-25T10:27:51.417Z,2026-03-25T10:27:51.417Z
+u-full,,+77010000005,Болат Ахметов,,$2a$10$g0RSNTDUMvW796TsGSEnOuh0ZFjnjHb4/MneNZeCbAynKZa2oDuRS,active,2026-03-25T10:27:51.647Z,2026-03-25T10:27:51.647Z
+u-observer,,+77010000006,Карина Смагулова,,$2a$10$g0RSNTDUMvW796TsGSEnOuh0ZFjnjHb4/MneNZeCbAynKZa2oDuRS,active,2026-03-25T10:27:51.869Z,2026-03-25T10:27:51.869Z
+u-dismissed,,+77010000007,Асхат Нуров,,$2a$10$Q8tE99hdukuHjgInax9rXOcl92T5ynQrxjYy7.Oc891wz1hwMYw0q,inactive,2026-03-25T10:27:52.074Z,2026-03-25T10:27:52.074Z
+cmn7eq5cg0008uqlchr2uwvu2,testcom@gmail.com,+75554444444,Анатолий Шпак,,$2a$10$15vnDhCt8DCvjqe3JyCUZud8LQQVjoioaHV/tr/jwyoQ6flzCe6/W,active,2026-03-26T11:46:41.679Z,2026-03-26T11:46:41.679Z
+cmn7w6k7i0000uqksoa02hqax,test@mail.ru,+73333333333,к,,$2a$10$198rF3sbxEECreeI9Y/wj.rr4dmVFR.V6R/zU1ewGHfhaudho0YPW,active,2026-03-26T19:55:20.911Z,2026-03-26T19:55:20.911Z
+cmnaic23l0000uqt85g5d33jq,,+77474568661,Жасарал Асхат,,$2a$10$8Ou41KNaJbq20DlT/hSxpu.zIVx9kl5HvYV8F/AL.vWWk5WeArhzC,active,2026-03-28T15:51:01.282Z,2026-03-28T15:56:57.557Z

@@ -1,0 +1,205 @@
+/* ── Floating chatbar — fixed right rail ─────────────────────────────────── */
+
+@keyframes activityPulse {
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--fill-accent) 40%, transparent); }
+  60%  { box-shadow: 0 0 0 8px color-mix(in srgb, var(--fill-accent) 0%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--fill-accent) 0%, transparent); }
+}
+
+.bar {
+  position: fixed;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 150;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+
+  padding: 10px 7px;
+  border-radius: 20px;
+  border: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--bg-surface-elevated) 88%, var(--bg-surface-inset) 12%);
+  box-shadow: 0 8px 32px -12px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(12px) saturate(120%);
+
+  opacity: 0.38;
+  transition: opacity 0.22s ease, box-shadow 0.22s ease;
+}
+
+:global(body[data-kort-drawer-open='true']) .bar {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.barLit {
+  opacity: 1;
+}
+
+.barActivity {
+  animation: activityPulse 1s ease-out;
+  opacity: 1;
+}
+
+/* ── Profile bubbles list ──────────────────────────────────────────────────── */
+.profileList {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  max-height: 240px;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.profileList::-webkit-scrollbar {
+  display: none;
+}
+
+.emptyHint {
+  width: 32px;
+  height: 32px;
+  pointer-events: none;
+}
+
+.profileBtn {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  padding: 0;
+  cursor: pointer;
+  background: none;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.profileBtn:hover {
+  transform: scale(1.08);
+}
+
+.profileAvatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--fill-accent) 20%, #7A8BA8) 0%,
+    color-mix(in srgb, var(--fill-accent) 30%, #4E5F78) 100%
+  );
+  border: 1.5px solid color-mix(in srgb, var(--fill-accent) 20%, var(--border-default));
+  color: var(--text-on-accent, #fff);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  font-family: var(--font-body);
+}
+
+.unreadDot {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--fill-positive, #22c55e);
+  border: 2px solid var(--bg-surface-elevated);
+}
+
+/* ── Divider ─────────────────────────────────────────────────────────────── */
+.divider {
+  width: 22px;
+  height: 1px;
+  background: var(--border-subtle);
+  flex-shrink: 0;
+  margin: 2px 0;
+}
+
+/* ── Chat icon button ────────────────────────────────────────────────────── */
+.chatIconBtn {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, #e040fb 60%, #9c27b0) 0%,
+    #9c27b0 100%
+  );
+  color: #fff;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px -4px rgba(156, 39, 176, 0.5);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.chatIconBtn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 16px -4px rgba(156, 39, 176, 0.65);
+}
+
+.chatIconBtnActive {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, #ba68c8 60%, #7b1fa2) 0%,
+    #7b1fa2 100%
+  );
+}
+
+.totalBadge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 8px;
+  background: var(--fill-negative, #ef4444);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  font-family: var(--font-body);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--bg-surface-elevated);
+  line-height: 1;
+}
+
+/* ── Mobile: move to bottom-right corner ──────────────────────────────────── */
+@media (max-width: 768px) {
+  .bar {
+    top: auto;
+    bottom: 80px;
+    right: 12px;
+    transform: none;
+    flex-direction: row;
+    border-radius: 20px;
+    padding: 7px 10px;
+  }
+
+  .profileList {
+    flex-direction: row;
+    max-height: none;
+    max-width: 180px;
+    overflow-x: auto;
+    overflow-y: visible;
+  }
+
+  .divider {
+    width: 1px;
+    height: 22px;
+    margin: 0 2px;
+  }
+}

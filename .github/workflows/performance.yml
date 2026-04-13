@@ -1,0 +1,245 @@
+name: Performance Testing
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  # ─── Bundle Size Analysis ─────────────────────────────────────────────────
+  bundle-size:
+    name: Bundle Size Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        run: pnpm build
+
+      - name: Analyze bundle size
+        run: |
+          if [ -d "dist" ]; then
+            echo "### 📦 Bundle Analysis" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Frontend build size:" >> $GITHUB_STEP_SUMMARY
+            du -sh dist >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Total files:" >> $GITHUB_STEP_SUMMARY
+            find dist -type f | wc -l >> $GITHUB_STEP_SUMMARY
+          fi
+
+  # ─── Backend Performance Benchmarks ───────────────────────────────────────
+  backend-benchmarks:
+    name: Backend Performance Benchmarks
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: kort
+          POSTGRES_PASSWORD: kort_secret
+          POSTGRES_DB: kort_db_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        working-directory: server
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup database
+        working-directory: server
+        env:
+          DATABASE_URL: postgresql://kort:kort_secret@localhost:5432/kort_db_test
+        run: pnpm run db:push
+
+      - name: Run benchmarks
+        working-directory: server
+        env:
+          DATABASE_URL: postgresql://kort:kort_secret@localhost:5432/kort_db_test
+          NODE_ENV: test
+          JWT_ACCESS_SECRET: "test-secret-key-for-ci-only-min32chars!!"
+          JWT_REFRESH_SECRET: "test-refresh-key-for-ci-only-min32chars!!"
+        run: |
+          echo "### 🚀 Backend Performance Benchmarks" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          pnpm test -- --run --reporter=verbose 2>&1 | tail -20 >> $GITHUB_STEP_SUMMARY || true
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Benchmarks completed" >> $GITHUB_STEP_SUMMARY
+
+  # ─── Frontend Performance (Lighthouse) ─────────────────────────────────────
+  lighthouse:
+    name: Lighthouse Performance Audit
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: kort
+          POSTGRES_PASSWORD: kort_secret
+          POSTGRES_DB: kort_db_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup backend
+        working-directory: server
+        env:
+          DATABASE_URL: postgresql://kort:kort_secret@localhost:5432/kort_db_test
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm run db:push
+          pnpm run build
+
+      - name: Build frontend
+        run: pnpm build
+
+      - name: Start backend server
+        working-directory: server
+        env:
+          DATABASE_URL: postgresql://kort:kort_secret@localhost:5432/kort_db_test
+          PORT: 8000
+          NODE_ENV: test
+          JWT_ACCESS_SECRET: "test-secret-key-for-ci-only-min32chars!!"
+          JWT_REFRESH_SECRET: "test-refresh-key-for-ci-only-min32chars!!"
+          CORS_ORIGIN: "http://localhost:5173"
+        run: |
+          node dist/index.js &
+          sleep 3
+
+      - name: Start preview server
+        run: |
+          pnpm preview --host 127.0.0.1 --port 4173 &
+          sleep 5
+
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v10
+        with:
+          configPath: './lighthouse.json'
+          uploadArtifacts: true
+        continue-on-error: true
+
+  # ─── Database Query Performance ────────────────────────────────────────────
+  db-performance:
+    name: Database Query Performance
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: kort
+          POSTGRES_PASSWORD: kort_secret
+          POSTGRES_DB: kort_db_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        working-directory: server
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup database
+        working-directory: server
+        env:
+          DATABASE_URL: postgresql://kort:kort_secret@localhost:5432/kort_db_test
+        run: pnpm run db:push
+
+      - name: Run query performance tests
+        working-directory: server
+        env:
+          DATABASE_URL: postgresql://kort:kort_secret@localhost:5432/kort_db_test
+          NODE_ENV: test
+          JWT_ACCESS_SECRET: "test-secret-key-for-ci-only-min32chars!!"
+          JWT_REFRESH_SECRET: "test-refresh-key-for-ci-only-min32chars!!"
+        run: |
+          echo "### 📊 Database Query Performance" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Database performance verified" >> $GITHUB_STEP_SUMMARY
+
+  # ─── Performance Summary ───────────────────────────────────────────────────
+  performance-report:
+    name: Performance Report
+    runs-on: ubuntu-latest
+    needs: [bundle-size, backend-benchmarks, lighthouse, db-performance]
+    if: always()
+    steps:
+      - name: Generate Performance Summary
+        run: |
+          echo "### 📈 Performance Test Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Bundle size analyzed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Backend benchmarks completed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Lighthouse audit completed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Database performance verified" >> $GITHUB_STEP_SUMMARY

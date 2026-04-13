@@ -1,0 +1,37 @@
+# Зависимости (самое важное!)
+node_modules/
+.npm/
+pnpm-lock.yaml
+package-lock.json
+
+# Сборка и кэш
+dist/
+build/
+.next/
+.cache/
+
+# Базы данных и Prisma
+prisma/migrations/
+*.db
+*.sqlite
+
+# Системные файлы и логи
+.git/
+.vscode/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+.DS_Store
+
+# Изображения и медиа (ИИ не нужно читать их бинарный код)
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.ico
+*.pdf
+
+# Временные файлы
+tmp/
+temp/

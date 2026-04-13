@@ -1,0 +1,57 @@
+/* ═══════════════════════════════════════════════════════════════
+   UPGRADE BANNER — CSS Module
+   Жёлтая полоска с призывом обновить тариф.
+   ═══════════════════════════════════════════════════════════════ */
+
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  margin-bottom: 20px;
+  /* Намеренно используем fill-warning токены, но они пока не определены как градиент.
+     Оставляем статичный gradient — это дизайн-решение, не runtime значение. */
+  background: linear-gradient(135deg, var(--fill-warning-soft), #FFFBEB);
+  border: 1px solid var(--fill-warning-border, #FDE68A);
+  border-radius: var(--radius-md);
+}
+
+.icon { flex-shrink: 0; color: var(--fill-accent); }
+
+.message {
+  font-size: 13px;
+  color: var(--fill-warning-text, #92400E);
+  flex: 1;
+}
+
+.upgradeBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fill-accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  flex-shrink: 0;
+  padding: 0;
+  transition: opacity var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.upgradeBtn:hover { opacity: 0.75; }
+
+.dismissBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--fill-warning-text, #D97706);
+  flex-shrink: 0;
+  display: flex;
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  transition: opacity var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.dismissBtn:hover { opacity: 0.7; }

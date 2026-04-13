@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#D97706" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="KORT" />
+    <meta name="description" content="KORT для вашего бизнеса" />
+
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/logo2.ico" />
+    <link rel="icon" type="image/png" href="/logo2.ico" />
+
+    <!--
+      1. Theme init: reads localStorage before first paint to apply dark/light.
+      2. FOUC guard: sets background inline so the browser never paints a white
+         frame while the JS/CSS bundle loads. Value matches --bg-canvas in dark
+         theme (globals.css: [data-theme="dark"] { --bg-canvas: #100E0B }).
+         Light theme users see the equivalent light canvas on mount.
+    -->
+    <script>
+      (function() {
+        try {
+          var raw = localStorage.getItem('kort-ui');
+          var theme = 'system';
+          try { theme = JSON.parse(raw).state.theme; } catch(e) {}
+          var dark = theme === 'dark' ||
+            (theme === 'system' && window.matchMedia('(prefers-color-scheme:dark)').matches);
+          if (dark) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            document.documentElement.style.background = '#100E0B';
+            document.body && (document.body.style.background = '#100E0B');
+          } else {
+            document.documentElement.removeAttribute('data-theme');
+            document.documentElement.style.background = '#F0EDE8';
+            document.body && (document.body.style.background = '#F0EDE8');
+          }
+        } catch(e) {}
+      })();
+    </script>
+
+    <!--
+      Critical inline CSS: paints the correct background BEFORE the bundle
+      arrives so the browser never renders a white frame (FOUC). The default
+      assumes dark mode; the script above overrides for light-mode users.
+    -->
+    <style>
+      html, body { margin: 0; padding: 0; background: #100E0B; }
+    </style>
+
+    <title>KORT</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

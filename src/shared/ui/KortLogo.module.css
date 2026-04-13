@@ -1,0 +1,13 @@
+.logo {
+  width: var(--logo-size, 32px);
+  height: var(--logo-size, 32px);
+  border-radius: 8px;
+  display: block;
+  object-fit: cover;
+}
+
+.logo {
+  box-shadow: 0 10px 24px -16px color-mix(in srgb, var(--fill-accent) 60%, transparent);
+  border: 1px solid color-mix(in srgb, var(--fill-accent) 16%, transparent);
+  background: color-mix(in srgb, var(--bg-surface) 72%, white 28%);
+}

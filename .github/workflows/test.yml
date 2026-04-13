@@ -1,0 +1,307 @@
+name: Test & Quality Assurance
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  # ─── Lint & Format ─────────────────────────────────────────────────────────
+  lint:
+    name: Lint & Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run ESLint
+        run: pnpm lint
+        continue-on-error: false
+
+  # ─── Backend: Unit + Integration + API Tests ─────────────────────────────
+  backend-tests:
+    name: Backend Tests (Vitest)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: kort
+          POSTGRES_PASSWORD: kort_secret
+          POSTGRES_DB: kort_db_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        working-directory: server
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup test database
+        working-directory: server
+        env:
+          DATABASE_URL: postgresql://kort:kort_secret@localhost:5432/kort_db_test
+        run: pnpm run db:push
+
+      - name: Run backend tests
+        working-directory: server
+        env:
+          DATABASE_URL: postgresql://kort:kort_secret@localhost:5432/kort_db_test
+          NODE_ENV: test
+          JWT_ACCESS_SECRET: "test-secret-key-for-ci-only-min32chars!!"
+          JWT_REFRESH_SECRET: "test-refresh-key-for-ci-only-min32chars!!"
+        run: pnpm test -- --run --coverage
+
+      - name: Upload backend coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./server/coverage/coverage-final.json
+          flags: backend
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  # ─── Frontend: Unit + Component Tests ──────────────────────────────────────
+  frontend-unit-tests:
+    name: Frontend Unit & Component Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run frontend tests
+        run: pnpm test -- --run --coverage
+
+      - name: Upload frontend coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage/coverage-final.json
+          flags: frontend
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  # ─── Prepare Playwright browsers (run once) ───────────────────────────────
+  prepare-playwright:
+    name: Cache Playwright Browsers
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            playwright-browsers-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium firefox webkit
+
+  # ─── Frontend: E2E Tests with Playwright (Sharded) ─────────────────────────
+  frontend-e2e:
+    name: Frontend E2E Tests (Playwright) - Shard ${{ matrix.shard }}/${{ matrix.totalShards }}
+    runs-on: ubuntu-latest
+    needs: [prepare-playwright]
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+        totalShards: [2]
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: kort
+          POSTGRES_PASSWORD: kort_secret
+          POSTGRES_DB: kort_db_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Restore Playwright browsers cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            playwright-browsers-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install server dependencies
+        working-directory: server
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup backend for E2E
+        working-directory: server
+        env:
+          DATABASE_URL: postgresql://kort:kort_secret@localhost:5432/kort_db_test
+        run: |
+          pnpm run db:push
+          pnpm run db:seed
+          pnpm run build
+
+      - name: Build frontend
+        env:
+          VITE_API_BASE_URL: /api/v1
+          VITE_MOCK_API: "false"
+        run: pnpm build
+
+      - name: Start backend server
+        working-directory: server
+        env:
+          DATABASE_URL: postgresql://kort:kort_secret@localhost:5432/kort_db_test
+          PORT: 8000
+          NODE_ENV: test
+          JWT_ACCESS_SECRET: "test-secret-key-for-ci-only-min32chars!!"
+          JWT_REFRESH_SECRET: "test-refresh-key-for-ci-only-min32chars!!"
+          CORS_ORIGIN: "http://localhost:4173"
+        run: |
+          node dist/index.js &
+          echo "⏳ Waiting for backend to be ready..."
+          for i in {1..30}; do
+            if curl -s http://localhost:8000/health > /dev/null; then
+              echo "✅ Backend is ready"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "❌ Backend failed to start"
+          exit 1
+
+      - name: Run E2E tests (Shard ${{ matrix.shard }}/${{ matrix.totalShards }})
+        run: pnpm test:e2e --shard=${{ matrix.shard }}/${{ matrix.totalShards }}
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-shard-${{ matrix.shard }}
+          path: playwright-report/
+
+  # ─── Build verification ───────────────────────────────────────────────────
+  build-verification:
+    name: Build Verification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        run: pnpm build
+
+      - name: Install server dependencies
+        working-directory: server
+        run: pnpm install --frozen-lockfile
+
+      - name: Build backend
+        working-directory: server
+        run: pnpm run build
+
+  # ─── Final Gate ────────────────────────────────────────────────────────────
+  tests-passed:
+    name: All Tests Passed ✅
+    runs-on: ubuntu-latest
+    needs: [lint, backend-tests, frontend-unit-tests, frontend-e2e, build-verification]
+    if: always()
+    steps:
+      - name: Check test results
+        run: |
+          if [ "${{ needs.lint.result }}" = "failure" ] || \
+             [ "${{ needs.backend-tests.result }}" = "failure" ] || \
+             [ "${{ needs.frontend-unit-tests.result }}" = "failure" ] || \
+             [ "${{ needs.frontend-e2e.result }}" = "failure" ] || \
+             [ "${{ needs.build-verification.result }}" = "failure" ]; then
+            echo "❌ Some tests failed"
+            exit 1
+          fi
+          echo "✅ All tests passed!"

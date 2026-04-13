@@ -1,0 +1,5 @@
+id,orgId,fullName,phone,email,companyName,status,source,notes,tags,createdAt,updatedAt
+cust-2,org-demo,Марат Исаев,+7 702 555 0202,,,new,referral,,[],2026-03-25T10:27:52.110Z,2026-03-25T10:27:52.110Z
+cust-1,org-demo,Айдана Бекова,+7 701 555 0101,aidana@example.kz,,active,instagram,,"[""VIP""]",2026-03-25T10:27:52.110Z,2026-03-25T10:27:52.110Z
+cust-3,org-demo,Зарина Досова,+7 777 555 0303,zarina@example.kz,ТОО «Алтын»,active,site,,[],2026-03-25T10:27:52.110Z,2026-03-25T10:27:52.110Z
+cust-aidana,org-demo,Айдана Бекова,+77010000009,aidana@example.kz,Bekova Studio,new,instagram,Seeded customer for E2E regressions,"[""seed"",""e2e""]",2026-04-01T12:51:54.781Z,2026-04-06T14:46:32.436Z

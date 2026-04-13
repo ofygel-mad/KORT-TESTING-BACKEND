@@ -1,0 +1,96 @@
+.root {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: calc(var(--surface-radius) + 4px);
+  border: 1px solid var(--brand-panel-border);
+  background: var(--brand-surface-3);
+  box-shadow: var(--brand-panel-shadow-strong);
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 18px 14px;
+  border-bottom: 1px solid var(--brand-panel-border);
+  background: color-mix(in srgb, var(--bg-surface) 84%, var(--fill-accent-subtle));
+}
+
+.backBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 14px;
+  border: 1px solid var(--journey-chip-border);
+  background: var(--journey-chip-bg);
+  color: var(--text-secondary);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform var(--motion-fast) var(--motion-ease),
+    background var(--motion-fast) var(--motion-ease),
+    border-color var(--motion-fast) var(--motion-ease),
+    color var(--motion-fast) var(--motion-ease);
+  flex-shrink: 0;
+}
+
+.backBtn:hover {
+  transform: var(--feedback-raise-hover);
+  background: color-mix(in srgb, var(--bg-hover) 70%, var(--fill-accent-soft));
+  border-color: color-mix(in srgb, var(--fill-accent) 28%, var(--border-default));
+  color: var(--text-primary);
+}
+
+.backBtn:focus-visible {
+  outline: none;
+  box-shadow: var(--brand-focus-ring);
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.title {
+  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  background: color-mix(in srgb, var(--bg-surface) 94%, var(--fill-accent-subtle));
+}
+
+.body[data-tone='template'] {
+  overflow: auto;
+  padding: 20px 24px 24px;
+}
+
+@media (max-width: 900px) {
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 14px;
+  }
+
+  .backBtn {
+    width: fit-content;
+  }
+
+  .title {
+    font-size: 20px;
+  }
+
+  .body[data-tone='template'] {
+    padding: 16px;
+  }
+}

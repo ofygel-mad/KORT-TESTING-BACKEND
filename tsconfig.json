@@ -1,0 +1,60 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": true,
+    "paths": { "@/*": ["./src/*"] }
+  },
+  "include": ["src"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/test",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/**/*.spec.ts",
+    "src/**/*.spec.tsx",
+    // ── Obsolete SPA layers (replaced by src/entities + src/pages/crm/) ──────
+    "src/features/accounting-spa",
+    "src/features/chapan-spa",
+    "src/features/deals-spa",
+    "src/features/leads-spa",
+    "src/features/production-spa",
+    "src/features/summary-spa",
+    "src/features/tasks-spa",
+    "src/features/warehouse-spa",
+    // ── Old workspace widget previews (workspace is now nav-only) ─────────────
+    "src/features/workspace/widgets",
+    // ── Old page tree (superseded by src/pages/crm/) ──────────────────────────
+    "src/pages/customers",
+    "src/pages/deals",
+    "src/pages/tasks",
+    "src/pages/dashboard",
+    "src/pages/audit",
+    "src/pages/automations",
+    "src/pages/feed",
+    "src/pages/imports",
+    "src/pages/workzone-request",
+    // ── Deleted widgets ───────────────────────────────────────────────────────
+    "src/features/imports",
+    "src/features/quick-actions",
+    "src/widgets/ai-assistant",
+    "src/widgets/daily-focus",
+    "src/widgets/focus-mode",
+    "src/widgets/smart-suggestions",
+    "src/widgets/spreadsheet-review",
+    "src/widgets/team-presence"
+  ]
+}

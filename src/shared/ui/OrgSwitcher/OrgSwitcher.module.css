@@ -1,0 +1,156 @@
+.root {
+  position: relative;
+  padding: 10px 8px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 18px;
+  border: 1px solid rgba(170, 120, 68, 0.14);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(219, 225, 234, 0.74);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: var(--text-size-sm, 13px);
+  font-weight: 600;
+  text-align: left;
+  transition:
+    background-color var(--motion-fast) var(--motion-ease),
+    border-color var(--motion-fast) var(--motion-ease),
+    color var(--motion-fast) var(--motion-ease);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.trigger:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(170, 120, 68, 0.2);
+  color: rgba(240, 237, 232, 0.92);
+}
+
+.triggerCollapsed {
+  justify-content: center;
+  padding: 6px;
+  width: 40px;
+}
+
+.switching {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  color: #d6af88;
+}
+
+.name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: rgba(240, 237, 232, 0.94);
+}
+
+.chevron {
+  flex-shrink: 0;
+  color: rgba(213, 220, 230, 0.4);
+  transition: transform var(--motion-fast) var(--motion-ease);
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.spinner {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ─── Dropdown ─────────────────────────────────────────────────────── */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-dropdown, 200);
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% - 4px);
+  left: 8px;
+  right: 8px;
+  z-index: calc(var(--z-dropdown, 200) + 1);
+  background: linear-gradient(180deg, rgba(16, 20, 29, 0.98) 0%, rgba(11, 15, 22, 0.98) 100%);
+  border: 1px solid rgba(170, 120, 68, 0.18);
+  border-radius: 18px;
+  box-shadow: 0 24px 56px -28px rgba(0, 0, 0, 0.82);
+  padding: 4px;
+  min-width: 160px;
+  overflow: hidden;
+}
+
+.dropdownLabel {
+  padding: 4px 8px 2px;
+  font-size: var(--text-size-xs);
+  font-weight: 600;
+  color: rgba(213, 220, 230, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 7px 8px;
+  border: none;
+  border-radius: var(--radius-sm, var(--radius-md));
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: var(--text-size-sm, 13px);
+  color: rgba(240, 237, 232, 0.94);
+  text-align: left;
+  transition: background-color var(--motion-fast) var(--motion-ease);
+}
+
+.item:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.itemActive {
+  background: linear-gradient(180deg, rgba(167, 115, 63, 0.24) 0%, rgba(84, 52, 28, 0.62) 100%);
+  color: rgba(240, 237, 232, 0.96);
+}
+
+.itemName {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.itemRole {
+  font-size: var(--text-size-xs);
+  color: rgba(213, 220, 230, 0.4);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.check {
+  color: #d6af88;
+  flex-shrink: 0;
+}

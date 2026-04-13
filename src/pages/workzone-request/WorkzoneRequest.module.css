@@ -1,0 +1,836 @@
+/* ═══════════════════════════════════════════════════════
+   WORKZONE REQUEST PAGE
+   Полностью на CSS-переменных дизайн-системы KORT.
+   Никаких хардкодных white/hex цветов в компонентах.
+   ═══════════════════════════════════════════════════════ */
+
+.page {
+  --intake-ink:           var(--text-primary);
+  --intake-soft:          var(--text-secondary);
+  --intake-muted:         var(--text-tertiary);
+  --intake-accent:        var(--fill-accent);
+  --intake-accent-strong: var(--text-accent);
+  --intake-accent-soft:   var(--fill-accent-soft);
+  --intake-surface:       var(--bg-surface-elevated);
+  --intake-surface-inset: var(--bg-surface-inset);
+  --intake-border:        var(--brand-panel-border);
+  --intake-border-strong: color-mix(in srgb, var(--fill-accent) 28%, var(--border-default));
+  --intake-shadow:        var(--brand-panel-shadow-strong);
+  --intake-input-shadow:  0 0 0 3px color-mix(in srgb, var(--fill-accent) 14%, transparent);
+
+  min-height: 100dvh;
+  position: relative;
+  overflow: hidden;
+  /* Тёмный фон с лёгким акцентным свечением — в духе основного KORT */
+  background:
+    radial-gradient(circle at 14% 10%, color-mix(in srgb, var(--fill-accent) 14%, transparent), transparent 28%),
+    radial-gradient(circle at 80% 20%, color-mix(in srgb, var(--fill-info) 10%, transparent), transparent 24%),
+    radial-gradient(circle at 72% 80%, color-mix(in srgb, var(--fill-accent) 10%, transparent), transparent 22%),
+    var(--bg-canvas);
+  color: var(--intake-ink);
+}
+
+/* ── Декоративные слои фона ── */
+.backdropOrb,
+.backdropGrid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.backdropOrb {
+  background:
+    radial-gradient(circle at 18% 24%, color-mix(in srgb, var(--fill-accent) 8%, transparent), transparent 22%),
+    radial-gradient(circle at 70% 18%, color-mix(in srgb, var(--fill-info) 6%, transparent), transparent 20%),
+    radial-gradient(circle at 68% 76%, color-mix(in srgb, var(--fill-accent) 6%, transparent), transparent 24%);
+  filter: blur(14px);
+}
+
+.backdropGrid {
+  opacity: 0.14;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--fill-accent) 12%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--fill-accent) 12%, transparent) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.9) 20%, rgba(0,0,0,0.9) 76%, transparent 100%);
+}
+
+/* ── Shell ── */
+.shell {
+  position: relative;
+  z-index: 1;
+  width: min(1240px, 100%);
+  margin: 0 auto;
+  padding: 28px 28px 48px;
+}
+
+.stage {
+  display: grid;
+  grid-template-columns: minmax(340px, 0.85fr) minmax(0, 1.15fr);
+  gap: 22px;
+  align-items: start;
+}
+
+/* ── Левая панель — Story ── */
+.story {
+  position: sticky;
+  top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 28px;
+  border-radius: 28px;
+  border: 1px solid var(--intake-border);
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--fill-accent) 10%, transparent), transparent 34%),
+    var(--brand-surface-3);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: var(--intake-shadow);
+}
+
+/* ── Kicker / badge ── */
+.kicker,
+.successKicker {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--fill-accent) 22%, var(--border-subtle));
+  background: color-mix(in srgb, var(--fill-accent-soft) 68%, var(--bg-surface));
+  color: var(--intake-accent-strong);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ── Заголовки ── */
+.title,
+.successTitle {
+  margin: 0;
+  font-family: var(--font-display);
+  line-height: 0.96;
+  letter-spacing: -0.055em;
+  color: var(--intake-ink);
+}
+
+.title {
+  font-size: clamp(36px, 5vw, 58px);
+}
+
+/* ── Story grid ── */
+.storyGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.storyCard,
+.storyCardAccent {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 190px;
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid var(--intake-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.storyCard {
+  background: color-mix(in srgb, var(--intake-surface) 80%, transparent);
+}
+
+.storyCardAccent {
+  color: var(--text-inverse);
+  background:
+    radial-gradient(circle at 16% 18%, color-mix(in srgb, var(--fill-accent) 18%, transparent), transparent 28%),
+    linear-gradient(160deg, var(--fill-accent) 0%, color-mix(in srgb, var(--fill-accent) 72%, var(--fill-info)) 100%);
+}
+
+.storyHead {
+  font-size: 13px;
+  font-weight: 800;
+  color: inherit;
+}
+
+.storyList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: var(--intake-soft);
+  font-size: 13px;
+  line-height: 1.62;
+}
+
+.storyCardAccent .storyList {
+  color: color-mix(in srgb, var(--text-inverse) 82%, transparent);
+}
+
+.storyList div {
+  position: relative;
+  padding-left: 16px;
+}
+
+.storyList div::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 9px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.5;
+}
+
+/* ── Правая панель — Form ── */
+.formShell {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 22px;
+  border-radius: 30px;
+  border: 1px solid var(--intake-border);
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--fill-accent) 8%, transparent), transparent 32%),
+    var(--brand-surface-3);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: var(--intake-shadow);
+}
+
+.formHeader,
+.panelHead,
+.footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.formTitle {
+  color: var(--intake-ink);
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.formStamp {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 18px;
+  border: 1px solid var(--intake-border);
+  background: color-mix(in srgb, var(--fill-accent-soft) 48%, var(--bg-surface));
+  color: var(--intake-accent-strong);
+  font-size: 17px;
+  font-weight: 800;
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── Секции формы ── */
+.panel,
+.itemCard,
+.preferenceBlock,
+.calendarPopover,
+.footerNote {
+  border: 1px solid var(--intake-border);
+  background: color-mix(in srgb, var(--bg-surface-elevated) 72%, transparent);
+  box-shadow: var(--surface-shadow-rest);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px;
+  border-radius: 24px;
+}
+
+.panelTitle {
+  color: var(--intake-ink);
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.field {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field > span,
+.preferenceLabel {
+  color: var(--intake-soft);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.fieldWide {
+  grid-column: 1 / -1;
+}
+
+/* ── Поля ввода: НЕТ белому фону, только CSS-переменные ── */
+.input,
+.select,
+.textarea,
+.inputWithIcon,
+.calendarTrigger {
+  width: 100%;
+  border-radius: 16px;
+  border: 1px solid var(--intake-border);
+  background: var(--bg-surface-inset);
+  color: var(--intake-ink);
+  font: inherit;
+  outline: none;
+  transition:
+    border-color var(--motion-fast, 140ms) ease,
+    box-shadow var(--motion-fast, 140ms) ease,
+    background var(--motion-fast, 140ms) ease;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus,
+.inputWithIcon:focus-within,
+.calendarTrigger:focus-visible {
+  border-color: var(--intake-border-strong);
+  box-shadow: var(--intake-input-shadow);
+  background: var(--bg-surface-elevated);
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: var(--text-placeholder);
+}
+
+.input,
+.select,
+.calendarTrigger {
+  min-height: 52px;
+  padding: 0 14px;
+}
+
+.textarea {
+  min-height: 110px;
+  padding: 12px 14px;
+  resize: vertical;
+  line-height: 1.65;
+}
+
+/* Select: сбрасываем appearance, ставим собственную стрелку через bg-image */
+.select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23B8A898' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+  cursor: pointer;
+}
+
+/* Принудительно красим option для браузеров, которые их рендерят */
+.select option {
+  background: var(--bg-surface-elevated, #1E1A14);
+  color: var(--text-primary, #F0EBE4);
+}
+
+.inputWithIcon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 0 14px;
+  color: var(--intake-soft);
+}
+
+.inputBare {
+  flex: 1;
+  border: none;
+  background: transparent;
+  /* Важно: цвет берём напрямую, не inherit от родителя-иконки */
+  color: var(--intake-ink);
+  font: inherit;
+  outline: none;
+}
+
+.inputBare::placeholder {
+  color: var(--text-placeholder);
+}
+
+/* ── Toggle / Choice кнопки ── */
+.preferenceBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 20px;
+}
+
+.toggleRow,
+.choiceRow,
+.successActions,
+.successMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.toggleBtn,
+.choiceBtn,
+.ghostBtn,
+.removeBtn,
+.submitBtn,
+.closeWindowBtn,
+.secondarySceneBtn,
+.calendarNavBtn,
+.calendarClearBtn,
+.calendarDay {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    transform 140ms ease,
+    border-color 140ms ease,
+    background 140ms ease,
+    color 140ms ease,
+    opacity 140ms ease;
+}
+
+.toggleBtn,
+.choiceBtn {
+  min-height: 38px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid var(--intake-border);
+  background: var(--bg-surface-inset);
+  color: var(--intake-soft);
+  font-weight: 700;
+}
+
+.toggleBtnActive,
+.choiceBtnActive {
+  border-color: color-mix(in srgb, var(--fill-accent) 28%, var(--border-default));
+  background: color-mix(in srgb, var(--fill-accent-soft) 72%, var(--bg-surface));
+  color: var(--intake-accent-strong);
+}
+
+.choiceBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Item cards ── */
+.itemStack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.itemCard {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 20px;
+}
+
+.itemHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.itemHead strong {
+  color: var(--intake-accent-strong);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ── Action buttons ── */
+.ghostBtn,
+.removeBtn,
+.submitBtn,
+.closeWindowBtn,
+.secondarySceneBtn {
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 14px;
+  font-weight: 700;
+}
+
+.ghostBtn,
+.removeBtn,
+.secondarySceneBtn {
+  border: 1px solid var(--intake-border);
+  background: var(--bg-surface-inset);
+  color: var(--intake-soft);
+}
+
+.removeBtn {
+  width: 42px;
+  padding: 0;
+}
+
+.submitBtn,
+.closeWindowBtn {
+  border: 1px solid color-mix(in srgb, var(--fill-accent) 28%, var(--border-default));
+  color: var(--text-inverse);
+  background: var(--fill-accent-gradient);
+  box-shadow: var(--shadow-accent);
+}
+
+.toggleBtn:hover,
+.choiceBtn:hover,
+.ghostBtn:hover,
+.removeBtn:hover,
+.submitBtn:hover,
+.closeWindowBtn:hover,
+.secondarySceneBtn:hover,
+.calendarNavBtn:hover,
+.calendarClearBtn:hover,
+.calendarDay:hover {
+  transform: translateY(-1px);
+}
+
+.submitBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+/* ── Календарь ── */
+.calendarField {
+  z-index: 2;
+}
+
+.calendarTrigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: flex-start;
+  color: var(--intake-soft);
+}
+
+.calendarPopover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: min(320px, 100%);
+  padding: 16px;
+  border-radius: 22px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  background: var(--bg-surface-elevated);
+}
+
+.calendarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.calendarHeader strong {
+  color: var(--intake-ink);
+  font-size: 14px;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
+.calendarNavBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid var(--intake-border);
+  background: var(--bg-surface-inset);
+  color: var(--intake-soft);
+}
+
+.calendarWeekdays,
+.calendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.calendarWeekdays {
+  margin-bottom: 8px;
+}
+
+.calendarWeekdays span {
+  display: grid;
+  place-items: center;
+  color: var(--intake-muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.calendarDay {
+  height: 38px;
+  border-radius: 12px;
+  border: 1px solid var(--intake-border);
+  background: var(--bg-surface-inset);
+  color: var(--intake-ink);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.calendarDayMuted { opacity: 0.38; }
+
+.calendarDayToday {
+  border-color: color-mix(in srgb, var(--fill-accent) 28%, var(--border-default));
+}
+
+.calendarDayActive {
+  border-color: color-mix(in srgb, var(--fill-accent) 34%, var(--border-default));
+  background: color-mix(in srgb, var(--fill-accent-soft) 72%, var(--bg-surface));
+  color: var(--intake-accent-strong);
+}
+
+.calendarActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.calendarClearBtn {
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--intake-border);
+  background: var(--bg-surface-inset);
+  color: var(--intake-soft);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+/* ── Footer ── */
+.footer {
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.footerNote {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  color: var(--intake-soft);
+}
+
+.footerNote strong,
+.footerNote span {
+  display: block;
+}
+
+.footerNote strong {
+  margin-bottom: 2px;
+  font-size: 12px;
+  color: var(--intake-ink);
+}
+
+.footerNote span {
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+/* ── Loading ── */
+.loading {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  background: var(--bg-canvas);
+  color: var(--intake-soft);
+}
+
+/* ── Success screen ── */
+.successScene {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--bg-canvas) 72%, transparent);
+}
+
+.successVideo,
+.successFog,
+.successGlow {
+  position: absolute;
+  inset: 0;
+}
+
+.successVideo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transform: scale(1.08);
+  filter: saturate(0.8) contrast(1.05) brightness(0.48);
+  transition: opacity 1800ms ease, transform 3600ms ease;
+}
+
+.successVideoReady {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.successFog {
+  background:
+    radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--fill-accent) 8%, transparent), transparent 30%),
+    linear-gradient(180deg, color-mix(in srgb, var(--bg-canvas) 62%, transparent) 0%, color-mix(in srgb, var(--bg-canvas) 42%, transparent) 100%);
+  backdrop-filter: blur(26px);
+  opacity: 1;
+  transition: opacity 1800ms ease, backdrop-filter 1800ms ease;
+}
+
+.successFogReady {
+  opacity: 0.8;
+  backdrop-filter: blur(8px);
+}
+
+.successGlow {
+  background:
+    radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--fill-accent) 14%, transparent), transparent 18%),
+    radial-gradient(circle at 50% 58%, color-mix(in srgb, var(--fill-accent) 18%, transparent), transparent 28%);
+  opacity: 0;
+  transition: opacity 2200ms ease 220ms;
+}
+
+.successGlowReady { opacity: 1; }
+
+.successPanel {
+  position: relative;
+  z-index: 1;
+  width: min(600px, calc(100% - 28px));
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 28px;
+  border-radius: 30px;
+  border: 1px solid color-mix(in srgb, var(--fill-accent) 18%, var(--border-subtle));
+  background: color-mix(in srgb, var(--bg-surface-elevated) 88%, transparent);
+  color: var(--text-primary);
+  box-shadow: var(--brand-panel-shadow-strong);
+  backdrop-filter: blur(16px);
+  opacity: 0;
+  transform: translateY(22px) scale(0.985);
+  transition:
+    opacity 720ms cubic-bezier(.21, 1, .23, 1) 180ms,
+    transform 720ms cubic-bezier(.21, 1, .23, 1) 180ms;
+}
+
+.successPanelReady {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.successTitle {
+  font-size: clamp(28px, 4.5vw, 44px);
+  color: var(--text-primary);
+}
+
+.successText {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.successMeta span {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface-inset);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.secondarySceneBtn {
+  color: var(--text-secondary);
+  background: var(--bg-surface-inset);
+  border-color: var(--border-default);
+}
+
+/* ── Responsive ── */
+@media (max-width: 1080px) {
+  .stage { grid-template-columns: 1fr; }
+  .story { position: static; }
+}
+
+@media (max-width: 760px) {
+  .shell { padding: 14px 14px 24px; }
+
+  .story,
+  .formShell {
+    padding: 18px;
+    border-radius: 24px;
+  }
+
+  .grid,
+  .storyGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .formHeader,
+  .footer,
+  .panelHead {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .toggleRow,
+  .choiceRow,
+  .successActions {
+    flex-direction: column;
+  }
+
+  .toggleBtn,
+  .choiceBtn,
+  .closeWindowBtn,
+  .secondarySceneBtn,
+  .submitBtn {
+    width: 100%;
+  }
+
+  .formStamp {
+    width: 46px;
+    height: 46px;
+  }
+
+  .calendarPopover { width: 100%; }
+  .successPanel { padding: 20px; }
+}

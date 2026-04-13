@@ -1,0 +1,547 @@
+.page {
+  width: min(100%, var(--space-page-max));
+  margin: 0 auto;
+  min-height: 100%;
+  padding: var(--space-page-y) var(--space-page-x);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-section-gap);
+}
+
+.tabs {
+  position: sticky;
+  top: 12px;
+  z-index: 4;
+  display: flex;
+  gap: 4px;
+  width: fit-content;
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid var(--brand-panel-border);
+  background: color-mix(in srgb, var(--bg-surface) 88%, var(--fill-accent-subtle));
+  box-shadow: var(--surface-shadow-rest);
+  backdrop-filter: blur(8px);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tabButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition:
+    transform var(--motion-duration-fast) var(--motion-ease-standard),
+    background var(--motion-duration-fast) var(--motion-ease-standard),
+    color var(--motion-duration-fast) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.tabButton:hover {
+  transform: var(--feedback-raise-hover);
+  background: color-mix(in srgb, var(--bg-hover) 82%, transparent);
+  color: var(--text-primary);
+}
+
+.tabButton:active {
+  transform: var(--feedback-soft-press);
+}
+
+.tabButton:focus-visible {
+  outline: none;
+  box-shadow: var(--brand-focus-ring);
+}
+
+.active {
+  background: color-mix(in srgb, var(--bg-surface-elevated) 88%, white 12%);
+  color: var(--text-primary);
+  box-shadow: var(--surface-shadow-rest);
+}
+
+.tabPanel {
+  display: grid;
+  gap: 16px;
+}
+
+.statToneInfo {
+  --tone-color: var(--fill-info);
+  --tone-shell: color-mix(in srgb, var(--fill-info-soft) 82%, transparent);
+  --tone-border: color-mix(in srgb, var(--fill-info) 18%, var(--border-subtle));
+  --tone-surface: color-mix(in srgb, var(--bg-surface) 90%, var(--fill-info-soft));
+}
+
+.statTonePositive {
+  --tone-color: var(--fill-positive);
+  --tone-shell: color-mix(in srgb, var(--fill-positive-soft) 82%, transparent);
+  --tone-border: color-mix(in srgb, var(--fill-positive) 18%, var(--border-subtle));
+  --tone-surface: color-mix(in srgb, var(--bg-surface) 90%, var(--fill-positive-soft));
+}
+
+.statToneWarning {
+  --tone-color: var(--fill-warning);
+  --tone-shell: color-mix(in srgb, var(--fill-warning-soft) 82%, transparent);
+  --tone-border: color-mix(in srgb, var(--fill-warning) 18%, var(--border-subtle));
+  --tone-surface: color-mix(in srgb, var(--bg-surface) 90%, var(--fill-warning-soft));
+}
+
+.statToneViolet {
+  --tone-color: var(--chart-series-5);
+  --tone-shell: color-mix(in srgb, var(--chart-series-5) 16%, transparent);
+  --tone-border: color-mix(in srgb, var(--chart-series-5) 18%, var(--border-subtle));
+  --tone-surface: color-mix(in srgb, var(--bg-surface) 90%, var(--chart-series-5) 8%);
+}
+
+.panelGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.statCard {
+  position: relative;
+  overflow: hidden;
+  padding: 20px;
+  border-radius: calc(var(--surface-radius) + 2px);
+  border: 1px solid var(--tone-border, var(--brand-panel-border));
+  background: var(--tone-surface, var(--chart-surface));
+  box-shadow: var(--brand-panel-shadow);
+  transition:
+    transform var(--motion-duration-fast) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.statCard::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--tone-color, var(--fill-accent)) 78%, white 22%) 0%,
+    var(--tone-color, var(--fill-accent)) 100%
+  );
+}
+
+.statCard:hover {
+  transform: var(--feedback-raise-hover);
+  box-shadow: var(--brand-panel-shadow-strong);
+}
+
+.statIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--tone-shell, var(--fill-accent-soft));
+  color: var(--tone-color, var(--fill-accent));
+}
+
+.statValue {
+  margin-top: 16px;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.statLabel {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.surfaceCard,
+.inviteCard,
+.teamCard,
+.planCard {
+  border-radius: calc(var(--surface-radius) + 2px);
+  border: 1px solid var(--brand-panel-border);
+  background: var(--chart-surface);
+  box-shadow: var(--brand-panel-shadow);
+}
+
+.surfaceCard {
+  padding: 22px 24px;
+}
+
+.surfaceTitle {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--text-primary);
+}
+
+.helperText {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+  max-width: 82ch;
+}
+
+.teamHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.memberCount {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--status-shell-border);
+  background: color-mix(in srgb, var(--bg-surface-elevated) 82%, transparent);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.inviteWrap {
+  overflow: hidden;
+}
+
+.inviteCard {
+  padding: 18px;
+}
+
+.inviteMeta {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+
+.inviteTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.inviteSubtitle {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.inviteForm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inviteFormSecondary {
+  margin-top: 10px;
+}
+
+.inviteSelect,
+.inlineSelect {
+  appearance: none;
+  outline: none;
+  cursor: pointer;
+  color-scheme: light dark;
+  border: 1px solid var(--border-default);
+  background:
+    var(--bg-surface)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236B7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")
+    no-repeat right 8px center;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+}
+
+.inviteSelect {
+  height: 36px;
+  min-width: 172px;
+  padding: 0 30px 0 10px;
+  border-radius: 14px;
+  font-size: 12px;
+}
+
+.inviteLinkField {
+  flex: 1;
+  min-width: 0;
+}
+
+.teamCard {
+  overflow: hidden;
+}
+
+.skeletonRow {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--status-shell-border);
+}
+
+.skeletonRow:last-child {
+  border-bottom: none;
+}
+
+.memberRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--status-shell-border);
+  transition:
+    background var(--motion-duration-fast) var(--motion-ease-standard),
+    transform var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.memberRow:last-child {
+  border-bottom: none;
+}
+
+.memberRow:hover {
+  background: var(--table-row-hover);
+  transform: translateY(-1px);
+}
+
+.memberIdentity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.memberAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--fill-accent);
+  background: color-mix(in srgb, var(--fill-accent-soft) 82%, transparent);
+}
+
+.memberName {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.memberEmail {
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.memberActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.inlineSelect {
+  height: 30px;
+  padding: 0 28px 0 8px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.iconButton {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--bg-surface-elevated) 82%, transparent);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition:
+    transform var(--motion-duration-fast) var(--motion-ease-standard),
+    background var(--motion-duration-fast) var(--motion-ease-standard),
+    color var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.iconButton:hover {
+  transform: var(--feedback-raise-hover);
+  background: color-mix(in srgb, var(--fill-negative-soft) 74%, transparent);
+  color: var(--fill-negative-text);
+}
+
+.warningBanner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--fill-negative) 22%, var(--border-subtle));
+  background: color-mix(in srgb, var(--fill-negative-soft) 72%, var(--bg-surface));
+}
+
+.warningText {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--fill-negative-text);
+}
+
+.modeDescription {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text-secondary);
+}
+
+.planToneInfo {
+  --plan-color: var(--fill-info);
+  --plan-shell: color-mix(in srgb, var(--fill-info-soft) 80%, transparent);
+  --plan-border: color-mix(in srgb, var(--fill-info) 18%, var(--border-subtle));
+  --plan-surface: color-mix(in srgb, var(--bg-surface) 90%, var(--fill-info-soft));
+}
+
+.planToneWarning {
+  --plan-color: var(--fill-warning);
+  --plan-shell: color-mix(in srgb, var(--fill-warning-soft) 80%, transparent);
+  --plan-border: color-mix(in srgb, var(--fill-warning) 18%, var(--border-subtle));
+  --plan-surface: color-mix(in srgb, var(--bg-surface) 90%, var(--fill-warning-soft));
+}
+
+.planToneViolet {
+  --plan-color: var(--chart-series-5);
+  --plan-shell: color-mix(in srgb, var(--chart-series-5) 14%, transparent);
+  --plan-border: color-mix(in srgb, var(--chart-series-5) 18%, var(--border-subtle));
+  --plan-surface: color-mix(in srgb, var(--bg-surface) 90%, var(--chart-series-5) 8%);
+}
+
+.planGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.planCard {
+  padding: 20px;
+  border-color: var(--plan-border, var(--brand-panel-border));
+  background: var(--plan-surface, var(--chart-surface));
+  display: grid;
+  gap: 10px;
+  transition:
+    transform var(--motion-duration-fast) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.planCard:hover {
+  transform: var(--feedback-raise-hover);
+  box-shadow: var(--brand-panel-shadow-strong);
+}
+
+.planCurrent {
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--plan-color, var(--fill-accent)) 16%, transparent),
+    var(--brand-panel-shadow);
+}
+
+.planEyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--plan-color, var(--fill-accent));
+}
+
+.planTitle {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text-primary);
+}
+
+.planDescription {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.planFeatureRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--plan-color, var(--fill-accent));
+}
+
+.planFeature {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.planCurrentBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--plan-border, var(--brand-panel-border));
+  background: var(--plan-shell, var(--fill-accent-soft));
+  color: var(--plan-color, var(--fill-accent));
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.planButton {
+  width: 100%;
+  margin-top: 8px;
+}
+
+@media (max-width: 980px) {
+  .panelGrid,
+  .planGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: 20px 16px;
+  }
+
+  .tabs {
+    width: 100%;
+  }
+
+  .tabButton {
+    flex: 1 1 0;
+    justify-content: center;
+  }
+
+  .panelGrid,
+  .planGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .inviteForm,
+  .memberRow {
+    flex-wrap: wrap;
+  }
+
+  .memberActions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}

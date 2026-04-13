@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kort — Нет подключения</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+      background: #FFFBF5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      text-align: center;
+    }
+    .wrap { max-width: 320px; padding: 24px; }
+    .icon { font-size: 48px; margin-bottom: 16px; }
+    h1 { font-size: 20px; font-weight: 700; color: #1F2937; margin: 0 0 8px; }
+    p  { font-size: 14px; color: #6B7280; margin: 0 0 24px; line-height: 1.5; }
+    button {
+      padding: 10px 24px;
+      background: #D97706;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="icon">📡</div>
+    <h1>Нет подключения</h1>
+    <p>Проверьте интернет и попробуйте снова.<br>Данные сохранятся автоматически.</p>
+    <button onclick="location.reload()">Повторить</button>
+  </div>
+</body>
+</html>

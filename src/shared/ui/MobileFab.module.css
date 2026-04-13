@@ -1,0 +1,65 @@
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE FAB — CSS Module
+   Плавающая кнопка действий на мобильных.
+   ═══════════════════════════════════════════════════════════════ */
+
+.container {
+  position: fixed;
+  right: 20px;
+  bottom: 80px;
+  z-index: 70;
+}
+
+/* Backdrop to close menu on outside tap */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 68;
+}
+
+/* ── Speed dial items ────────────────────────────────────────── */
+/* position `bottom` is dynamic (index * 56px) → stays inline */
+.dialItem {
+  position: absolute;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  z-index: 69;
+  transition: box-shadow var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.dialItem:hover { box-shadow: var(--shadow-lg); }
+
+.dialIcon { color: var(--fill-accent); display: flex; }
+
+/* ── Main FAB button ─────────────────────────────────────────── */
+.fab {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--fill-accent);
+  border: none;
+  box-shadow: 0 4px 16px rgba(217, 119, 6, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text-inverse);
+  z-index: 70;
+  transition: box-shadow var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.fab:hover { box-shadow: 0 6px 24px rgba(217, 119, 6, 0.5); }

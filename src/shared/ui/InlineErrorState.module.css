@@ -1,0 +1,46 @@
+.root {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--fill-negative-soft, rgba(220, 38, 38, 0.18));
+  background: color-mix(in srgb, var(--bg-surface-elevated) 84%, rgba(220, 38, 38, 0.08));
+  border-radius: var(--radius-lg);
+}
+
+.iconWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--fill-negative-soft, rgba(220, 38, 38, 0.12));
+  color: var(--fill-negative-text, #ef4444);
+  flex-shrink: 0;
+}
+
+.copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.description {
+  margin-top: 2px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.action {
+  border: 0;
+  background: transparent;
+  color: var(--text-accent);
+  font-weight: 700;
+  cursor: pointer;
+}

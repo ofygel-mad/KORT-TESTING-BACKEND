@@ -1,0 +1,87 @@
+/* ═══════════════════════════════════════════════════════════════
+   CUSTOM FIELDS TAB — CSS Module
+   ═══════════════════════════════════════════════════════════════ */
+
+.root { padding: 24px; }
+
+/* ── Toolbar ─────────────────────────────────────────────────── */
+.toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+
+.btnGroup {
+  display: flex;
+  gap: 8px;
+}
+
+/* ── Field list ──────────────────────────────────────────────── */
+.fieldList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Field label ─────────────────────────────────────────────── */
+.fieldLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  display: block;
+  margin-bottom: 6px;
+}
+
+.required {
+  color: var(--fill-negative);
+  margin-left: 4px;
+}
+
+/* ── Read-only value ─────────────────────────────────────────── */
+.readValue {
+  font-size: 13px;
+  padding: 8px 12px;
+  background: var(--bg-surface-inset);
+  border-radius: var(--radius-md);
+  line-height: 1.4;
+}
+
+.readValue.filled { color: var(--text-primary); }
+.readValue.empty  { color: var(--text-tertiary); }
+
+/* ── Checkbox field ──────────────────────────────────────────── */
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+/* ── Empty state ─────────────────────────────────────────────── */
+.emptyState {
+  padding: 32px;
+  text-align: center;
+}
+
+.emptyIcon {
+  color: var(--text-tertiary);
+  margin-bottom: 12px;
+}
+
+.emptyTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.emptyDesc {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+/* ── Loading ─────────────────────────────────────────────────── */
+.loading { padding: 24px; }
+.skeletonItem { margin-bottom: 12px; }
