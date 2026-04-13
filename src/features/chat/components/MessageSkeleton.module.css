@@ -1,0 +1,25 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 14px;
+  flex: 1;
+}
+
+.row {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.rowMine {
+  justify-content: flex-end;
+}
+
+.rowTheirs {
+  justify-content: flex-start;
+}
+
+.bubbleWrap {
+  display: flex;
+}

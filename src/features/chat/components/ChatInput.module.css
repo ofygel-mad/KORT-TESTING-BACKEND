@@ -1,0 +1,158 @@
+.wrapper {
+  position: relative;
+  border-top: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.wrapperDragging {
+  outline: 2px dashed #e040fb;
+  outline-offset: -2px;
+}
+
+.contextBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 4px;
+  background: color-mix(in srgb, #e040fb 8%, var(--bg-surface-inset));
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.contextBarIcon {
+  color: #e040fb;
+  flex-shrink: 0;
+}
+
+.contextBarContent {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.contextBarLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: #e040fb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.contextBarPreview {
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.contextBarClose {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  transition: color 0.15s;
+}
+
+.contextBarClose:hover {
+  color: var(--text-primary);
+}
+
+.dropOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: color-mix(in srgb, #e040fb 15%, var(--bg-surface));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  pointer-events: none;
+}
+
+.dropOverlay span {
+  font-size: 13px;
+  color: #e040fb;
+  font-weight: 500;
+}
+
+.inputRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  padding: 8px 10px;
+}
+
+.attachBtn {
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: color 0.15s, background 0.15s;
+}
+
+.attachBtn:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+.messageInput {
+  flex: 1;
+  background: var(--bg-surface-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 7px 10px;
+  font-size: 13px;
+  color: var(--text-primary);
+  resize: none;
+  outline: none;
+  font-family: inherit;
+  line-height: 1.4;
+  max-height: 120px;
+  overflow-y: auto;
+  transition: border-color 0.15s;
+}
+
+.messageInput::placeholder {
+  color: var(--text-tertiary);
+}
+
+.messageInput:focus {
+  border-color: color-mix(in srgb, #e040fb 60%, transparent);
+}
+
+.sendBtn {
+  background: var(--bg-surface-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 7px;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.sendBtnActive {
+  background: #e040fb;
+  border-color: #e040fb;
+  color: white;
+}
+
+.sendBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

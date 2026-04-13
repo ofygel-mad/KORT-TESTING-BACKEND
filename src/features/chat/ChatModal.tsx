@@ -1,34 +1,34 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { MessageCircleMore, Send, X, Plus, MessageSquareDashed } from 'lucide-react';
+import { MessageCircleMore, MessageSquareDashed, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuthStore } from '../../shared/stores/auth';
 import { useChatStore } from '../../shared/stores/chat';
+import { SearchInput } from '../../shared/ui/SearchInput';
 import {
   useChatConversations,
   useChatMessages,
   useMarkRead,
   useSendMessage,
+  useEditMessage,
+  useDeleteMessage,
+  useSendAttachment,
   useStartConversation,
 } from './hooks';
+import { requestNotificationPermission } from './useChatSocket';
 import type { ChatConversation, ChatMessage } from './types';
+import { Bubble } from './components/Bubble';
+import { TypingIndicator } from './components/TypingIndicator';
+import { MessageSkeleton } from './components/MessageSkeleton';
+import { NewChatPanel } from './components/NewChatPanel';
+import { ChatInput } from './components/ChatInput';
+import { useScrollToMessage } from './hooks/useScrollToMessage';
 import styles from './ChatModal.module.css';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function getInitials(name: string) {
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase();
-}
-
-function formatTime(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  return name.split(' ').filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 }
 
 function formatDate(iso: string) {
@@ -41,21 +41,34 @@ function formatDate(iso: string) {
   return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
 }
 
-// ── Conversation list item ──────────────────────────────────────────────────
+// ── ConvItem ───────────────────────────────────────────────────────────────
 
 function ConvItem({
   conv,
   active,
   currentUserId,
+  isOnline,
   onClick,
 }: {
   conv: ChatConversation;
   active: boolean;
   currentUserId: string;
+  isOnline: boolean;
   onClick: () => void;
 }) {
   const other = conv.participants.find((p) => p.id !== currentUserId) ?? conv.participants[0];
   const name = other?.full_name ?? 'Неизвестно';
+
+  const lastPreview = (() => {
+    const lm = conv.last_message;
+    if (!lm) return null;
+    if (lm.deleted_at) return 'Сообщение удалено';
+    if (lm.type === 'IMAGE') return '📷 Изображение';
+    if (lm.type === 'FILE') return `📎 ${lm.attachment?.file_name ?? 'Файл'}`;
+    if (lm.type === 'ORDER_REF') return '📋 Заказ';
+    const prefix = lm.sender_id === currentUserId ? 'Вы: ' : '';
+    return prefix + lm.body;
+  })();
 
   return (
     <button
@@ -63,14 +76,14 @@ function ConvItem({
       onClick={onClick}
       aria-selected={active}
     >
-      <div className={styles.convAvatar}>{getInitials(name)}</div>
+      <div className={styles.convAvatarWrap}>
+        <div className={styles.convAvatar}>{getInitials(name)}</div>
+        {isOnline && <span className={styles.onlineDot} />}
+      </div>
       <div className={styles.convInfo}>
         <div className={styles.convName}>{name}</div>
-        {conv.last_message && (
-          <div className={styles.convPreview}>
-            {conv.last_message.sender_id === currentUserId ? 'Вы: ' : ''}
-            {conv.last_message.body}
-          </div>
+        {lastPreview && (
+          <div className={styles.convPreview}>{lastPreview}</div>
         )}
       </div>
       {conv.unread_count > 0 && (
@@ -80,33 +93,18 @@ function ConvItem({
   );
 }
 
-// ── Message bubble ──────────────────────────────────────────────────────────
-
-function Bubble({ msg, isMine, isOptimistic }: { msg: ChatMessage; isMine: boolean; isOptimistic?: boolean }) {
-  return (
-    <div className={[styles.msgRow, isMine ? styles.msgRowMine : styles.msgRowTheirs].join(' ')}>
-      <div className={[
-        styles.bubble,
-        isMine ? styles.bubbleMine : styles.bubbleTheirs,
-        isOptimistic ? styles.bubbleOptimistic : '',
-      ].join(' ')}>
-        <span className={styles.bubbleText}>{msg.body}</span>
-        <span className={styles.bubbleTime}>{formatTime(msg.created_at)}</span>
-      </div>
-    </div>
-  );
-}
-
-// ── Message thread ─────────────────────────────────────────────────────────
+// ── MessageThread ──────────────────────────────────────────────────────────
 
 function MessageThread({
   conversationId,
   currentUserId,
   otherName,
+  otherUserId,
 }: {
   conversationId: string;
   currentUserId: string;
   otherName: string;
+  otherUserId: string;
 }) {
   const {
     data,
@@ -115,25 +113,41 @@ function MessageThread({
     hasPreviousPage,
     fetchPreviousPage,
   } = useChatMessages(conversationId);
+
   const send = useSendMessage(conversationId);
+  const edit = useEditMessage(conversationId);
+  const del = useDeleteMessage(conversationId);
+  const sendFile = useSendAttachment(conversationId);
   const markRead = useMarkRead();
-  const [draft, setDraft] = useState('');
+  const { containerRef, scrollToMessage } = useScrollToMessage();
+
+  const {
+    typingState,
+    presenceState,
+    setReplyingTo,
+    setEditingMessage,
+    editingMessage,
+  } = useChatStore();
+
   const bottomRef = useRef<HTMLDivElement>(null);
   const topSentinelRef = useRef<HTMLDivElement>(null);
-  const messagesRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
   const prevScrollHeightRef = useRef(0);
   const initialScrollDoneRef = useRef(false);
   const prevMessageCountRef = useRef(0);
 
-  // Flatten pages into chronological message list
   const messages = data?.pages.flat() ?? [];
+  const typingUsers = Object.values(typingState[conversationId] ?? {});
+  const typingNames = typingUsers.map((u) => u.name);
+  const isOtherOnline = presenceState[otherUserId] === 'online';
 
   // Mark as read when conversation opens
   useEffect(() => {
     markRead.mutate(conversationId);
     initialScrollDoneRef.current = false;
     prevMessageCountRef.current = 0;
+    return () => {
+      // clear typing state on unmount
+    };
   }, [conversationId]);
 
   // Scroll to bottom on initial load
@@ -148,7 +162,7 @@ function MessageThread({
   // Auto-scroll on new messages if user is near bottom
   useEffect(() => {
     if (!initialScrollDoneRef.current) return;
-    const container = messagesRef.current;
+    const container = containerRef.current;
     if (!container) return;
     const newCount = messages.length;
     const prevCount = prevMessageCountRef.current;
@@ -163,7 +177,7 @@ function MessageThread({
 
   // Preserve scroll position when older messages are prepended
   useLayoutEffect(() => {
-    const container = messagesRef.current;
+    const container = containerRef.current;
     if (!container) return;
     if (isFetchingPreviousPage) {
       prevScrollHeightRef.current = container.scrollHeight;
@@ -173,7 +187,7 @@ function MessageThread({
     }
   }, [isFetchingPreviousPage]);
 
-  // IntersectionObserver on top sentinel to load older messages
+  // IntersectionObserver for infinite scroll
   useEffect(() => {
     const sentinel = topSentinelRef.current;
     if (!sentinel) return;
@@ -201,44 +215,49 @@ function MessageThread({
     }
   }
 
-  function handleSend() {
-    const body = draft.trim();
-    if (!body) return;
-    setDraft('');
-    send.mutate(body);
-    inputRef.current?.focus();
+  function handleSendText(body: string, replyToId?: string | null) {
+    send.mutate({ body, replyToId });
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 30);
   }
 
-  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
+  function handleSendFile(file: File) {
+    sendFile.mutate(file, {
+      onSuccess: () => {
+        setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 30);
+      },
+    });
+  }
+
+  function handleConfirmEdit(body: string) {
+    if (!editingMessage) return;
+    edit.mutate({ messageId: editingMessage.id, body });
   }
 
   return (
     <div className={styles.thread}>
       {/* Thread header */}
       <div className={styles.threadHeader}>
-        <div className={styles.threadAvatar}>{getInitials(otherName)}</div>
-        <div className={styles.threadName}>{otherName}</div>
+        <div className={styles.threadAvatarWrap}>
+          <div className={styles.threadAvatar}>{getInitials(otherName)}</div>
+          {isOtherOnline && <span className={styles.onlineDotThread} />}
+        </div>
+        <div>
+          <div className={styles.threadName}>{otherName}</div>
+          {isOtherOnline && (
+            <div className={styles.onlineLabel}>в сети</div>
+          )}
+        </div>
       </div>
 
-      {/* Messages */}
-      <div ref={messagesRef} className={styles.messages}>
-        {/* Top sentinel — watched by IntersectionObserver to load older messages */}
+      {/* Messages scroll area */}
+      <div ref={containerRef} className={styles.messages}>
         <div ref={topSentinelRef} className={styles.loadOlderSentinel}>
           {isFetchingPreviousPage && (
             <span className={styles.loadingOlderText}>Загрузка...</span>
           )}
         </div>
 
-        {isLoading && (
-          <div className={styles.threadEmpty}>
-            <span className={styles.threadEmptyText}>Загрузка...</span>
-          </div>
-        )}
+        {isLoading && <MessageSkeleton />}
 
         {!isLoading && messages.length === 0 && (
           <div className={styles.threadEmpty}>
@@ -258,39 +277,34 @@ function MessageThread({
                 msg={msg}
                 isMine={msg.sender_id === currentUserId}
                 isOptimistic={msg.id.startsWith('optimistic-')}
+                onReply={() => setReplyingTo(msg)}
+                onEdit={() => setEditingMessage(msg)}
+                onDelete={() => {
+                  if (window.confirm('Удалить сообщение?')) {
+                    del.mutate(msg.id);
+                  }
+                }}
+                onQuoteClick={(id) => scrollToMessage(id)}
               />
             ))}
           </div>
         ))}
 
+        <TypingIndicator names={typingNames} />
         <div ref={bottomRef} />
       </div>
 
       {/* Input */}
-      <div className={styles.inputRow}>
-        <button className={styles.attachBtn} title="Прикрепить" aria-label="Прикрепить файл">
-          <Plus size={16} />
-        </button>
-        <textarea
-          ref={inputRef}
-          className={styles.messageInput}
-          placeholder="Напишите сообщение..."
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={handleKeyDown}
-          rows={1}
-          maxLength={2000}
-        />
-        <button
-          className={[styles.sendBtn, draft.trim() ? styles.sendBtnActive : ''].join(' ')}
-          onClick={handleSend}
-          disabled={!draft.trim() || send.isPending}
-          aria-label="Отправить"
-          title="Отправить (Enter)"
-        >
-          <Send size={15} />
-        </button>
-      </div>
+      <ChatInput
+        conversationId={conversationId}
+        currentUserId={currentUserId}
+        currentUserName="Вы"
+        otherParticipantName={otherName}
+        onSendText={handleSendText}
+        onSendFile={handleSendFile}
+        onConfirmEdit={handleConfirmEdit}
+        isSending={send.isPending || sendFile.isPending}
+      />
     </div>
   );
 }
@@ -299,10 +313,23 @@ function MessageThread({
 
 export function ChatModal({ onClose }: { onClose: () => void }) {
   const user = useAuthStore((s) => s.user);
-  const { activeConversationId, targetUserId, setActiveConversation } = useChatStore();
+  const {
+    activeConversationId,
+    targetUserId,
+    setActiveConversation,
+    searchQuery,
+    setSearchQuery,
+    presenceState,
+  } = useChatStore();
   const { data: conversations = [] } = useChatConversations();
   const startConv = useStartConversation();
   const backdropRef = useRef<HTMLDivElement>(null);
+  const [showNewChat, setShowNewChat] = useState(false);
+
+  // Request notification permission on first open
+  useEffect(() => {
+    requestNotificationPermission();
+  }, []);
 
   // Close on Escape
   useEffect(() => {
@@ -313,7 +340,7 @@ export function ChatModal({ onClose }: { onClose: () => void }) {
     return () => document.removeEventListener('keydown', handler);
   }, [onClose]);
 
-  // Resolve targetUserId → existing conversation or start new
+  // Resolve targetUserId → existing conversation or stay in "new DM" mode
   useEffect(() => {
     if (!targetUserId || conversations.length === 0) return;
     const existing = conversations.find((c) =>
@@ -322,21 +349,23 @@ export function ChatModal({ onClose }: { onClose: () => void }) {
     if (existing) {
       setActiveConversation(existing.id);
     }
-    // If no existing conversation found, we stay in "new DM" mode — handled below
   }, [targetUserId, conversations, setActiveConversation]);
 
-  // Active conversation object
   const activeConv = conversations.find((c) => c.id === activeConversationId) ?? null;
   const otherParticipant = activeConv?.participants.find((p) => p.id !== user?.id);
 
-  // "New DM" target — when targetUserId is set but no conversation found yet
   const pendingTargetName = (() => {
     if (!targetUserId || activeConversationId) return null;
-    const fromConv = conversations
-      .flatMap((c) => c.participants)
-      .find((p) => p.id === targetUserId);
+    const fromConv = conversations.flatMap((c) => c.participants).find((p) => p.id === targetUserId);
     return fromConv?.full_name ?? null;
   })();
+
+  const filteredConversations = searchQuery
+    ? conversations.filter((conv) => {
+        const other = conv.participants.find((p) => p.id !== user?.id);
+        return other?.full_name.toLowerCase().includes(searchQuery.toLowerCase());
+      })
+    : conversations;
 
   function handleStartConversation() {
     if (!targetUserId) return;
@@ -363,36 +392,67 @@ export function ChatModal({ onClose }: { onClose: () => void }) {
         exit={{ opacity: 0, scale: 0.96, y: 12 }}
         transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
       >
-        {/* ── Left panel: conversation list ── */}
+        {/* ── Left panel ── */}
         <div className={styles.sidebar}>
-          <div className={styles.sidebarHeader}>
-            <MessageCircleMore size={15} className={styles.sidebarIcon} />
-            <span className={styles.sidebarTitle}>Сообщения</span>
-          </div>
-
-          <div className={styles.convList}>
-            {conversations.length === 0 && (
-              <div className={styles.convEmpty}>
-                <MessageSquareDashed size={28} className={styles.convEmptyIcon} />
-                <span className={styles.convEmptyText}>Нет диалогов</span>
-                <span className={styles.convEmptyHint}>
-                  Нажмите на аватар сотрудника в панели справа, чтобы начать переписку
-                </span>
+          {showNewChat ? (
+            <NewChatPanel onClose={() => setShowNewChat(false)} />
+          ) : (
+            <>
+              <div className={styles.sidebarHeader}>
+                <MessageCircleMore size={15} className={styles.sidebarIcon} />
+                <span className={styles.sidebarTitle}>Сообщения</span>
+                <button
+                  className={styles.newChatBtn}
+                  onClick={() => setShowNewChat(true)}
+                  title="Новый диалог"
+                  aria-label="Новый диалог"
+                >
+                  <Plus size={14} />
+                </button>
               </div>
-            )}
-            {conversations.map((conv) => (
-              <ConvItem
-                key={conv.id}
-                conv={conv}
-                active={conv.id === activeConversationId}
-                currentUserId={user?.id ?? ''}
-                onClick={() => setActiveConversation(conv.id)}
-              />
-            ))}
-          </div>
+
+              <div className={styles.sidebarSearch}>
+                <SearchInput
+                  value={searchQuery}
+                  onChange={setSearchQuery}
+                  placeholder="Поиск..."
+                />
+              </div>
+
+              <div className={styles.convList}>
+                {filteredConversations.length === 0 && (
+                  <div className={styles.convEmpty}>
+                    <MessageSquareDashed size={28} className={styles.convEmptyIcon} />
+                    <span className={styles.convEmptyText}>
+                      {searchQuery ? 'Не найдено' : 'Нет диалогов'}
+                    </span>
+                    {!searchQuery && (
+                      <span className={styles.convEmptyHint}>
+                        Нажмите «+» или на аватар сотрудника в панели справа
+                      </span>
+                    )}
+                  </div>
+                )}
+                {filteredConversations.map((conv) => {
+                  const other = conv.participants.find((p) => p.id !== user?.id);
+                  const isOnline = other ? presenceState[other.id] === 'online' : false;
+                  return (
+                    <ConvItem
+                      key={conv.id}
+                      conv={conv}
+                      active={conv.id === activeConversationId}
+                      currentUserId={user?.id ?? ''}
+                      isOnline={isOnline}
+                      onClick={() => setActiveConversation(conv.id)}
+                    />
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
 
-        {/* ── Right panel: message thread ── */}
+        {/* ── Right panel ── */}
         <div className={styles.main}>
           <button className={styles.closeBtn} onClick={onClose} aria-label="Закрыть">
             <X size={16} />
@@ -403,10 +463,10 @@ export function ChatModal({ onClose }: { onClose: () => void }) {
               conversationId={activeConversationId}
               currentUserId={user?.id ?? ''}
               otherName={otherParticipant.full_name}
+              otherUserId={otherParticipant.id}
             />
           )}
 
-          {/* Pending new DM — conversation not created yet */}
           {!activeConversationId && pendingTargetName && (
             <div className={styles.newDmPane}>
               <div className={styles.newDmAvatar}>{getInitials(pendingTargetName)}</div>
@@ -422,7 +482,6 @@ export function ChatModal({ onClose }: { onClose: () => void }) {
             </div>
           )}
 
-          {/* No conversation selected */}
           {!activeConversationId && !pendingTargetName && (
             <div className={styles.noConvPane}>
               <MessageCircleMore size={40} className={styles.noConvIcon} />

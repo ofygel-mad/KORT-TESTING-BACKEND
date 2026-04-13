@@ -29,7 +29,7 @@ function getInitials(name: string) {
 export function FloatingChatbar() {
   const user = useAuthStore((s) => s.user);
   const hasCompanyAccess = useAuthStore((s) => s.membership.status === 'active');
-  const { isOpen, totalUnread, hasActivity, open, close } = useChatStore();
+  const { isOpen, totalUnread, hasActivity, presenceState, open, close } = useChatStore();
   const [hovered, setHovered] = useState(false);
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -84,6 +84,7 @@ export function FloatingChatbar() {
           )}
           {teamMembers.map((member) => {
             const memberUnread = unreadByUserId[member.id] ?? 0;
+            const isOnline = presenceState[member.id] === 'online';
             return (
               <button
                 key={member.id}
@@ -93,6 +94,9 @@ export function FloatingChatbar() {
                 aria-label={`Написать ${member.full_name}`}
               >
                 <span className={styles.profileAvatar}>{getInitials(member.full_name)}</span>
+                {isOnline && memberUnread === 0 && (
+                  <span className={styles.onlineDot} />
+                )}
                 {memberUnread > 0 && (
                   <span className={styles.unreadDot} aria-label={`${memberUnread} непрочитанных`} />
                 )}
