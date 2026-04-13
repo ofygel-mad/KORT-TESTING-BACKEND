@@ -144,15 +144,6 @@ export async function createInvoice(
       );
     }
 
-    const unpaid = orders.filter((order) => order.paymentStatus !== 'paid');
-    if (unpaid.length > 0) {
-      throw new ValidationError(
-        `Невозможно передать неоплаченные заказы: ${unpaid
-          .map((order) => `${order.orderNumber} (остаток: ${(order.totalAmount - order.paidAmount).toLocaleString('ru-KZ')} ₸)`)
-          .join(', ')}`,
-      );
-    }
-
     for (let attempt = 0; attempt < 5; attempt += 1) {
       try {
         return await prisma.$transaction(async (tx) => {
