@@ -793,6 +793,17 @@ function ProductionListView({
   return (
     <div className={styles.listView}>
       <CollapsibleSection title="Выполнение" count={displayRunningGroups.length} defaultOpen={true}>
+        {runningDisplayTasks.length > 0 && (
+          <div className={styles.taskListHeader}>
+            <div className={styles.taskListHeaderLabel}>Товар</div>
+            <div className={styles.taskListHeaderLabel}>Ткань</div>
+            <div className={styles.taskListHeaderLabel}>Размер</div>
+            <div className={styles.taskListHeaderLabel}>Длина</div>
+            <div className={styles.taskListHeaderLabel}>Кол-во</div>
+            <div className={styles.taskListHeaderLabel}>Срок</div>
+            <div className={styles.taskListHeaderLabel}>Заказ</div>
+          </div>
+        )}
         {runningDisplayTasks.map((task) => (
           <TaskListCard
             key={task.id}
@@ -811,6 +822,17 @@ function ProductionListView({
 
       {!showOnlyRunning && (
         <CollapsibleSection title="Новые заказы" count={displayQueuedGroups.length} defaultOpen={true}>
+        {queuedDisplayTasks.length > 0 && (
+          <div className={styles.taskListHeader}>
+            <div className={styles.taskListHeaderLabel}>Товар</div>
+            <div className={styles.taskListHeaderLabel}>Ткань</div>
+            <div className={styles.taskListHeaderLabel}>Размер</div>
+            <div className={styles.taskListHeaderLabel}>Длина</div>
+            <div className={styles.taskListHeaderLabel}>Кол-во</div>
+            <div className={styles.taskListHeaderLabel}>Срок</div>
+            <div className={styles.taskListHeaderLabel}>Заказ</div>
+          </div>
+        )}
         {queuedDisplayTasks.map((task) => (
           <TaskListCard
             key={task.id}

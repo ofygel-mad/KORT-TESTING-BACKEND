@@ -1059,3 +1059,26 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* ── Task List Header ── */
+.taskListHeader {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 8px 14px;
+  background: var(--ch-surface-dim, rgba(255, 255, 255, 0.03));
+  border-bottom: 1px solid var(--ch-border);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.taskListHeaderLabel {
+  min-width: 60px;
+  flex-shrink: 0;
+}
