@@ -661,11 +661,11 @@ function TaskListCard({
       <div className={styles.taskListCardMain}>
         <div className={styles.taskListCardRow}>
           <div className={styles.taskListCardValue}>{itemLine}</div>
-          {task.fabric && <div className={styles.taskListCardValue}>{task.fabric}</div>}
+          <div className={styles.taskListCardValue}>{task.fabric || '—'}</div>
           <div className={styles.taskListCardValue}>{task.size}</div>
-          {task.length && <div className={styles.taskListCardValue}>{task.length}</div>}
+          <div className={styles.taskListCardValue}>{task.length || '—'}</div>
           <div className={styles.taskListCardValue}>{task.quantity} шт.</div>
-          {deadline && <div className={styles.taskListCardValue}>{deadline}</div>}
+          <div className={styles.taskListCardValue}>{deadline || '—'}</div>
           <div className={styles.taskListCardValue}>#{task.order.orderNumber}</div>
         </div>
 
