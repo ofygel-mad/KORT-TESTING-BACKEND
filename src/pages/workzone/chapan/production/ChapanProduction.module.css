@@ -1049,10 +1049,10 @@
 
 /* ── Task List Header ── */
 .taskListHeader {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(200px, 1fr) 80px 70px 70px 70px 80px 90px;
   gap: 12px;
-  flex-wrap: wrap;
-  padding: 8px 14px;
+  padding: 8px 14px 8px 17px;
   background: var(--ch-surface-dim, rgba(255, 255, 255, 0.03));
   border-bottom: 1px solid var(--ch-border);
   font-size: 10px;
@@ -1066,6 +1066,5 @@
 }
 
 .taskListHeaderLabel {
-  min-width: 60px;
-  flex-shrink: 0;
+  /* Ширину теперь задаёт grid */
 }
