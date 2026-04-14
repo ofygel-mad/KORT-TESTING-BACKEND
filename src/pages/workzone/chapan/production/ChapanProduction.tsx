@@ -1,5 +1,5 @@
 import { useDeferredValue, useEffect, useMemo, useState, type CSSProperties } from 'react';
-import { AlertTriangle, CheckCircle2, Factory, Flag, Layers, MessageSquare, Search, User, X } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, Factory, Flag, LayoutList, Layers, MessageSquare, Search, User, X } from 'lucide-react';
 import {
   useAssignWorker,
   useChapanCatalogs,
@@ -20,6 +20,7 @@ import styles from './ChapanProduction.module.css';
 
 type ProductionMode = 'manager' | 'workshop';
 type ColumnKey = Extract<ProductionStatus, 'queued' | 'in_progress'>;
+type LayoutMode = 'kanban' | 'list';
 
 const COLUMNS: { key: ColumnKey; label: string }[] = [
   { key: 'queued', label: 'Новые заказы' },
@@ -42,6 +43,10 @@ type TaskDisplayGroup =
 
 function groupStorageKey(userId?: string) {
   return `chapan_prod_grouped_${userId ?? 'guest'}`;
+}
+
+function layoutModeStorageKey(userId?: string) {
+  return `chapan_prod_layout_${userId ?? 'guest'}`;
 }
 
 function taskBatchKey(task: ProductionTask): string {
@@ -144,6 +149,7 @@ export default function ChapanProductionPage() {
 
   const [view, setView] = useState<ProductionMode>(workshopDefault ? 'workshop' : 'manager');
   const [grouped, setGroupedState] = useState(true);
+  const [layoutMode, setLayoutModeState] = useState<LayoutMode>('kanban');
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
   const [flagModal, setFlagModal] = useState<{ taskId: string } | null>(null);
@@ -162,10 +168,25 @@ export default function ChapanProductionPage() {
     }
   }, [userId]);
 
+  useEffect(() => {
+    const saved = localStorage.getItem(layoutModeStorageKey(userId));
+    if (saved !== null && (saved === 'kanban' || saved === 'list')) {
+      setLayoutModeState(saved as LayoutMode);
+    }
+  }, [userId]);
+
   const toggleGrouped = () => {
     setGroupedState((value) => {
       localStorage.setItem(groupStorageKey(userId), String(!value));
       return !value;
+    });
+  };
+
+  const toggleLayoutMode = () => {
+    setLayoutModeState((value) => {
+      const newValue = value === 'kanban' ? 'list' : 'kanban';
+      localStorage.setItem(layoutModeStorageKey(userId), newValue);
+      return newValue;
     });
   };
 
@@ -278,6 +299,15 @@ export default function ChapanProductionPage() {
             <span>Группировать</span>
           </button>
 
+          <button
+            className={`${styles.groupToggle} ${layoutMode === 'list' ? styles.groupToggleActive : ''}`}
+            onClick={toggleLayoutMode}
+            title={layoutMode === 'list' ? 'Переключить на Канбан' : 'Переключить на Список'}
+          >
+            <LayoutList size={13} />
+            <span>Список</span>
+          </button>
+
           {!workshopDefault && (
             <div className={styles.viewSwitch}>
               <button
@@ -379,7 +409,7 @@ export default function ChapanProductionPage() {
         </div>
       )}
 
-      {!isLoading && tasks.length > 0 && (
+      {!isLoading && tasks.length > 0 && layoutMode === 'kanban' && (
         <div className={styles.board}>
           {COLUMNS.map((column) => {
             const columnTasks = column.key === 'queued' ? queuedTasks : runningTasks;
@@ -439,6 +469,24 @@ export default function ChapanProductionPage() {
             );
           })}
         </div>
+      )}
+
+      {!isLoading && tasks.length > 0 && layoutMode === 'list' && (
+        <ProductionListView
+          queuedTasks={queuedTasks}
+          runningTasks={runningTasks}
+          mode={view}
+          grouped={grouped}
+          currentWorkerName={currentWorkerName}
+          onClaim={handleClaim}
+          onDone={handleMarkDone}
+          onReturnToQueue={handleReturnToQueue}
+          onFlag={(task) => {
+            setFlagModal({ taskId: task.id });
+            setFlagReason('');
+          }}
+          onUnflag={(task) => unflagTask.mutate(task.id)}
+        />
       )}
 
       {flagModal && (
@@ -514,6 +562,259 @@ export default function ChapanProductionPage() {
         </div>
       )}
 
+    </div>
+  );
+}
+
+interface CollapsibleSectionProps {
+  title: string;
+  count: number;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}
+
+function CollapsibleSection({ title, count, defaultOpen = true, children }: CollapsibleSectionProps) {
+  const [open, setOpen] = useState(defaultOpen);
+
+  return (
+    <section className={styles.collapsibleSection}>
+      <div className={styles.sectionHeader}>
+        <span className={styles.sectionTitle}>{title}</span>
+        <span className={styles.columnCount}>{count}</span>
+        <button
+          className={styles.sectionToggle}
+          onClick={() => setOpen((v) => !v)}
+          title={open ? 'Свернуть' : 'Развернуть'}
+        >
+          {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </button>
+      </div>
+      {open && <div className={styles.sectionBody}>{children}</div>}
+    </section>
+  );
+}
+
+interface TaskListCardProps {
+  task: ProductionTask;
+  column: ColumnKey;
+  mode: ProductionMode;
+  currentWorkerName: string | null;
+  onClaim: (taskId: string) => Promise<void>;
+  onDone: (taskId: string) => Promise<void>;
+  onReturnToQueue: (taskId: string) => Promise<void>;
+  onFlag: (task: ProductionTask) => void;
+  onUnflag: (task: ProductionTask) => void;
+}
+
+function TaskListCard({
+  task,
+  column,
+  mode,
+  currentWorkerName,
+  onClaim,
+  onDone,
+  onReturnToQueue,
+  onFlag,
+  onUnflag,
+}: TaskListCardProps) {
+  const deadline = formatDeadline(task.order.dueDate);
+  const isUrgent = (task.order.urgency ?? task.order.priority) === 'urgent';
+  const isDemanding = task.order.isDemandingClient ?? (task.order.priority === 'vip');
+  const canClaim = !task.isBlocked && (!task.assignedTo || task.assignedTo === currentWorkerName);
+
+  const itemLine = buildItemLine({ productName: task.productName, color: task.color, gender: task.gender }) || task.productName;
+
+  return (
+    <article
+      className={`${styles.taskListCard} ${task.isBlocked ? styles.taskListCardBlocked : ''} ${isUrgent ? styles.taskListCardUrgent : ''} ${isDemanding && !isUrgent ? styles.taskListCardDemanding : ''}`}
+    >
+      {isUrgent && !task.isBlocked && (
+        <div className={styles.taskListCardUrgentBanner}>
+          <AlertTriangle size={11} />
+          <span>Срочно</span>
+        </div>
+      )}
+      {isDemanding && !isUrgent && !task.isBlocked && (
+        <div className={styles.taskListCardDemandBanner}>
+          <span>⭐ Требовательный</span>
+        </div>
+      )}
+      {task.isBlocked && task.blockReason && (
+        <div className={styles.taskListCardBlockBanner}>
+          <AlertTriangle size={11} />
+          <span>{task.blockReason}</span>
+        </div>
+      )}
+
+      <div className={styles.taskListCardMain}>
+        <div className={styles.taskListCardRow}>
+          <div className={styles.taskListCardField}>
+            <span className={styles.taskListCardLabel}>Товар</span>
+            <span className={styles.taskListCardValue}>{itemLine}</span>
+          </div>
+          {task.fabric && (
+            <div className={styles.taskListCardField}>
+              <span className={styles.taskListCardLabel}>Ткань</span>
+              <span className={styles.taskListCardValue}>{task.fabric}</span>
+            </div>
+          )}
+          <div className={styles.taskListCardField}>
+            <span className={styles.taskListCardLabel}>Размер</span>
+            <span className={styles.taskListCardValue}>{task.size}</span>
+          </div>
+          {task.length && (
+            <div className={styles.taskListCardField}>
+              <span className={styles.taskListCardLabel}>Длина</span>
+              <span className={styles.taskListCardValue}>{task.length}</span>
+            </div>
+          )}
+          <div className={styles.taskListCardField}>
+            <span className={styles.taskListCardLabel}>Кол-во</span>
+            <span className={styles.taskListCardValue}>{task.quantity} шт.</span>
+          </div>
+          {deadline && (
+            <div className={styles.taskListCardField}>
+              <span className={styles.taskListCardLabel}>Срок</span>
+              <span className={styles.taskListCardValue}>{deadline}</span>
+            </div>
+          )}
+          <div className={styles.taskListCardField}>
+            <span className={styles.taskListCardLabel}>Заказ</span>
+            <span className={styles.taskListCardValue}>#{task.order.orderNumber}</span>
+          </div>
+        </div>
+
+        {(task.notes || task.workshopNotes) && (
+          <div className={styles.taskListCardComment}>
+            {task.workshopNotes && (
+              <div>
+                <span className={styles.taskListCardCommentLabel}>Коммент: </span>
+                {task.workshopNotes}
+              </div>
+            )}
+            {task.notes && !task.workshopNotes && (
+              <div>
+                <span className={styles.taskListCardCommentLabel}>Примечание: </span>
+                {task.notes}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className={styles.taskListCardAction}>
+        {column === 'queued' && mode === 'workshop' && (
+          <button
+            className={styles.taskListCardActionBtn}
+            onClick={() => onClaim(task.id)}
+            disabled={!canClaim}
+            title="Взять в работу"
+          >
+            Взять
+          </button>
+        )}
+
+        {column === 'in_progress' && mode === 'workshop' && (
+          <button
+            className={`${styles.taskListCardActionBtn} ${styles.taskListCardActionSuccess}`}
+            onClick={() => onDone(task.id)}
+            disabled={task.isBlocked}
+            title="Готово"
+          >
+            Готово
+          </button>
+        )}
+
+        {mode === 'manager' && (
+          task.isBlocked ? (
+            <button
+              className={styles.taskListCardActionBtn}
+              onClick={() => onUnflag(task)}
+              title="Снять блок"
+            >
+              Блок
+            </button>
+          ) : (
+            <button
+              className={styles.taskListCardActionBtn}
+              onClick={() => onFlag(task)}
+              title="Заблокировать"
+            >
+              Флаг
+            </button>
+          )
+        )}
+      </div>
+    </article>
+  );
+}
+
+interface ProductionListViewProps {
+  queuedTasks: ProductionTask[];
+  runningTasks: ProductionTask[];
+  mode: ProductionMode;
+  grouped: boolean;
+  currentWorkerName: string | null;
+  onClaim: (taskId: string) => Promise<void>;
+  onDone: (taskId: string) => Promise<void>;
+  onReturnToQueue: (taskId: string) => Promise<void>;
+  onFlag: (task: ProductionTask) => void;
+  onUnflag: (task: ProductionTask) => void;
+}
+
+function ProductionListView({
+  queuedTasks,
+  runningTasks,
+  mode,
+  grouped,
+  currentWorkerName,
+  onClaim,
+  onDone,
+  onReturnToQueue,
+  onFlag,
+  onUnflag,
+}: ProductionListViewProps) {
+  const displayQueuedGroups = grouped ? buildTaskGroups(queuedTasks) : queuedTasks.map((task) => ({ kind: 'single' as const, task }));
+  const displayRunningGroups = grouped ? buildTaskGroups(runningTasks) : runningTasks.map((task) => ({ kind: 'single' as const, task }));
+
+  const queuedDisplayTasks = displayQueuedGroups.flatMap((group) => (group.kind === 'single' ? [group.task] : group.tasks));
+  const runningDisplayTasks = displayRunningGroups.flatMap((group) => (group.kind === 'single' ? [group.task] : group.tasks));
+
+  return (
+    <div className={styles.listView}>
+      <CollapsibleSection title="Выполнение" count={displayRunningGroups.length} defaultOpen={true}>
+        {runningDisplayTasks.map((task) => (
+          <TaskListCard
+            key={task.id}
+            task={task}
+            column="in_progress"
+            mode={mode}
+            currentWorkerName={currentWorkerName}
+            onClaim={onClaim}
+            onDone={onDone}
+            onReturnToQueue={onReturnToQueue}
+            onFlag={onFlag}
+            onUnflag={onUnflag}
+          />
+        ))}
+      </CollapsibleSection>
+
+      <CollapsibleSection title="Новые заказы" count={displayQueuedGroups.length} defaultOpen={true}>
+        {queuedDisplayTasks.map((task) => (
+          <TaskListCard
+            key={task.id}
+            task={task}
+            column="queued"
+            mode={mode}
+            currentWorkerName={currentWorkerName}
+            onClaim={onClaim}
+            onDone={onDone}
+            onReturnToQueue={onReturnToQueue}
+            onFlag={onFlag}
+            onUnflag={onUnflag}
+          />
+        ))}
+      </CollapsibleSection>
     </div>
   );
 }
@@ -643,7 +944,6 @@ function TaskCard({
   onFlag,
   onUnflag,
 }: TaskCardProps) {
-  const [detailOpen, setDetailOpen] = useState(false);
   const deadline = formatDeadline(task.order.dueDate);
   const canClaim = !task.isBlocked && (!task.assignedTo || task.assignedTo === currentWorkerName);
   const isUrgent = (task.order.urgency ?? task.order.priority) === 'urgent';
@@ -751,20 +1051,9 @@ function TaskCard({
             </button>
           )
         )}
-
-        {mode === 'workshop' && (
-          <button
-            className={styles.ghostAction}
-            onClick={() => setDetailOpen((v) => !v)}
-            aria-expanded={detailOpen}
-            style={{ marginLeft: 'auto', fontSize: 11 }}
-          >
-            {detailOpen ? 'Скрыть' : 'Детали'}
-          </button>
-        )}
       </div>
 
-      {mode === 'workshop' && detailOpen && <TaskDetailPanel task={task} />}
+      {mode === 'workshop' && <TaskDetailPanel task={task} />}
     </article>
   );
 }

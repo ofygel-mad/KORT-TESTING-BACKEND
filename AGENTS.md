@@ -620,8 +620,8 @@ Main file:
 
 Modes:
 
-- `manager`
-- `workshop`
+- `ProductionMode = 'manager' | 'workshop'`
+- `LayoutMode = 'kanban' | 'list'` — persisted per user in localStorage (`chapan_prod_layout_{userId}`)
 
 Behavior:
 
@@ -631,15 +631,28 @@ Behavior:
   - workshop-safe task list without client PII
 - supports grouping similar tasks into task batches
 - search by order number/product/fabric/size
-- columns:
-  - `queued`
-  - `in_progress`
+- layout modes:
+  - **kanban**: two-column board (Новые заказы / Выполнение)
+  - **list**: vertical collapsible sections (Выполнение / Новые заказы)
+- columns/sections:
+  - `queued` (Новые заказы)
+  - `in_progress` (Выполнение)
 - task actions:
   - claim
   - mark done
   - return to queue
   - block/unblock
 - shows change request alerts from managers and supports approve/reject flows
+- workshop-mode cards now display `TaskDetailPanel` inline (always expanded; no toggle button)
+
+Components:
+
+- **`TaskCard`** — kanban card (compact header + meta + actions + detail panel in workshop mode)
+- **`BatchTaskCard`** — grouped kanban card with expand/collapse
+- **`TaskListCard`** — horizontal list-view card (fields in row, vertical action button)
+- **`CollapsibleSection`** — wraps task groups in list view; expand/collapse via chevron
+- **`ProductionListView`** — top-level list layout with two collapsible sections
+- **`TaskDetailPanel`** — detail grid (item fields, notes, order info, defects)
 
 Frontend production status model is currently simplified to:
 
