@@ -983,24 +983,12 @@
   font-size: 12px;
 }
 
-.taskListCardField {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 60px;
-}
-
-.taskListCardLabel {
-  font-size: 10px;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-
 .taskListCardValue {
   font-size: 12px;
   color: var(--ch-text);
   font-weight: 500;
+  min-width: 60px;
+  flex-shrink: 0;
 }
 
 .taskListCardComment {

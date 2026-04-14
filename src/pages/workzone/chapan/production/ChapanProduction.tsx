@@ -660,40 +660,13 @@ function TaskListCard({
 
       <div className={styles.taskListCardMain}>
         <div className={styles.taskListCardRow}>
-          <div className={styles.taskListCardField}>
-            <span className={styles.taskListCardLabel}>Товар</span>
-            <span className={styles.taskListCardValue}>{itemLine}</span>
-          </div>
-          {task.fabric && (
-            <div className={styles.taskListCardField}>
-              <span className={styles.taskListCardLabel}>Ткань</span>
-              <span className={styles.taskListCardValue}>{task.fabric}</span>
-            </div>
-          )}
-          <div className={styles.taskListCardField}>
-            <span className={styles.taskListCardLabel}>Размер</span>
-            <span className={styles.taskListCardValue}>{task.size}</span>
-          </div>
-          {task.length && (
-            <div className={styles.taskListCardField}>
-              <span className={styles.taskListCardLabel}>Длина</span>
-              <span className={styles.taskListCardValue}>{task.length}</span>
-            </div>
-          )}
-          <div className={styles.taskListCardField}>
-            <span className={styles.taskListCardLabel}>Кол-во</span>
-            <span className={styles.taskListCardValue}>{task.quantity} шт.</span>
-          </div>
-          {deadline && (
-            <div className={styles.taskListCardField}>
-              <span className={styles.taskListCardLabel}>Срок</span>
-              <span className={styles.taskListCardValue}>{deadline}</span>
-            </div>
-          )}
-          <div className={styles.taskListCardField}>
-            <span className={styles.taskListCardLabel}>Заказ</span>
-            <span className={styles.taskListCardValue}>#{task.order.orderNumber}</span>
-          </div>
+          <div className={styles.taskListCardValue}>{itemLine}</div>
+          {task.fabric && <div className={styles.taskListCardValue}>{task.fabric}</div>}
+          <div className={styles.taskListCardValue}>{task.size}</div>
+          {task.length && <div className={styles.taskListCardValue}>{task.length}</div>}
+          <div className={styles.taskListCardValue}>{task.quantity} шт.</div>
+          {deadline && <div className={styles.taskListCardValue}>{deadline}</div>}
+          <div className={styles.taskListCardValue}>#{task.order.orderNumber}</div>
         </div>
 
         {(task.notes || task.workshopNotes) && (
