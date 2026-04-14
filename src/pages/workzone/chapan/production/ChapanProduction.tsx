@@ -150,6 +150,7 @@ export default function ChapanProductionPage() {
   const [view, setView] = useState<ProductionMode>(workshopDefault ? 'workshop' : 'manager');
   const [grouped, setGroupedState] = useState(true);
   const [layoutMode, setLayoutModeState] = useState<LayoutMode>('kanban');
+  const [showOnlyRunning, setShowOnlyRunning] = useState(false);
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
   const [flagModal, setFlagModal] = useState<{ taskId: string } | null>(null);
@@ -307,6 +308,16 @@ export default function ChapanProductionPage() {
             <LayoutList size={13} />
             <span>Список</span>
           </button>
+
+          {layoutMode === 'list' && (
+            <button
+              className={`${styles.groupToggle} ${showOnlyRunning ? styles.groupToggleActive : ''}`}
+              onClick={() => setShowOnlyRunning(!showOnlyRunning)}
+              title={showOnlyRunning ? 'Показать все заказы' : 'Показать только выполнение'}
+            >
+              <span>Выполнение</span>
+            </button>
+          )}
 
           {!workshopDefault && (
             <div className={styles.viewSwitch}>
@@ -477,6 +488,7 @@ export default function ChapanProductionPage() {
           runningTasks={runningTasks}
           mode={view}
           grouped={grouped}
+          showOnlyRunning={showOnlyRunning}
           currentWorkerName={currentWorkerName}
           onClaim={handleClaim}
           onDone={handleMarkDone}
@@ -750,6 +762,7 @@ interface ProductionListViewProps {
   runningTasks: ProductionTask[];
   mode: ProductionMode;
   grouped: boolean;
+  showOnlyRunning: boolean;
   currentWorkerName: string | null;
   onClaim: (taskId: string) => Promise<void>;
   onDone: (taskId: string) => Promise<void>;
@@ -763,6 +776,7 @@ function ProductionListView({
   runningTasks,
   mode,
   grouped,
+  showOnlyRunning,
   currentWorkerName,
   onClaim,
   onDone,
@@ -795,7 +809,8 @@ function ProductionListView({
         ))}
       </CollapsibleSection>
 
-      <CollapsibleSection title="Новые заказы" count={displayQueuedGroups.length} defaultOpen={true}>
+      {!showOnlyRunning && (
+        <CollapsibleSection title="Новые заказы" count={displayQueuedGroups.length} defaultOpen={true}>
         {queuedDisplayTasks.map((task) => (
           <TaskListCard
             key={task.id}
@@ -811,6 +826,7 @@ function ProductionListView({
           />
         ))}
       </CollapsibleSection>
+      )}
     </div>
   );
 }
