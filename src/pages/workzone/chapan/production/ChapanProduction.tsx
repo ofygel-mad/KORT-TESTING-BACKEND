@@ -769,14 +769,17 @@ function ProductionListView({
       <CollapsibleSection title="Выполнение" count={displayRunningGroups.length} defaultOpen={true}>
         {runningDisplayTasks.length > 0 && (
           <div className={styles.taskListHeader}>
-            <div className={styles.taskListHeaderLabel}>Товар</div>
-            <div className={styles.taskListHeaderLabel}>Цвет</div>
-            <div className={styles.taskListHeaderLabel}>Ткань</div>
-            <div className={styles.taskListHeaderLabel}>Размер</div>
-            <div className={styles.taskListHeaderLabel}>Длина</div>
-            <div className={styles.taskListHeaderLabel}>Кол-во</div>
-            <div className={styles.taskListHeaderLabel}>Срок</div>
-            <div className={styles.taskListHeaderLabel}>Заказ</div>
+            <div className={styles.taskListHeaderContent}>
+              <div className={styles.taskListHeaderLabel}>Товар</div>
+              <div className={styles.taskListHeaderLabel}>Цвет</div>
+              <div className={styles.taskListHeaderLabel}>Ткань</div>
+              <div className={styles.taskListHeaderLabel}>Размер</div>
+              <div className={styles.taskListHeaderLabel}>Длина</div>
+              <div className={styles.taskListHeaderLabel}>Кол-во</div>
+              <div className={styles.taskListHeaderLabel}>Срок</div>
+              <div className={styles.taskListHeaderLabel}>Заказ</div>
+            </div>
+            <div className={styles.taskListHeaderSpacer} />
           </div>
         )}
         {runningDisplayTasks.map((task) => (
@@ -799,14 +802,17 @@ function ProductionListView({
         <CollapsibleSection title="Новые заказы" count={displayQueuedGroups.length} defaultOpen={true}>
         {queuedDisplayTasks.length > 0 && (
           <div className={styles.taskListHeader}>
-            <div className={styles.taskListHeaderLabel}>Товар</div>
-            <div className={styles.taskListHeaderLabel}>Цвет</div>
-            <div className={styles.taskListHeaderLabel}>Ткань</div>
-            <div className={styles.taskListHeaderLabel}>Размер</div>
-            <div className={styles.taskListHeaderLabel}>Длина</div>
-            <div className={styles.taskListHeaderLabel}>Кол-во</div>
-            <div className={styles.taskListHeaderLabel}>Срок</div>
-            <div className={styles.taskListHeaderLabel}>Заказ</div>
+            <div className={styles.taskListHeaderContent}>
+              <div className={styles.taskListHeaderLabel}>Товар</div>
+              <div className={styles.taskListHeaderLabel}>Цвет</div>
+              <div className={styles.taskListHeaderLabel}>Ткань</div>
+              <div className={styles.taskListHeaderLabel}>Размер</div>
+              <div className={styles.taskListHeaderLabel}>Длина</div>
+              <div className={styles.taskListHeaderLabel}>Кол-во</div>
+              <div className={styles.taskListHeaderLabel}>Срок</div>
+              <div className={styles.taskListHeaderLabel}>Заказ</div>
+            </div>
+            <div className={styles.taskListHeaderSpacer} />
           </div>
         )}
         {queuedDisplayTasks.map((task) => (
