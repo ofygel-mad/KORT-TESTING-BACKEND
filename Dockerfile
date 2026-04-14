@@ -31,4 +31,8 @@ ENV PORT=80
 ENV BACKEND_URL=http://127.0.0.1:8000
 
 EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+  CMD wget --quiet --tries=1 --spider http://localhost:80/ || exit 1
+
 CMD ["/usr/local/bin/start-nginx.sh"]
