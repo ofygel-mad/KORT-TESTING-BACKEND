@@ -620,7 +620,7 @@ export async function create(orgId: string, authorId: string, authorName: string
   const paymentMethod = data.paymentMethod?.trim() || 'cash';
   const paymentNote = buildInitialPaymentNote(data);
 
-  return prisma.$transaction(async (tx) => {
+  const mapped = await prisma.$transaction(async (tx) => {
     // Order number is incremented atomically inside the transaction so that
     // a rollback also rolls back the counter — no skipped numbers, no races.
     const orderNumber = await nextOrderNumber(orgId, tx);
@@ -748,10 +748,34 @@ export async function create(orgId: string, authorId: string, authorName: string
     }
 
     const mapped = mapOrder(order);
-    // Sprint 10: async sync to Google Sheets — fire-and-forget, never blocks
-    fireSheetSync(orgId, order.id);
     return mapped;
   });
+
+  // P3: Немедленная складская регистрация спроса при создании заказа (Метод накопления).
+  // Запускается после коммита транзакции, non-fatal — не должна блокировать создание заказа.
+  try {
+    const { autoCreateFromOrder, reserveNewOrderItems, createOrderTransitEntries } =
+      await import('../warehouse/warehouse.service.js');
+    const warehouseItems = mapped.items.map((item) => ({
+      id: item.id,
+      productName: item.productName,
+      color: item.color,
+      gender: item.gender,
+      length: item.length,
+      size: item.size,
+      quantity: item.quantity,
+      variantKey: item.variantKey,
+      attributesJson: item.attributesJson as Record<string, string> | null,
+      attributesSummary: item.attributesSummary,
+    }));
+    await autoCreateFromOrder(orgId, warehouseItems, mapped.id, authorName || 'system');
+    await reserveNewOrderItems(orgId, mapped.id, warehouseItems);
+    await createOrderTransitEntries(orgId, mapped.id, warehouseItems);
+  } catch { /* non-fatal: не должно блокировать создание заказа */ }
+
+  // Sprint 10: async sync to Google Sheets — fire-and-forget, never blocks
+  fireSheetSync(orgId, mapped.id);
+  return mapped;
 }
 
 // Confirm order (creates production tasks)
@@ -1084,8 +1108,9 @@ export async function updateStatus(orgId: string, id: string, status: string, au
   // P3: Release simple warehouse reservations on cancellation
   if (status === 'cancelled') {
     try {
-      const { releaseOrderReservations } = await import('../warehouse/warehouse.service.js');
+      const { releaseOrderReservations, cancelOrderTransitEntries } = await import('../warehouse/warehouse.service.js');
       await releaseOrderReservations(orgId, id);
+      await cancelOrderTransitEntries(orgId, id);
     } catch { /* non-fatal */ }
   }
 
@@ -1514,8 +1539,10 @@ export async function close(orgId: string, id: string, authorId: string, authorN
 
   // P3: Consume simple warehouse reservations on close (order completed)
   try {
-    const { consumeSimpleOrderReservations } = await import('../warehouse/warehouse.service.js');
+    const { consumeSimpleOrderReservations, dispatchOrderTransitEntries } =
+      await import('../warehouse/warehouse.service.js');
     await consumeSimpleOrderReservations(orgId, id, authorName);
+    await dispatchOrderTransitEntries(orgId, id);
   } catch { /* non-fatal */ }
 
   fireSheetSync(orgId, id);
@@ -1612,8 +1639,9 @@ export async function shipOrder(
 
   // P3: Consume simple (non-canonical) warehouse reservations on shipment
   try {
-    const { consumeSimpleOrderReservations } = await import('../warehouse/warehouse.service.js');
+    const { consumeSimpleOrderReservations, dispatchOrderTransitEntries } = await import('../warehouse/warehouse.service.js');
     await consumeSimpleOrderReservations(orgId, id, authorName);
+    await dispatchOrderTransitEntries(orgId, id);
   } catch { /* non-fatal */ }
 
   fireSheetSync(orgId, id);

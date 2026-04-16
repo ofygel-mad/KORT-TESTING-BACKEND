@@ -1,7 +1,5 @@
-import { useMemo } from 'react';
 import { AlertTriangle, Plus, RotateCcw, X } from 'lucide-react';
-import { useWarehouseMovements } from '../../../../entities/warehouse/queries';
-import { getQtyAvailable } from '../../../../entities/warehouse/types';
+import { useWarehouseMovements, useItemFormula } from '../../../../entities/warehouse/queries';
 import type { WarehouseItem, WarehouseMovement } from '../../../../entities/warehouse/types';
 import styles from '../../../warehouse/Warehouse.module.css';
 
@@ -32,28 +30,6 @@ function FormulaCell({ label, value, unit, color, bold }: {
       }}>
         {fmtNum(value)}
         <span style={{ fontSize: 10, fontWeight: 400, marginLeft: 2, opacity: .7 }}>{unit}</span>
-      </span>
-    </div>
-  );
-}
-
-function InfoTile({ label, value, color }: { label: string; value: string; color?: string }) {
-  return (
-    <div style={{
-      padding: '10px 12px',
-      background: 'var(--bg-surface-inset)',
-      border: '1px solid var(--border-subtle)',
-      borderRadius: 8,
-      display: 'flex', flexDirection: 'column', gap: 3,
-    }}>
-      <span style={{
-        fontSize: 9, fontWeight: 600, letterSpacing: '.06em',
-        textTransform: 'uppercase', color: 'var(--text-tertiary)',
-      }}>
-        {label}
-      </span>
-      <span style={{ fontSize: 14, fontWeight: 600, color: color ?? 'var(--text-primary)' }}>
-        {value}
       </span>
     </div>
   );
@@ -123,22 +99,22 @@ interface Props {
 }
 
 export function ItemDetailDrawer({ item, onClose, onAddMovement, onVerify }: Props) {
-  const { data: movData, isLoading: movLoading } = useWarehouseMovements({ itemId: item.id, limit: 50 });
+  const { data: movData, isLoading: movLoading } = useWarehouseMovements({ itemId: item.id });
   const movements = movData?.results ?? [];
 
-  // ── Формула накопления: Начало + Приход − Расход = Конец ──────────────────
-  const { prikhod, raskhod } = useMemo(() => {
-    const prikhod = movements
-      .filter(m => m.type === 'in' || m.type === 'return')
-      .reduce((sum, m) => sum + m.qty, 0);
-    const raskhod = movements
-      .filter(m => m.type === 'out' || m.type === 'write_off')
-      .reduce((sum, m) => sum + m.qty, 0);
-    return { prikhod, raskhod };
-  }, [movements]);
+  // ── Авторитетная разбивка формулы с сервера ───────────────────────────────
+  // Использует computeFormulaBreakdown — точные суммы по всем движениям,
+  // не ограниченным пагинацией. Fallback на поля item до загрузки.
+  const { data: formula } = useItemFormula(item.id);
 
-  const available = getQtyAvailable(item);
-  const needsVerify = item.verificationRequired || item.qty - item.qtyReserved < 0;
+  const qtyBeginning = formula?.qtyBeginning ?? item.qtyBeginning;
+  const totalIn      = formula?.totalIn      ?? 0;
+  const totalOut     = formula?.totalOut     ?? 0;
+  const qtyReserved  = formula?.qtyReserved  ?? item.qtyReserved;
+  const qtyAvailable = formula?.qtyAvailable ?? (item.qty - item.qtyReserved);
+
+  const needsVerify = formula?.verificationRequired ?? item.verificationRequired ?? (item.qty - item.qtyReserved < 0);
+  const hasReserve  = qtyReserved > 0;
 
   return (
     <div className={styles.drawerOverlay} onClick={onClose}>
@@ -158,33 +134,35 @@ export function ItemDetailDrawer({ item, onClose, onAddMovement, onVerify }: Pro
 
         <div className={styles.drawerBody}>
 
-          {/* Формула накопления */}
+          {/* Формула накопления: Начало + Приход − Расход [− Резерв] = Доступно */}
           <div className={styles.drawerCard}>
             <div className={styles.drawerCardLabel}>Формула накопления</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
-              <FormulaCell label="Начало" value={item.qtyBeginning} unit={item.unit} />
+              <FormulaCell label="Начало" value={qtyBeginning} unit={item.unit} />
               <span style={{ color: 'var(--text-tertiary)', fontSize: 16, fontWeight: 300 }}>+</span>
-              <FormulaCell label="Приход" value={prikhod} unit={item.unit} color="var(--fill-positive)" />
+              <FormulaCell label="Приход" value={totalIn} unit={item.unit} color="var(--fill-positive)" />
               <span style={{ color: 'var(--text-tertiary)', fontSize: 16, fontWeight: 300 }}>−</span>
-              <FormulaCell label="Расход" value={raskhod} unit={item.unit} color="var(--fill-negative)" />
+              <FormulaCell label="Расход" value={totalOut} unit={item.unit} color="var(--fill-negative)" />
+              {hasReserve && (
+                <>
+                  <span style={{ color: 'var(--text-tertiary)', fontSize: 16, fontWeight: 300 }}>−</span>
+                  <FormulaCell label="Резерв" value={qtyReserved} unit={item.unit} color="var(--fill-warning)" />
+                </>
+              )}
               <span style={{ color: 'var(--text-tertiary)', fontSize: 16, fontWeight: 300 }}>=</span>
-              <FormulaCell label="Остаток" value={item.qty} unit={item.unit} bold />
+              <FormulaCell
+                label="Доступно"
+                value={qtyAvailable}
+                unit={item.unit}
+                color={qtyAvailable < 0 ? 'var(--fill-negative)' : 'var(--fill-positive)'}
+                bold
+              />
             </div>
-          </div>
-
-          {/* Плитки: Остаток / Резерв / Доступно */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
-            <InfoTile label="Остаток" value={`${fmtNum(item.qty)} ${item.unit}`} />
-            <InfoTile
-              label="Резерв"
-              value={`${fmtNum(item.qtyReserved)} ${item.unit}`}
-              color={item.qtyReserved > 0 ? 'var(--fill-warning)' : undefined}
-            />
-            <InfoTile
-              label="Доступно"
-              value={`${fmtNum(available)} ${item.unit}`}
-              color={needsVerify ? 'var(--fill-negative)' : 'var(--fill-positive)'}
-            />
+            <div style={{ fontSize: 10, color: 'var(--text-tertiary)', marginTop: 6 }}>
+              {hasReserve
+                ? 'Начало + Приход − Расход − Резерв = Доступно'
+                : 'Начало + Приход − Расход = Доступно'}
+            </div>
           </div>
 
           {/* Алерт сверки */}
@@ -198,8 +176,9 @@ export function ItemDetailDrawer({ item, onClose, onAddMovement, onVerify }: Pro
             }}>
               <AlertTriangle size={14} style={{ flexShrink: 0, marginTop: 1 }} />
               <span>
-                Резерв превышает остаток на {fmtNum(Math.abs(item.qty - item.qtyReserved))} {item.unit}.
-                Проведите физическую сверку и зафиксируйте начальный остаток.
+                {qtyAvailable < 0
+                  ? `Доступный остаток отрицательный (${fmtNum(qtyAvailable)} ${item.unit}). Проведите физическую сверку.`
+                  : 'Товар ещё не прошёл сверку. Введите фактический остаток.'}
               </span>
             </div>
           )}

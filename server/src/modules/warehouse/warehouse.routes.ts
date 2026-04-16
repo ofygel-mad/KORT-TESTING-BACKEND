@@ -140,7 +140,7 @@ export const warehouseRoutes: FastifyPluginAsync = async (app) => {
     return {
       count: result.total,
       page: result.page,
-      totalPages: Math.max(1, Math.ceil(result.total / result.pageSize)),
+      totalPages: result.pageSize ? Math.max(1, Math.ceil(result.total / result.pageSize)) : 1,
       results: result.movements,
     };
   });
@@ -251,4 +251,46 @@ export const warehouseRoutes: FastifyPluginAsync = async (app) => {
     const lot = await svc.createLot(req.orgId!, req.body, authorName);
     return reply.status(201).send(lot);
   });
+
+  // ── Transit Zone routes ────────────────────────────────────────────────────
+
+  // GET /api/v1/warehouse/transit-zones — list transit zones (auto-creates default if none)
+  app.get('/transit-zones', async (req) => {
+    return toListResponse(await svc.listTransitZones(req.orgId!));
+  });
+
+  // GET /api/v1/warehouse/transit-zones/:id/entries — list entries for a zone
+  app.get<{
+    Params: { id: string };
+    Querystring: { status?: string; orderId?: string };
+  }>('/transit-zones/:id/entries', async (req) => {
+    return toListResponse(
+      await svc.listTransitEntries(req.orgId!, {
+        zoneId: req.params.id,
+        status: req.query.status,
+        orderId: req.query.orderId,
+      }),
+    );
+  });
+
+  // GET /api/v1/warehouse/transit-entries — list all transit entries for org
+  app.get<{
+    Querystring: { status?: string; orderId?: string };
+  }>('/transit-entries', async (req) => {
+    return toListResponse(
+      await svc.listTransitEntries(req.orgId!, {
+        status: req.query.status,
+        orderId: req.query.orderId,
+      }),
+    );
+  });
+
+  // POST /api/v1/warehouse/transit-zones/:id/entries/:entryId/dispatch
+  app.post<{ Params: { id: string; entryId: string } }>(
+    '/transit-zones/:id/entries/:entryId/dispatch',
+    async (req, reply) => {
+      await svc.dispatchTransitEntry(req.orgId!, req.params.entryId);
+      return reply.status(204).send();
+    },
+  );
 };

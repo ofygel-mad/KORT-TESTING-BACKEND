@@ -20,6 +20,7 @@ import type {
   WarehouseExceptionTimelineResponse, WarehouseLayoutVersionCompareResult,
   WarehouseLayoutPublishAuditResponse, WarehouseLayoutRollbackResult,
   WarehouseRouteHistoryResponse, WarehouseSlaEscalationResult, WarehousePoolPolicyDto,
+  TransitZonesResponse, TransitEntriesResponse,
 } from './types';
 
 export const warehouseApi = {
@@ -220,6 +221,19 @@ export const warehouseApi = {
   // Pool policy
   updatePoolPolicy: (poolId: string, dto: WarehousePoolPolicyDto) =>
     api.patch<WarehouseAssigneePoolsResponse>(`/warehouse/foundation/assignee-pools/${poolId}/policy`, dto),
+
+  // Transit Zones
+  listTransitZones: () =>
+    api.get<TransitZonesResponse>('/warehouse/transit-zones'),
+
+  listTransitEntries: (params?: { status?: string; orderId?: string }) =>
+    api.get<TransitEntriesResponse>('/warehouse/transit-entries', params),
+
+  listZoneTransitEntries: (zoneId: string, params?: { status?: string; orderId?: string }) =>
+    api.get<TransitEntriesResponse>(`/warehouse/transit-zones/${zoneId}/entries`, params),
+
+  dispatchTransitEntry: (zoneId: string, entryId: string) =>
+    api.post<void>(`/warehouse/transit-zones/${zoneId}/entries/${entryId}/dispatch`, {}),
 };
 
 // ── Smart Catalog API ──────────────────────────────────────────────────────────

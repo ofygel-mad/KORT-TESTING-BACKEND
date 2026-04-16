@@ -18,10 +18,13 @@ export function SetBeginningBalanceModal({ item, onClose }: Props) {
   const parsedQty = parseFloat(inputQty);
   const isValidQty = !isNaN(parsedQty) && parsedQty >= 0;
 
-  // Preview: new beginning = parsedQty; formula recalculates
-  const previewEnd = isValidQty && formula
-    ? parsedQty + formula.totalIn - formula.totalOut
+  // Preview: new beginning = parsedQty; reservations are unchanged
+  // Доступно = новоеНачало + Приход − Расход − Резерв
+  const previewAvailable = isValidQty && formula
+    ? parsedQty + formula.totalIn - formula.totalOut - formula.qtyReserved
     : null;
+
+  const hasReserve = (formula?.qtyReserved ?? 0) > 0;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -67,9 +70,15 @@ export function SetBeginningBalanceModal({ item, onClose }: Props) {
                 <span style={{ color: 'var(--fill-positive)' }}>{formula.totalIn}</span>
                 <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>−</span>
                 <span style={{ color: 'var(--fill-negative)' }}>{formula.totalOut}</span>
+                {hasReserve && (
+                  <>
+                    <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>−</span>
+                    <span style={{ color: 'var(--fill-warning)' }}>{formula.qtyReserved}</span>
+                  </>
+                )}
                 <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>=</span>
-                <span style={{ color: formula.qtyEnd < 0 ? 'var(--fill-negative)' : 'var(--text-primary)' }}>
-                  {formula.qtyEnd} {item.unit}
+                <span style={{ color: formula.qtyAvailable < 0 ? 'var(--fill-negative)' : 'var(--text-primary)' }}>
+                  {formula.qtyAvailable} {item.unit}
                 </span>
                 {formula.verificationRequired && (
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: 'var(--fill-negative)', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 5, padding: '2px 7px' }}>
@@ -79,7 +88,9 @@ export function SetBeginningBalanceModal({ item, onClose }: Props) {
               </div>
             ) : null}
             <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 6 }}>
-              Начало + Приход − Расход = Конец
+              {hasReserve
+                ? 'Начало + Приход − Расход − Резерв = Доступно'
+                : 'Начало + Приход − Расход = Доступно'}
             </div>
           </div>
 
@@ -106,7 +117,7 @@ export function SetBeginningBalanceModal({ item, onClose }: Props) {
             </div>
 
             {/* Live preview */}
-            {isValidQty && formula && previewEnd !== null && (
+            {isValidQty && formula && previewAvailable !== null && (
               <div style={{
                 background: 'rgba(79,201,153,0.08)',
                 border: '1px solid rgba(79,201,153,0.25)',
@@ -122,11 +133,18 @@ export function SetBeginningBalanceModal({ item, onClose }: Props) {
                   <span style={{ color: 'var(--fill-positive)' }}>{formula.totalIn}</span>
                   <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>−</span>
                   <span style={{ color: 'var(--fill-negative)' }}>{formula.totalOut}</span>
+                  {hasReserve && (
+                    <>
+                      <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>−</span>
+                      <span style={{ color: 'var(--fill-warning)' }}>{formula.qtyReserved}</span>
+                    </>
+                  )}
                   <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>=</span>
-                  <span style={{ color: previewEnd < 0 ? 'var(--fill-negative)' : 'var(--text-primary)' }}>
-                    {previewEnd} {item.unit}
+                  <span style={{ color: previewAvailable < 0 ? 'var(--fill-negative)' : 'var(--text-primary)' }}>
+                    {previewAvailable} {item.unit}
                   </span>
-                  <CheckCircle2 size={14} style={{ color: '#4FC999' }} />
+                  {previewAvailable >= 0 && <CheckCircle2 size={14} style={{ color: '#4FC999' }} />}
+                  {previewAvailable < 0 && <AlertTriangle size={14} style={{ color: 'var(--fill-negative)' }} />}
                 </div>
               </div>
             )}

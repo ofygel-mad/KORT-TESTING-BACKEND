@@ -1313,3 +1313,39 @@ export interface WarehousePoolPolicyDto {
   slaTimeoutMin?: number;
   escalationPoolId?: string | null;
 }
+
+// ── Transit Zone types ─────────────────────────────────────────────────────────
+
+export type TransitEntryStatus = 'in_transit' | 'dispatched' | 'cancelled';
+export type TransitEntrySourceType = 'order_demand' | 'workshop_direct' | 'market_purchase';
+
+export interface WarehouseTransitZone {
+  id: string;
+  orgId: string;
+  name: string;
+  createdAt: string;
+}
+
+export interface WarehouseTransitEntry {
+  id: string;
+  orgId: string;
+  zoneId: string;
+  itemId: string;
+  orderId?: string | null;
+  qty: number;
+  status: TransitEntryStatus;
+  sourceType: TransitEntrySourceType;
+  createdAt: string;
+  updatedAt: string;
+  item?: Pick<WarehouseItem, 'id' | 'name' | 'unit' | 'attributesSummary'>;
+}
+
+export interface TransitZonesResponse {
+  count: number;
+  results: WarehouseTransitZone[];
+}
+
+export interface TransitEntriesResponse {
+  count: number;
+  results: WarehouseTransitEntry[];
+}

@@ -931,3 +931,32 @@ export const useUpdatePoolPolicy = () => {
     onError: () => toast.error('Не удалось обновить политику пула'),
   });
 };
+
+// ── Transit Zone hooks ─────────────────────────────────────────────────────────
+
+export const useTransitZones = () =>
+  useQuery({
+    queryKey: ['warehouse', 'transit-zones'] as const,
+    queryFn: () => warehouseApi.listTransitZones(),
+    staleTime: 60_000,
+  });
+
+export const useTransitEntries = (params?: { status?: string; orderId?: string }) =>
+  useQuery({
+    queryKey: ['warehouse', 'transit-entries', params] as const,
+    queryFn: () => warehouseApi.listTransitEntries(params),
+    staleTime: 30_000,
+  });
+
+export const useDispatchTransitEntry = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ zoneId, entryId }: { zoneId: string; entryId: string }) =>
+      warehouseApi.dispatchTransitEntry(zoneId, entryId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['warehouse', 'transit-entries'] });
+      toast.success('Отгрузка подтверждена');
+    },
+    onError: () => toast.error('Не удалось подтвердить отгрузку'),
+  });
+};

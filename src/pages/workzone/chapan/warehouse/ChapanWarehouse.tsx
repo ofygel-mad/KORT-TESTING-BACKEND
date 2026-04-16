@@ -2,7 +2,7 @@ import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AlertCircle, AlertTriangle, Archive, CheckCircle2, ChevronRight, Download,
-  FileText, Package, PackageCheck, Phone, Plus, RefreshCcw, Search, TrendingDown, User, Upload, X, XCircle, CheckSquare, BookOpen,
+  FileText, Package, PackageCheck, Phone, Plus, RefreshCcw, Search, TrendingDown, User, Upload, X, XCircle, CheckSquare, BookOpen, Truck,
 } from 'lucide-react';
 import { WarehouseCatalog } from '../../../warehouse/WarehouseCatalog';
 import ChapanInvoicePreviewModal from '../invoices/ChapanInvoicePreviewModal';
@@ -12,13 +12,14 @@ import {
   useWarehouseCategories, useCreateItem, useAddMovement, useDeleteItem, useResolveAlert,
   useWarehouseFoundationSites, useWarehouseFoundationSiteControlTower, useWarehouseFoundationSiteHealth,
   useImportOpeningBalance, useWarehouseSummary, useSyncFromOrders,
+  useTransitEntries, useDispatchTransitEntry,
 } from '../../../../entities/warehouse/queries';
 import { SetBeginningBalanceModal } from './SetBeginningBalanceModal';
 import {
   useInvoices, useConfirmWarehouse, useOrders, useShipOrder, useOrder, useArchiveInvoice,
   useCloseOrder, useReturnToReady, useRejectInvoice,
 } from '../../../../entities/order/queries';
-import type { WarehouseItem, MovementType, CreateItemDto, AddMovementDto, ImportOpeningBalanceRow } from '../../../../entities/warehouse/types';
+import type { WarehouseItem, MovementType, CreateItemDto, AddMovementDto, ImportOpeningBalanceRow, WarehouseTransitEntry } from '../../../../entities/warehouse/types';
 import type { ChapanInvoice, ChapanOrder } from '../../../../entities/order/types';
 import { getStockStatus, getQtyAvailable } from '../../../../entities/warehouse/types';
 import { ItemDetailDrawer } from './ItemDetailDrawer';
@@ -27,7 +28,7 @@ import { exportToCSV } from '../../../../shared/lib/export';
 import { toast } from 'sonner';
 import styles from '../../../warehouse/Warehouse.module.css';
 
-type Tab = 'incoming' | 'invoice_archive' | 'orders_wh' | 'shipped' | 'items' | 'movements' | 'alerts' | 'catalog';
+type Tab = 'incoming' | 'invoice_archive' | 'orders_wh' | 'shipped' | 'items' | 'movements' | 'alerts' | 'catalog' | 'transit';
 
 const MOVEMENT_LABEL: Record<MovementType, string> = {
   in: 'Приход', out: 'Расход', adjustment: 'Корректировка', write_off: 'Списание', return: 'Возврат',
@@ -841,6 +842,119 @@ function ClickRow({ children, onClick }: { children: React.ReactNode; onClick: (
   );
 }
 
+// ── Transit Tab ───────────────────────────────────────────────────────────────
+
+function TransitTab() {
+  const { data, isLoading } = useTransitEntries({ status: 'in_transit' });
+  const dispatch = useDispatchTransitEntry();
+  const entries: WarehouseTransitEntry[] = data?.results ?? [];
+
+  // Group by orderId
+  const groups = entries.reduce<Record<string, WarehouseTransitEntry[]>>((acc, e) => {
+    const key = e.orderId ?? 'no_order';
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(e);
+    return acc;
+  }, {});
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>Транзит</div>
+          <div style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>
+            Товары, зарезервированные по активным заказам. Статус: <strong>in_transit</strong>.
+          </div>
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
+          {entries.length} позиций
+        </div>
+      </div>
+
+      {isLoading && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {[1, 2, 3].map((i) => <Skeleton key={i} style={{ height: 48, borderRadius: 8 }} />)}
+        </div>
+      )}
+
+      {!isLoading && entries.length === 0 && (
+        <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: 13 }}>
+          Нет товаров в транзите
+        </div>
+      )}
+
+      {!isLoading && Object.entries(groups).map(([orderId, items]) => (
+        <div
+          key={orderId}
+          style={{
+            border: '1px solid var(--border-subtle)',
+            borderRadius: 10,
+            overflow: 'hidden',
+          }}
+        >
+          <div style={{
+            padding: '8px 14px',
+            background: 'var(--bg-surface-elevated)',
+            fontSize: 12,
+            fontWeight: 600,
+            color: 'var(--text-secondary)',
+            borderBottom: '1px solid var(--border-subtle)',
+          }}>
+            {orderId === 'no_order' ? 'Без заказа' : `Заказ: ${orderId.slice(-8)}`}
+          </div>
+          <div className={styles.tableWrap}>
+            <table className={styles.table}>
+              <thead>
+                <tr>
+                  <th>Товар</th>
+                  <th style={{ textAlign: 'right' }}>Кол-во</th>
+                  <th>Источник</th>
+                  <th>Дата</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((entry) => (
+                  <tr key={entry.id} className={styles.row}>
+                    <td>
+                      <div style={{ fontWeight: 600, fontSize: 13 }}>{entry.item?.name ?? entry.itemId}</div>
+                      {entry.item?.attributesSummary && (
+                        <div style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{entry.item.attributesSummary}</div>
+                      )}
+                    </td>
+                    <td style={{ textAlign: 'right', fontWeight: 600 }}>{entry.qty}</td>
+                    <td style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
+                      {entry.sourceType === 'order_demand' ? 'Заказ' :
+                       entry.sourceType === 'workshop_direct' ? 'Цех (прямая)' :
+                       entry.sourceType === 'market_purchase' ? 'Закуп' : entry.sourceType}
+                    </td>
+                    <td style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{fmtDate(entry.createdAt)}</td>
+                    <td>
+                      {entry.sourceType === 'workshop_direct' && (
+                        <button
+                          className={styles.actionBtn}
+                          disabled={dispatch.isPending}
+                          onClick={() => {
+                            if (!entry.zoneId) return;
+                            dispatch.mutate({ zoneId: entry.zoneId, entryId: entry.id });
+                          }}
+                          style={{ fontSize: 11, padding: '3px 10px' }}
+                        >
+                          Отгружено
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function ChapanWarehousePage() {
@@ -975,6 +1089,9 @@ export default function ChapanWarehousePage() {
             </button>
             <button className={`${styles.tab} ${tab === 'shipped' ? styles.tabActive : ''}`} onClick={() => setTab('shipped')}>
               <CheckSquare size={13} /> Отправленные {shippedOrders.length > 0 && <span className={styles.alertBadge}>{shippedOrders.length}</span>}
+            </button>
+            <button className={`${styles.tab} ${tab === 'transit' ? styles.tabActive : ''}`} onClick={() => setTab('transit')}>
+              <Truck size={13} /> Транзит
             </button>
           </div>
         </div>
@@ -1556,6 +1673,11 @@ export default function ChapanWarehousePage() {
             </div>
           ) : null}
         </div>
+      )}
+
+      {/* ── Транзит tab ── */}
+      {tab === 'transit' && (
+        <TransitTab />
       )}
 
       {/* Drawers */}
