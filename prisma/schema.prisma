@@ -229,6 +229,7 @@ model Organization {
   accountingGaps       AccountingGap[]
   importTemplates      ImportTemplate[]
   conversations        Conversation[]
+  chatAttachments      ChatAttachment[]
 
   @@map("organizations")
 }
@@ -994,7 +995,9 @@ model WarehouseItem {
   name              String
   unit              String   @default("шт")   // шт | кг | м | л | пар | рулон | лист
   qty               Float    @default(0)
+  qtyBeginning      Float    @default(0)      @map("qty_beginning")
   qtyReserved       Float    @default(0)      @map("qty_reserved")
+  verificationRequired Boolean @default(false) @map("verification_required")
   qtyMin            Float    @default(0)      @map("qty_min")
   qtyMax            Float?   @map("qty_max")
   costPrice         Float?   @map("cost_price")
@@ -1022,6 +1025,7 @@ model WarehouseItem {
   @@index([orgId])
   @@index([orgId, categoryId])
   @@index([orgId, variantKey])
+  @@index([orgId, verificationRequired])
   @@map("warehouse_items")
 }
 
@@ -1911,17 +1915,51 @@ model ConversationParticipant {
   @@map("conversation_participants")
 }
 
-model Message {
-  id             String    @id @default(cuid())
-  conversationId String    @map("conversation_id")
-  senderId       String    @map("sender_id")
-  body           String    @db.Text
-  createdAt      DateTime  @default(now()) @map("created_at")
-  readAt         DateTime? @map("read_at")
+enum MessageType {
+  TEXT
+  IMAGE
+  FILE
+  ORDER_REF
+}
 
-  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender       User         @relation(fields: [senderId], references: [id])
+model Message {
+  id             String      @id @default(cuid())
+  conversationId String      @map("conversation_id")
+  senderId       String      @map("sender_id")
+  body           String      @db.Text
+  type           MessageType @default(TEXT)
+  replyToId      String?     @map("reply_to_id")
+  editedAt       DateTime?   @map("edited_at")
+  deletedAt      DateTime?   @map("deleted_at")
+  orderId        String?     @map("order_id")
+  createdAt      DateTime    @default(now()) @map("created_at")
+  readAt         DateTime?   @map("read_at")
+
+  conversation Conversation    @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User            @relation(fields: [senderId], references: [id])
+  replyTo      Message?        @relation("MessageReplies", fields: [replyToId], references: [id])
+  replies      Message[]       @relation("MessageReplies")
+  attachments  ChatAttachment[]
 
   @@index([conversationId, createdAt])
   @@map("messages")
+}
+
+model ChatAttachment {
+  id          String   @id @default(cuid())
+  messageId   String   @map("message_id")
+  orgId       String   @map("org_id")
+  fileName    String   @map("file_name")
+  mimeType    String   @map("mime_type")
+  sizeBytes   Int      @map("size_bytes")
+  storagePath String   @map("storage_path")
+  width       Int?
+  height      Int?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  message Message      @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  org     Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+  @@map("chat_attachments")
 }
