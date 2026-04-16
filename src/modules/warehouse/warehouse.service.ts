@@ -583,7 +583,7 @@ export async function listMovements(
   filters?: { itemId?: string; type?: string; page?: number; pageSize?: number },
 ) {
   const page = filters?.page ?? 1;
-  const pageSize = Math.min(filters?.pageSize ?? 50, 200);
+  const pageSize = filters?.pageSize; // undefined = no limit
 
   const where: Record<string, unknown> = { orgId };
   if (filters?.itemId) where.itemId = filters.itemId;
@@ -595,7 +595,7 @@ export async function listMovements(
       where,
       include: { item: { select: { name: true, unit: true, sku: true } } },
       orderBy: { createdAt: 'desc' },
-      skip: (page - 1) * pageSize,
+      skip: pageSize ? (page - 1) * pageSize : 0,
       take: pageSize,
     }),
   ]);
@@ -846,6 +846,73 @@ async function reserveSimpleOrderItems(
   }
 
   return summary;
+}
+
+/**
+ * Немедленное резервирование при создании заказа (Метод накопления).
+ * В отличие от reserveSimpleOrderItems, не проверяет наличие свободного остатка —
+ * резерв создаётся даже если qty=0 или отрицательное.
+ * Это соответствует WMS-ARCHI.md: заказ = немедленный расход (−N в формуле).
+ */
+export async function reserveNewOrderItems(
+  orgId: string,
+  orderId: string,
+  items: Array<{
+    productName: string;
+    color?: string | null;
+    gender?: string | null;
+    size?: string | null;
+    length?: string | null;
+    quantity: number;
+    variantKey?: string | null;
+  }>,
+): Promise<{ reserved: number; skipped: number }> {
+  let reserved = 0;
+  let skipped = 0;
+
+  for (const item of items) {
+    const name = item.productName?.trim();
+    if (!name || item.quantity <= 0) { skipped++; continue; }
+
+    const attrs: Record<string, string> = {};
+    if (item.color?.trim())  attrs.color  = item.color.trim();
+    if (item.gender?.trim()) attrs.gender = item.gender.trim();
+    if (item.size?.trim())   attrs.size   = item.size.trim();
+    if (item.length?.trim()) attrs.length = item.length.trim();
+    const variantKey = item.variantKey ?? buildWarehouseVariantKey(name, attrs);
+
+    const warehouseItem = await prisma.warehouseItem.findFirst({
+      where: { orgId, variantKey },
+      select: { id: true },
+    });
+    if (!warehouseItem) { skipped++; continue; }
+
+    // Идемпотентность: не создавать дубль резерва для того же заказа + позиции
+    const existing = await prisma.warehouseReservation.findFirst({
+      where: { orgId, sourceId: orderId, itemId: warehouseItem.id, status: 'active' },
+    });
+    if (existing) { skipped++; continue; }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.warehouseReservation.create({
+        data: {
+          orgId,
+          itemId: warehouseItem.id,
+          qty: item.quantity,
+          sourceId: orderId,
+          sourceType: 'chapan_order',
+          status: 'active',
+        },
+      });
+      await tx.warehouseItem.update({
+        where: { id: warehouseItem.id },
+        data: { qtyReserved: { increment: item.quantity } },
+      });
+    });
+    reserved++;
+  }
+
+  return { reserved, skipped };
 }
 
 export async function reserveOrderWarehouseItems(
@@ -1947,4 +2014,176 @@ export async function syncFromOrders(
     matchedItemIds: allMatched,
     scannedOrders: activeOrders.length,
   };
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Транзитная зона (WarehouseTransitZone / WarehouseTransitEntry)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Возвращает (или создаёт) транзитную зону организации.
+ * У каждой организации одна транзитная зона — авто-создаётся при первом обращении.
+ */
+async function getOrCreateTransitZone(orgId: string): Promise<{ id: string }> {
+  const existing = await prisma.warehouseTransitZone.findFirst({ where: { orgId }, select: { id: true } });
+  if (existing) return existing;
+  return prisma.warehouseTransitZone.create({ data: { orgId, name: 'Транзит' }, select: { id: true } });
+}
+
+/**
+ * Создаёт транзитные записи для всех позиций нового заказа.
+ * Вызывается сразу после reserveNewOrderItems при создании заказа.
+ * Идемпотентен: не создаёт дубли для одного orderId.
+ */
+export async function createOrderTransitEntries(
+  orgId: string,
+  orderId: string,
+  items: Array<{
+    productName: string;
+    color?: string | null;
+    gender?: string | null;
+    size?: string | null;
+    length?: string | null;
+    quantity: number;
+    variantKey?: string | null;
+  }>,
+): Promise<{ created: number }> {
+  const zone = await getOrCreateTransitZone(orgId);
+  let created = 0;
+
+  for (const item of items) {
+    const name = item.productName?.trim();
+    if (!name || item.quantity <= 0) continue;
+
+    const attrs: Record<string, string> = {};
+    if (item.color?.trim())  attrs.color  = item.color.trim();
+    if (item.gender?.trim()) attrs.gender = item.gender.trim();
+    if (item.size?.trim())   attrs.size   = item.size.trim();
+    if (item.length?.trim()) attrs.length = item.length.trim();
+    const variantKey = item.variantKey ?? buildWarehouseVariantKey(name, attrs);
+
+    const warehouseItem = await prisma.warehouseItem.findFirst({
+      where: { orgId, variantKey },
+      select: { id: true },
+    });
+    if (!warehouseItem) continue;
+
+    // Идемпотентность
+    const existing = await prisma.warehouseTransitEntry.findFirst({
+      where: { orgId, orderId, itemId: warehouseItem.id, status: 'in_transit' },
+    });
+    if (existing) continue;
+
+    await prisma.warehouseTransitEntry.create({
+      data: {
+        orgId,
+        zoneId: zone.id,
+        itemId: warehouseItem.id,
+        orderId,
+        qty: item.quantity,
+        status: 'in_transit',
+        sourceType: 'order_demand',
+      },
+    });
+    created++;
+  }
+
+  return { created };
+}
+
+/**
+ * Отмечает транзитные записи заказа как dispatched (товар отгружен клиенту).
+ * Вызывается при consumeSimpleOrderReservations (отправка/закрытие заказа).
+ */
+export async function dispatchOrderTransitEntries(orgId: string, orderId: string): Promise<void> {
+  await prisma.warehouseTransitEntry.updateMany({
+    where: { orgId, orderId, status: 'in_transit' },
+    data: { status: 'dispatched' },
+  });
+}
+
+/**
+ * Отменяет транзитные записи заказа (при отмене заказа).
+ * Вызывается при releaseOrderReservations.
+ */
+export async function cancelOrderTransitEntries(orgId: string, orderId: string): Promise<void> {
+  await prisma.warehouseTransitEntry.updateMany({
+    where: { orgId, orderId, status: 'in_transit' },
+    data: { status: 'cancelled' },
+  });
+}
+
+/**
+ * Создаёт транзитную запись для прямой выдачи с цеха (workshop_direct).
+ * Запись сразу помечается как dispatched — товар прошёл через транзит виртуально.
+ */
+export async function recordWorkshopDirectDispatch(
+  orgId: string,
+  orderId: string,
+  itemId: string,
+  qty: number,
+): Promise<void> {
+  const zone = await getOrCreateTransitZone(orgId);
+  await prisma.warehouseTransitEntry.create({
+    data: {
+      orgId,
+      zoneId: zone.id,
+      itemId,
+      orderId,
+      qty,
+      status: 'dispatched',
+      sourceType: 'workshop_direct',
+    },
+  });
+}
+
+/**
+ * Список транзитных зон организации.
+ */
+export async function listTransitZones(orgId: string) {
+  const zones = await prisma.warehouseTransitZone.findMany({
+    where: { orgId },
+    orderBy: { createdAt: 'asc' },
+  });
+  // Auto-create default zone if none exist
+  if (zones.length === 0) {
+    const zone = await prisma.warehouseTransitZone.create({
+      data: { orgId, name: 'Транзит' },
+    });
+    return [zone];
+  }
+  return zones;
+}
+
+/**
+ * Список транзитных записей организации.
+ * Без фильтра status — возвращает все записи (фронт фильтрует или передаёт status).
+ */
+export async function listTransitEntries(
+  orgId: string,
+  params?: { orderId?: string; itemId?: string; zoneId?: string; status?: string },
+) {
+  const where: Record<string, unknown> = { orgId };
+  if (params?.status)  where.status  = params.status;
+  if (params?.orderId) where.orderId = params.orderId;
+  if (params?.itemId)  where.itemId  = params.itemId;
+  if (params?.zoneId)  where.zoneId  = params.zoneId;
+
+  return prisma.warehouseTransitEntry.findMany({
+    where,
+    include: {
+      item: { select: { id: true, name: true, unit: true, attributesSummary: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+}
+
+/**
+ * Подтверждает отгрузку одной транзитной записи (для прямых выдач с цеха).
+ */
+export async function dispatchTransitEntry(orgId: string, entryId: string): Promise<void> {
+  await prisma.warehouseTransitEntry.updateMany({
+    where: { id: entryId, orgId, status: 'in_transit' },
+    data: { status: 'dispatched' },
+  });
 }

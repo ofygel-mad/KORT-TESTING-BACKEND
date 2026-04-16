@@ -197,6 +197,8 @@ model Organization {
   warehouseCategories       WarehouseCategory[]
   warehouseMovements        WarehouseMovement[]
   warehouseReservations     WarehouseReservation[]
+  warehouseTransitZones     WarehouseTransitZone[]
+  warehouseTransitEntries   WarehouseTransitEntry[]
   warehouseBomLines         WarehouseBOMLine[]
   warehouseAlerts           WarehouseAlert[]
   warehouseLots             WarehouseLot[]
@@ -1018,6 +1020,7 @@ model WarehouseItem {
   productCatalog WarehouseProductCatalog?  @relation(fields: [productCatalogId], references: [id], onDelete: SetNull)
   movements      WarehouseMovement[]
   reservations   WarehouseReservation[]
+  transitEntries WarehouseTransitEntry[]
   bomLines       WarehouseBOMLine[]
   lots           WarehouseLot[]
   alerts         WarehouseAlert[]
@@ -1071,6 +1074,46 @@ model WarehouseReservation {
   @@index([orgId, status])
   @@index([sourceId])
   @@map("warehouse_reservations")
+}
+
+// ── Транзитная зона ────────────────────────────────────────────────────────────
+// Отдельная именованная зона в рамках склада для отслеживания товаров
+// "в пути к клиенту": зарезервированных по заказу или направленных напрямую с цеха.
+
+model WarehouseTransitZone {
+  id        String   @id @default(cuid())
+  orgId     String   @map("org_id")
+  name      String   @default("Транзит")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  org     Organization           @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  entries WarehouseTransitEntry[]
+
+  @@index([orgId])
+  @@map("warehouse_transit_zones")
+}
+
+model WarehouseTransitEntry {
+  id         String   @id @default(cuid())
+  orgId      String   @map("org_id")
+  zoneId     String   @map("zone_id")
+  itemId     String   @map("item_id")
+  orderId    String?  @map("order_id")   // ссылка на ChapanOrder (если по заказу)
+  qty        Float
+  // in_transit | dispatched | cancelled
+  status     String   @default("in_transit")
+  // order_demand | workshop_direct | market_purchase
+  sourceType String   @map("source_type")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt      @map("updated_at")
+
+  org  Organization         @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  zone WarehouseTransitZone @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  item WarehouseItem         @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([orgId, status])
+  @@index([orderId])
+  @@map("warehouse_transit_entries")
 }
 
 // Bill of Materials: product SKU/name → list of warehouse items needed per unit
