@@ -11,7 +11,7 @@ import {
   useWarehouseItems, useWarehouseMovements, useWarehouseAlerts,
   useWarehouseCategories, useCreateItem, useAddMovement, useDeleteItem, useResolveAlert,
   useWarehouseFoundationSites, useWarehouseFoundationSiteControlTower, useWarehouseFoundationSiteHealth,
-  useImportOpeningBalance,
+  useImportOpeningBalance, useWarehouseSummary,
 } from '../../../../entities/warehouse/queries';
 import {
   useInvoices, useConfirmWarehouse, useOrders, useShipOrder, useOrder, useArchiveInvoice,
@@ -19,7 +19,8 @@ import {
 } from '../../../../entities/order/queries';
 import type { WarehouseItem, MovementType, CreateItemDto, AddMovementDto, ImportOpeningBalanceRow } from '../../../../entities/warehouse/types';
 import type { ChapanInvoice, ChapanOrder } from '../../../../entities/order/types';
-import { getStockStatus } from '../../../../entities/warehouse/types';
+import { getStockStatus, getQtyAvailable } from '../../../../entities/warehouse/types';
+import { ItemDetailDrawer } from './ItemDetailDrawer';
 import { Skeleton } from '../../../../shared/ui/Skeleton';
 import { exportToCSV } from '../../../../shared/lib/export';
 import { toast } from 'sonner';
@@ -856,9 +857,10 @@ export default function ChapanWarehousePage() {
   const [previewInvoiceId, setPreviewInvoiceId] = useState<string | null>(null);
   const [previewInvoice, setPreviewInvoice] = useState<ChapanInvoice | null>(null);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [selectedItem, setSelectedItem] = useState<WarehouseItem | null>(null);
 
-  // Inventory data
-  const { data: itemsData, isLoading: itemsLoading } = useWarehouseItems({ search: deferredSearch || undefined });
+  // Inventory data — limit:2000 чтобы загрузить все позиции (нужно для точного totalUnits)
+  const { data: itemsData, isLoading: itemsLoading } = useWarehouseItems({ search: deferredSearch || undefined, limit: 2000 });
   const { data: movData, isLoading: movLoading } = useWarehouseMovements({ limit: 100 });
   const { data: alertsData } = useWarehouseAlerts();
   const deleteItem = useDeleteItem();
@@ -894,7 +896,10 @@ export default function ChapanWarehousePage() {
   const alerts = useMemo(() => alertsData?.results ?? [], [alertsData?.results]);
   const alertCount = alerts.length;
   const incomingCount = pendingInvoices.length;
-  const totalUnits = useMemo(() => items.reduce((sum, i) => sum + i.qty, 0), [items]);
+  const { data: summaryData } = useWarehouseSummary();
+  const totalUnits = useMemo(() => items.reduce((sum, i) => sum + getQtyAvailable(i), 0), [items]);
+  const totalReserved = useMemo(() => items.reduce((sum, i) => sum + i.qtyReserved, 0), [items]);
+  const needsVerificationCount = useMemo(() => items.filter(i => i.qty - i.qtyReserved < 0).length, [items]);
   const { data: canonicalSites } = useWarehouseFoundationSites();
   const { data: canonicalSiteHealth } = useWarehouseFoundationSiteHealth(selectedCanonicalSiteId || undefined);
   const { data: canonicalControlTower } = useWarehouseFoundationSiteControlTower(selectedCanonicalSiteId || undefined);
@@ -917,7 +922,7 @@ export default function ChapanWarehousePage() {
       'Ед.изм': i.unit,
       'Остаток': i.qty,
       'Зарезервировано': i.qtyReserved,
-      'Доступно': i.qty - i.qtyReserved,
+      'Доступно': Math.max(0, i.qty - i.qtyReserved),
       'Мин.остаток': i.qtyMin,
       'Категория': i.category?.name ?? '',
       'Цена закупки': i.costPrice ?? '',
@@ -973,13 +978,27 @@ export default function ChapanWarehousePage() {
       {!itemsLoading && (
         <div className={styles.statsBar}>
           <div className={styles.statItem}>
-            <span className={styles.statValue}>{items.length}</span>
+            <span className={styles.statValue}>
+              {summaryData?.totalItems ?? itemsData?.count ?? items.length}
+            </span>
             <span className={styles.statLabel}>Позиций в базе</span>
           </div>
           <div className={styles.statItem}>
             <span className={styles.statValue}>{fmtNum(totalUnits)}</span>
-            <span className={styles.statLabel}>Единиц на складе</span>
+            <span className={styles.statLabel}>Доступно (ед.)</span>
           </div>
+          <div className={styles.statItem}>
+            <span className={styles.statValue} style={{ color: totalReserved > 0 ? 'var(--fill-warning)' : 'var(--text-primary)' }}>
+              {fmtNum(totalReserved)}
+            </span>
+            <span className={styles.statLabel}>Зарезервировано</span>
+          </div>
+          {needsVerificationCount > 0 && (
+            <div className={styles.statItem}>
+              <span className={styles.statValue} style={{ color: 'var(--fill-negative)' }}>{needsVerificationCount}</span>
+              <span className={styles.statLabel}>Требуют сверки</span>
+            </div>
+          )}
           {alertCount > 0 && (
             <div className={styles.statItem}>
               <span className={styles.statValue} style={{ color: 'var(--fill-warning)' }}>{alertCount}</span>
@@ -1282,26 +1301,48 @@ export default function ChapanWarehousePage() {
             <div className={styles.tableWrap}>
               <table className={styles.table}>
                 <thead>
-                  <tr><th>Название</th><th>Вариант</th><th>Кат.</th><th>Остаток</th><th>Мин.</th><th>Статус</th><th></th></tr>
+                  <tr><th>Название</th><th>Вариант</th><th>Кат.</th><th>Остаток</th><th>Резерв</th><th>Доступно</th><th>Мин.</th><th>Статус</th><th></th></tr>
                 </thead>
                 <tbody>
                   {items.map(item => {
                     const status = getStockStatus(item);
+                    const available = getQtyAvailable(item);
+                    const needsVerify = item.qty - item.qtyReserved < 0;
                     return (
-                      <tr key={item.id} className={styles.row}>
-                        <td className={styles.tdName}>{item.name}</td>
+                      <tr key={item.id} className={styles.row} onClick={() => setSelectedItem(item)} style={{ cursor: 'pointer' }}>
+                        <td className={styles.tdName}>
+                          {item.name}
+                          {needsVerify && (
+                            <span style={{
+                              marginLeft: 6, display: 'inline-flex', alignItems: 'center', gap: 3,
+                              fontSize: 10, fontWeight: 600, color: 'var(--fill-negative)',
+                              background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)',
+                              borderRadius: 4, padding: '1px 5px',
+                            }}>
+                              <AlertTriangle size={9} /> Сверка
+                            </span>
+                          )}
+                        </td>
                         <td className={styles.tdSecondary} style={{ fontSize: 11 }}>
                           {item.attributesSummary ?? (item.sku ? <span className={styles.tdMono}>{item.sku}</span> : '—')}
                         </td>
                         <td className={styles.tdSecondary}>{item.category?.name ?? '—'}</td>
                         <td className={styles.tdNum}>{fmtNum(item.qty)} {item.unit}</td>
+                        <td className={styles.tdSecondary} style={{ fontSize: 12 }}>
+                          {item.qtyReserved > 0
+                            ? <span style={{ color: 'var(--fill-warning)' }}>{fmtNum(item.qtyReserved)}</span>
+                            : '—'}
+                        </td>
+                        <td className={styles.tdNum} style={{ color: needsVerify ? 'var(--fill-negative)' : 'var(--fill-positive)' }}>
+                          {fmtNum(available)} {item.unit}
+                        </td>
                         <td className={styles.tdSecondary}>{fmtNum(item.qtyMin)} {item.unit}</td>
                         <td>
                           <span className={styles.stockBadge} data-status={status}>
                             {status === 'ok' ? 'Норма' : status === 'low' ? 'Мало' : 'Критично'}
                           </span>
                         </td>
-                        <td className={styles.tdActions}>
+                        <td className={styles.tdActions} onClick={e => e.stopPropagation()}>
                           <button className={styles.incomBtn} onClick={() => { setPreselectItem(item.id); setAddMovOpen(true); }}>Приход</button>
                           <button className={styles.deleteBtn} onClick={() => { if (confirm('Удалить позицию?')) deleteItem.mutate(item.id); }}><X size={12} /></button>
                         </td>
@@ -1515,6 +1556,17 @@ export default function ChapanWarehousePage() {
       />
       {selectedInvoice && (
         <InvoiceDetailDrawer invoice={selectedInvoice} onClose={() => setSelectedInvoice(null)} />
+      )}
+      {selectedItem && (
+        <ItemDetailDrawer
+          item={selectedItem}
+          onClose={() => setSelectedItem(null)}
+          onAddMovement={() => {
+            setPreselectItem(selectedItem.id);
+            setAddMovOpen(true);
+            setSelectedItem(null);
+          }}
+        />
       )}
       <ChapanOrderDetailModal
         open={Boolean(selectedOrderId)}

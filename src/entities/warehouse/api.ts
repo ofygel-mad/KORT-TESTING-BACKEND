@@ -24,7 +24,7 @@ import type {
 
 export const warehouseApi = {
   // Items
-  listItems: (params?: { search?: string; categoryId?: string; lowStock?: string; page?: number }) =>
+  listItems: (params?: { search?: string; categoryId?: string; lowStock?: string; page?: number; limit?: number }) =>
     api.get<PaginatedWarehouseItems>('/warehouse/items', params),
 
   createItem: (dto: CreateItemDto) =>

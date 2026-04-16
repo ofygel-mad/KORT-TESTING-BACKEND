@@ -45,7 +45,7 @@ export const warehouseKeys = {
   },
 };
 
-export const useWarehouseItems = (params?: { search?: string; categoryId?: string; lowStock?: string; page?: number }) =>
+export const useWarehouseItems = (params?: { search?: string; categoryId?: string; lowStock?: string; page?: number; limit?: number }) =>
   useQuery({ queryKey: warehouseKeys.items(params), queryFn: () => warehouseApi.listItems(params), staleTime: 60_000 });
 
 export const useWarehouseMovements = (params?: { itemId?: string; type?: string; page?: number; limit?: number }) =>

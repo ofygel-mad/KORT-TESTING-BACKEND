@@ -1210,9 +1210,16 @@ export interface ImportResult {
   errors: string[];
 }
 
+/** Доступное количество — никогда не бывает отрицательным. */
+export function getQtyAvailable(item: WarehouseItem): number {
+  return Math.max(0, item.qty - item.qtyReserved);
+}
+
+/** Статус товара рассчитывается по доступному, а не валовому количеству. */
 export function getStockStatus(item: WarehouseItem): StockStatus {
-  if (item.qty <= item.qtyMin) return 'critical';
-  if (item.qty <= item.qtyMin * 1.5) return 'low';
+  const available = getQtyAvailable(item);
+  if (available <= item.qtyMin) return 'critical';
+  if (available <= item.qtyMin * 1.5) return 'low';
   return 'ok';
 }
 
