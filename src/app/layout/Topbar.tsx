@@ -41,7 +41,16 @@ function NotificationBell({ enabled }: { enabled: boolean }) {
 
   useSSE({
     enabled,
-    onNotification: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+    onNotification: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      // Invalidate Chapan queries on order/production events
+      const entity = (data?.entity ?? data?.type ?? '') as string;
+      if (!entity || entity.startsWith('order') || entity.startsWith('chapan') || entity.startsWith('production')) {
+        queryClient.invalidateQueries({ queryKey: ['chapan_orders'] });
+        queryClient.invalidateQueries({ queryKey: ['chapan_production'] });
+        queryClient.invalidateQueries({ queryKey: ['chapan_invoices'] });
+      }
+    },
   });
 
   const markAllRead = useMutation({

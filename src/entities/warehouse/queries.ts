@@ -49,25 +49,26 @@ export const warehouseKeys = {
 };
 
 export const useWarehouseItems = (params?: { search?: string; categoryId?: string; lowStock?: string; page?: number; limit?: number }) =>
-  useQuery({ queryKey: warehouseKeys.items(params), queryFn: () => warehouseApi.listItems(params), staleTime: 60_000 });
+  useQuery({ queryKey: warehouseKeys.items(params), queryFn: () => warehouseApi.listItems(params), staleTime: 60_000, refetchInterval: 60_000 });
 
 export const useWarehouseMovements = (params?: { itemId?: string; type?: string; page?: number; limit?: number }) =>
-  useQuery({ queryKey: warehouseKeys.movements(params), queryFn: () => warehouseApi.listMovements(params), staleTime: 60_000 });
+  useQuery({ queryKey: warehouseKeys.movements(params), queryFn: () => warehouseApi.listMovements(params), staleTime: 60_000, refetchInterval: 60_000 });
 
 export const useWarehouseAlerts = () =>
-  useQuery({ queryKey: warehouseKeys.alerts, queryFn: () => warehouseApi.listAlerts({ status: 'open' }), staleTime: 30_000 });
+  useQuery({ queryKey: warehouseKeys.alerts, queryFn: () => warehouseApi.listAlerts({ status: 'open' }), staleTime: 30_000, refetchInterval: 30_000 });
 
 export const useWarehouseCategories = () =>
   useQuery({ queryKey: warehouseKeys.categories, queryFn: () => warehouseApi.listCategories(), staleTime: 5 * 60_000 });
 
 export const useWarehouseSummary = () =>
-  useQuery({ queryKey: warehouseKeys.summary, queryFn: () => warehouseApi.getSummary(), staleTime: 60_000 });
+  useQuery({ queryKey: warehouseKeys.summary, queryFn: () => warehouseApi.getSummary(), staleTime: 60_000, refetchInterval: 60_000 });
 
 export const useWarehouseFoundationStatus = () =>
   useQuery({
     queryKey: warehouseKeys.foundation.status,
     queryFn: () => warehouseApi.getFoundationStatus(),
     staleTime: 30_000,
+    refetchInterval: 30_000,
   });
 
 export const useWarehouseFoundationSites = () =>
@@ -75,6 +76,7 @@ export const useWarehouseFoundationSites = () =>
     queryKey: warehouseKeys.foundation.sites,
     queryFn: () => warehouseApi.listFoundationSites(),
     staleTime: 60_000,
+    refetchInterval: 60_000,
   });
 
 export const useWarehouseFoundationSiteStructure = (siteId?: string) =>
@@ -91,6 +93,7 @@ export const useWarehouseFoundationSiteHealth = (siteId?: string) =>
     queryFn: () => warehouseApi.getFoundationSiteHealth(siteId!),
     enabled: Boolean(siteId),
     staleTime: 15_000,
+    refetchInterval: 15_000,
   });
 
 export const useWarehouseFoundationSiteControlTower = (siteId?: string) =>
@@ -99,6 +102,7 @@ export const useWarehouseFoundationSiteControlTower = (siteId?: string) =>
     queryFn: () => warehouseApi.getFoundationSiteControlTower(siteId!),
     enabled: Boolean(siteId),
     staleTime: 15_000,
+    refetchInterval: 15_000,
   });
 
 export const useWarehouseFoundationSiteFeed = (siteId?: string, params?: { limit?: number }) =>
@@ -107,6 +111,7 @@ export const useWarehouseFoundationSiteFeed = (siteId?: string, params?: { limit
     queryFn: () => warehouseApi.getFoundationSiteFeed(siteId!, params),
     enabled: Boolean(siteId),
     staleTime: 10_000,
+    refetchInterval: 10_000,
   });
 
 export const useWarehouseFoundationTwinRuntime = (siteId?: string, params?: { draftVersionId?: string }) =>
@@ -115,6 +120,7 @@ export const useWarehouseFoundationTwinRuntime = (siteId?: string, params?: { dr
     queryFn: () => warehouseApi.getFoundationTwinRuntime(siteId!, params),
     enabled: Boolean(siteId),
     staleTime: 10_000,
+    refetchInterval: 10_000,
   });
 
 export const useWarehouseFoundationAssigneePools = (siteId?: string) =>
@@ -162,6 +168,7 @@ export const useWarehouseFoundationBalances = (siteId?: string, params?: { varia
     queryFn: () => warehouseApi.listFoundationBalances(siteId!, params),
     enabled: Boolean(siteId),
     staleTime: 15_000,
+    refetchInterval: 15_000,
   });
 
 export const useWarehouseFoundationReservations = (siteId?: string, params?: { status?: string }) =>
@@ -170,6 +177,7 @@ export const useWarehouseFoundationReservations = (siteId?: string, params?: { s
     queryFn: () => warehouseApi.listFoundationReservations(siteId!, params),
     enabled: Boolean(siteId),
     staleTime: 15_000,
+    refetchInterval: 15_000,
   });
 
 export const useWarehouseFoundationTasks = (siteId?: string, params?: { status?: string; taskType?: string }) =>
@@ -178,6 +186,7 @@ export const useWarehouseFoundationTasks = (siteId?: string, params?: { status?:
     queryFn: () => warehouseApi.listFoundationTasks(siteId!, params),
     enabled: Boolean(siteId),
     staleTime: 10_000,
+    refetchInterval: 10_000,
   });
 
 export const useWarehouseFoundationExceptions = (siteId?: string, params?: { status?: string; severity?: string }) =>
@@ -186,6 +195,7 @@ export const useWarehouseFoundationExceptions = (siteId?: string, params?: { sta
     queryFn: () => warehouseApi.listFoundationExceptions(siteId!, params),
     enabled: Boolean(siteId),
     staleTime: 10_000,
+    refetchInterval: 10_000,
   });
 
 export const useWarehouseFoundationDocuments = (siteId?: string, params?: { documentType?: string }) =>
@@ -621,6 +631,7 @@ export const useProductsAvailability = (names: string[]) => {
     queryFn: () => warehouseApi.checkProducts(sorted),
     enabled: sorted.length > 0,
     staleTime: 30_000,
+    refetchInterval: 30_000,
   });
 };
 
@@ -637,6 +648,7 @@ export const useVariantAvailability = (
     queryFn: () => warehouseApi.checkVariants(JSON.parse(stable)),
     enabled: variants.some((v) => v.name?.trim()),
     staleTime: 30_000,
+    refetchInterval: 30_000,
   });
 };
 

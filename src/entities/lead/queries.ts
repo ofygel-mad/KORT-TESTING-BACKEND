@@ -13,6 +13,7 @@ export const useLeads = (filters?: LeadFilters) =>
   useQuery({
     queryKey: leadKeys.list(filters),
     queryFn: () => leadsApi.list(filters),
+    refetchInterval: 60_000,
   });
 
 export const useLead = (id: string) =>
