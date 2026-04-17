@@ -4,11 +4,12 @@ import { API_BASE_URL, apiClient } from '../api/client';
 
 type SSEOptions = {
   onNotification?: (data: Record<string, any>) => void;
+  onEntityUpdate?: (entities: string[]) => void;
   onConnected?: () => void;
   enabled?: boolean;
 };
 
-export function useSSE({ onNotification, onConnected, enabled = true }: SSEOptions = {}) {
+export function useSSE({ onNotification, onEntityUpdate, onConnected, enabled = true }: SSEOptions = {}) {
   const token = useAuthStore(s => s.token);
   const esRef = useRef<EventSource | null>(null);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout>>();
@@ -49,6 +50,14 @@ export function useSSE({ onNotification, onConnected, enabled = true }: SSEOptio
         // ignore malformed events
       }
     });
+    es.addEventListener('entity_update', (e) => {
+      try {
+        const data = JSON.parse((e as MessageEvent).data);
+        onEntityUpdate?.(data.entities ?? []);
+      } catch {
+        // ignore malformed events
+      }
+    });
 
     es.onerror = () => {
       es.close();
@@ -71,7 +80,7 @@ export function useSSE({ onNotification, onConnected, enabled = true }: SSEOptio
       const delay = Math.min(5000 * Math.pow(1.5, Math.min(failCountRef.current, 4)), 30000);
       reconnectTimer.current = setTimeout(() => connectRef.current(), delay);
     };
-  }, [enabled, onNotification, onConnected]);
+  }, [enabled, onNotification, onEntityUpdate, onConnected]);
 
   // Keep ref in sync with latest connect so onerror closures are never stale
   connectRef.current = connect;

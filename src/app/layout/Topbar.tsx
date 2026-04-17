@@ -43,12 +43,33 @@ function NotificationBell({ enabled }: { enabled: boolean }) {
     enabled,
     onNotification: (data) => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      // Invalidate Chapan queries on order/production events
+      // Legacy: invalidate Chapan on generic notification events
       const entity = (data?.entity ?? data?.type ?? '') as string;
       if (!entity || entity.startsWith('order') || entity.startsWith('chapan') || entity.startsWith('production')) {
         queryClient.invalidateQueries({ queryKey: ['chapan_orders'] });
         queryClient.invalidateQueries({ queryKey: ['chapan_production'] });
         queryClient.invalidateQueries({ queryKey: ['chapan_invoices'] });
+      }
+    },
+    onEntityUpdate: (entities) => {
+      const keyMap: Record<string, readonly unknown[]> = {
+        chapan_orders:          ['chapan_orders'],
+        chapan_production:      ['chapan_production'],
+        chapan_invoices:        ['chapan_invoices'],
+        chapan_returns:         ['chapan_returns'],
+        chapan_change_requests: ['chapan_change_requests'],
+        leads:                  ['leads'],
+        deals:                  ['deals'],
+        customers:              ['customers'],
+        tasks:                  ['tasks'],
+        finance:                ['finance'],
+      };
+      for (const key of entities) {
+        const queryKey = keyMap[key];
+        if (queryKey) queryClient.invalidateQueries({ queryKey });
+        if (key === 'chapan_orders') {
+          queryClient.invalidateQueries({ queryKey: ['chapan_production'] });
+        }
       }
     },
   });
