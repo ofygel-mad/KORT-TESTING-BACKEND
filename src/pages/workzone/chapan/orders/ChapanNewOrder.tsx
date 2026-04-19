@@ -136,8 +136,9 @@ function todayIso() {
 }
 
 function parseOptionalAmount(value: string) {
-  if (!value.trim()) return undefined;
-  const n = Number(value);
+  const digits = value.replace(/[^\d]/g, '');
+  if (!digits) return undefined;
+  const n = Number(digits);
   return Number.isFinite(n) ? n : undefined;
 }
 
@@ -766,7 +767,7 @@ export default function ChapanNewOrderPage() {
                           ? catalogColors
                           : globalWarehouseColors.length > 0
                             ? globalWarehouseColors
-                            : (catalogs?.fabricCatalog ?? []);
+                            : [];
                         return (
                           <SearchableSelect
                             options={colorOpts}
@@ -787,7 +788,7 @@ export default function ChapanNewOrderPage() {
                       <label className={styles.label}>Цена за ед. (₸)</label>
                       <Controller control={control} name={`items.${idx}.unitPrice`} render={({ field: f }) => (
                         <input
-                          type="number" min="0" inputMode="numeric"
+                          type="text" inputMode="numeric"
                           className={styles.input}
                           placeholder="0"
                           value={f.value ?? ''}
@@ -801,7 +802,7 @@ export default function ChapanNewOrderPage() {
                       <label className={styles.label}>Скидка (₸)</label>
                       <Controller control={control} name={`items.${idx}.itemDiscount`} render={({ field: f }) => (
                         <input
-                          type="number" min="0" inputMode="numeric"
+                          type="text" inputMode="numeric"
                           className={styles.input}
                           placeholder="0"
                           value={f.value ?? ''}
@@ -973,7 +974,7 @@ export default function ChapanNewOrderPage() {
                 <span className={styles.finLabel}>Доставка</span>
                 <Controller control={control} name="deliveryFee" render={({ field }) => (
                   <input
-                    type="number" min="0" inputMode="numeric"
+                    type="text" inputMode="numeric"
                     className={styles.finInput}
                     placeholder="0 ₸"
                     value={field.value ?? ''}
@@ -990,7 +991,7 @@ export default function ChapanNewOrderPage() {
                 <div className={styles.discountCompound}>
                   <Controller control={control} name="orderDiscount" render={({ field }) => (
                     <input
-                      type="number" min="0" inputMode="numeric"
+                      type="text" inputMode="numeric"
                       className={`${styles.finInput} ${styles.discountAmtInput}`}
                       placeholder="0 ₸"
                       value={field.value ?? ''}
@@ -1164,7 +1165,7 @@ export default function ChapanNewOrderPage() {
                     <span className={styles.mixedLabel}>{m.label}</span>
                     <Controller control={control} name={`paymentBreakdown.${m.value}`} render={({ field }) => (
                       <input
-                        type="number" min="0" inputMode="numeric"
+                        type="text" inputMode="numeric"
                         className={styles.mixedInput}
                         placeholder="0 ₸"
                         value={field.value ?? ''}

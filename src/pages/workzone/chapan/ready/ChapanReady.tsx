@@ -302,12 +302,6 @@ export default function ChapanReadyPage() {
   }
 
   async function dispatchReadyOrders(targetOrders: ReadyOrder[], onSuccess?: () => void) {
-    const pendingRouting = targetOrders.filter(o => hasPendingRouting(o));
-    if (pendingRouting.length > 0) {
-      setWorkshopBlockedOrders(pendingRouting.map(o => `#${o.orderNumber} — сначала назначьте маршрут всем позициям`));
-      return;
-    }
-
     const pendingWorkshop = targetOrders.filter(o => hasPendingProduction(o));
     if (pendingWorkshop.length > 0) {
       setWorkshopBlockedOrders(pendingWorkshop.map(o => `#${o.orderNumber}`));
@@ -605,16 +599,14 @@ export default function ChapanReadyPage() {
             <button
               className={`${styles.floatingAction} ${styles.floatingActionPrimary}`}
               onClick={handleTransferToWarehouse}
-              disabled={createInvoice.isPending || selectedOrders.some(hasPendingProduction) || selectedOrders.some(hasPendingRouting)}
+              disabled={createInvoice.isPending || selectedOrders.some(hasPendingProduction)}
             >
               <Warehouse size={13} />
-              {selectedOrders.some(hasPendingRouting)
-                ? 'Назначьте маршрут'
-                : selectedOrders.some(hasPendingProduction)
-                  ? 'Ждём цех'
-                  : createInvoice.isPending
-                    ? 'Создание...'
-                    : `На склад (${selectedIds.size})`}
+              {selectedOrders.some(hasPendingProduction)
+                ? 'Ждём цех'
+                : createInvoice.isPending
+                  ? 'Создание...'
+                  : `На склад (${selectedIds.size})`}
             </button>
           </div>
         </div>
@@ -839,7 +831,7 @@ function ReadyCard({
 
       {firstItem && (
         <div className={styles.itemBlock}>
-          <span className={styles.itemName}>{buildItemLine(firstItem)} <span className={styles.orderNumber}>(#{order.orderNumber})</span></span>
+          <span className={styles.itemName}>{buildItemLine(firstItem)}</span>
           <span className={styles.itemMeta}>
             {firstItem.size}{firstItem.quantity > 1 && ` × ${firstItem.quantity}`}
           </span>
@@ -1042,7 +1034,7 @@ function ReadyRow({
       <div className={styles.rowMain}>
         <div className={styles.rowTop}>
           {isSelected && <Check size={13} className={styles.rowCheckmark} />}
-          <span className={styles.orderNumber}>#{order.orderNumber}</span>
+          <span className={styles.itemName}>{buildItemLine(firstItem) || 'Без позиции'}{order.items.length > 1 && ` +${order.items.length - 1}`}</span>
           <span className={styles.statusBadge}>{STATUS_LABEL[order.status]}</span>
           {isPendingRouting && (
             <span className={styles.pendingRoutingBadge}><AlertTriangle size={10} /> {pendingCount} без маршрута</span>
@@ -1065,10 +1057,7 @@ function ReadyRow({
         )}
         <div className={styles.rowClient}>{order.clientName}</div>
         <div className={styles.rowMeta}>
-          <span>
-            {buildItemLine(firstItem) || 'Без позиции'}
-            {order.items.length > 1 && ` +${order.items.length - 1}`}
-          </span>
+          <span className={styles.orderNumberSecondary}>#{order.orderNumber}</span>
           <span>{formatMoney(order.totalAmount)}</span>
           <span>{formatDate(order.dueDate)}</span>
           {order.productionTasks && order.productionTasks.length > 0 && (() => {

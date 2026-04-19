@@ -27,7 +27,6 @@ export type ClientRequest = {
   items: Array<{
     id: string;
     productName: string;
-    fabricPreference?: string;
     size?: string;
     quantity: number;
     notes?: string;
@@ -38,7 +37,6 @@ export type ClientRequest = {
 };
 
 export const PRODUCT_CATALOG = ['Костюм', 'Платье', 'Рубашка'];
-export const FABRIC_CATALOG = ['Хлопок', 'Шелк', 'Лен'];
 export const SIZE_OPTIONS = ['42', '44', '46', '48', '50', '52'];
 
 type ListResponse<T> = { count: number; results: T[] };
@@ -48,7 +46,6 @@ export const chapanApi = {
   getCatalogs: () =>
     api.get<{
       productCatalog: string[];
-      fabricCatalog: string[];
       sizeCatalog: string[];
       workers: string[];
     }>('/chapan/settings/catalogs'),
@@ -65,7 +62,6 @@ export const chapanApi = {
     source?: ClientRequest['source'];
     items: Array<{
       productName: string;
-      fabricPreference?: string;
       size?: string;
       quantity: number;
       notes?: string;

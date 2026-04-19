@@ -186,7 +186,6 @@ model Organization {
   chapanRequests ChapanRequest[]
   chapanWorkers  ChapanWorker[]
   chapanProducts ChapanCatalogProduct[]
-  chapanFabrics  ChapanCatalogFabric[]
   chapanSizes    ChapanCatalogSize[]
   chapanPaymentMethods ChapanCatalogPaymentMethod[]
   chapanInvoices ChapanInvoice[]
@@ -543,17 +542,6 @@ model ChapanCatalogProduct {
   @@map("chapan_catalog_products")
 }
 
-model ChapanCatalogFabric {
-  id    String @id @default(cuid())
-  orgId String @map("org_id")
-  name  String
-
-  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-
-  @@unique([orgId, name])
-  @@map("chapan_catalog_fabrics")
-}
-
 model ChapanCatalogSize {
   id        String @id @default(cuid())
   orgId     String @map("org_id")
@@ -626,7 +614,6 @@ model ChapanRequestItem {
   id               String  @id @default(cuid())
   requestId        String  @map("request_id")
   productName      String  @map("product_name")
-  fabricPreference String? @map("fabric_preference")
   size             String?
   quantity         Int     @default(1)
   notes            String?
@@ -706,7 +693,6 @@ model ChapanOrderItem {
   id                String  @id @default(cuid())
   orderId           String  @map("order_id")
   productName       String  @map("product_name")
-  fabric            String?
   size              String
   quantity          Int     @default(1)
   unitPrice         Float   @map("unit_price")
@@ -732,7 +718,6 @@ model ChapanProductionTask {
   orderId     String    @map("order_id")
   orderItemId String    @unique @map("order_item_id")
   productName String    @map("product_name")
-  fabric      String?
   size        String
   quantity    Int
   status      String    @default("pending")
@@ -940,7 +925,6 @@ model ChapanReturnItem {
   orderItemId     String? @map("order_item_id")
   productName     String  @map("product_name")
   size            String
-  fabric          String?
   color           String?
   gender          String?
   qty             Int     @default(1)

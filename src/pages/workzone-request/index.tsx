@@ -31,13 +31,12 @@ import {
   subMonths,
 } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { chapanApi, FABRIC_CATALOG, PRODUCT_CATALOG, SIZE_OPTIONS, type ClientRequest, type WorkzoneProfile } from './chapanApi';
+import { chapanApi, PRODUCT_CATALOG, SIZE_OPTIONS, type ClientRequest, type WorkzoneProfile } from './chapanApi';
 import styles from './WorkzoneRequest.module.css';
 
 interface DraftItem {
   key: string;
   productName: string;
-  fabricPreference: string;
   size: string;
   quantity: number;
   notes: string;
@@ -73,13 +72,11 @@ const DEFAULT_PROFILE: WorkzoneProfile = {
 
 function buildItem(
   productCatalog: readonly string[],
-  fabricCatalog: readonly string[],
   sizeCatalog: readonly string[],
 ): DraftItem {
   return {
     key: crypto.randomUUID(),
     productName: productCatalog[0] ?? PRODUCT_CATALOG[0],
-    fabricPreference: fabricCatalog[0] ?? FABRIC_CATALOG[0],
     size: sizeCatalog[3] ?? sizeCatalog[0] ?? SIZE_OPTIONS[0],
     quantity: 1,
     notes: '',
@@ -136,7 +133,6 @@ export default function WorkzoneRequestPage() {
   const [videoReady, setVideoReady] = useState(false);
   const [profile, setProfile] = useState<WorkzoneProfile>(DEFAULT_PROFILE);
   const [productCatalog, setProductCatalog] = useState<string[]>([...PRODUCT_CATALOG]);
-  const [fabricCatalog, setFabricCatalog] = useState<string[]>([...FABRIC_CATALOG]);
   const [sizeCatalog, setSizeCatalog] = useState<string[]>([...SIZE_OPTIONS]);
   const [customerName, setCustomerName] = useState('');
   const [phone, setPhone] = useState('+7');
@@ -151,7 +147,7 @@ export default function WorkzoneRequestPage() {
   const [calendarMonth, setCalendarMonth] = useState(() => new Date());
   const [notes, setNotes] = useState('');
   const [items, setItems] = useState<DraftItem[]>([
-    buildItem(PRODUCT_CATALOG, FABRIC_CATALOG, SIZE_OPTIONS),
+    buildItem(PRODUCT_CATALOG, SIZE_OPTIONS),
   ]);
   const calendarRef = useRef<HTMLDivElement | null>(null);
 
@@ -168,9 +164,8 @@ export default function WorkzoneRequestPage() {
 
       setProfile(nextProfile);
       setProductCatalog(settings.productCatalog);
-      setFabricCatalog(settings.fabricCatalog);
       setSizeCatalog(settings.sizeCatalog);
-      setItems([buildItem(settings.productCatalog, settings.fabricCatalog, settings.sizeCatalog)]);
+      setItems([buildItem(settings.productCatalog, settings.sizeCatalog)]);
       setLoading(false);
     })();
 
@@ -236,7 +231,7 @@ export default function WorkzoneRequestPage() {
     setCalendarOpen(false);
     setCalendarMonth(new Date());
     setNotes('');
-    setItems([buildItem(productCatalog, fabricCatalog, sizeCatalog)]);
+    setItems([buildItem(productCatalog, sizeCatalog)]);
   };
 
   const submit = async () => {
@@ -259,7 +254,6 @@ export default function WorkzoneRequestPage() {
       notes: notes || undefined,
       items: items.map((item) => ({
         productName: item.productName,
-        fabricPreference: item.fabricPreference || undefined,
         size: item.size || undefined,
         quantity: item.quantity,
         notes: item.notes || undefined,
@@ -464,7 +458,7 @@ export default function WorkzoneRequestPage() {
                 <div className={styles.panelTitle}>Что нужно изготовить</div>
                 <button
                   className={styles.ghostBtn}
-                  onClick={() => setItems((state) => [...state, buildItem(productCatalog, fabricCatalog, sizeCatalog)])}
+                  onClick={() => setItems((state) => [...state, buildItem(productCatalog, sizeCatalog)])}
                 >
                   <Plus size={14} />
                   Добавить позицию
@@ -495,18 +489,6 @@ export default function WorkzoneRequestPage() {
                           value={item.productName}
                           onChange={(event) => setItems((state) => state.map((entry) => (
                             entry.key === item.key ? { ...entry, productName: event.target.value } : entry
-                          )))}
-                        />
-                      </label>
-
-                      <label className={styles.field}>
-                        <span>Материал или ткань</span>
-                        <input
-                          className={styles.input}
-                          list="client-fabrics"
-                          value={item.fabricPreference}
-                          onChange={(event) => setItems((state) => state.map((entry) => (
-                            entry.key === item.key ? { ...entry, fabricPreference: event.target.value } : entry
                           )))}
                         />
                       </label>
@@ -557,9 +539,6 @@ export default function WorkzoneRequestPage() {
 
               <datalist id="client-products">
                 {productCatalog.map((item) => <option key={item} value={item} />)}
-              </datalist>
-              <datalist id="client-fabrics">
-                {fabricCatalog.map((item) => <option key={item} value={item} />)}
               </datalist>
               <datalist id="client-sizes">
                 {sizeCatalog.map((item) => <option key={item} value={item} />)}

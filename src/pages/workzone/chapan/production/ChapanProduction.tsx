@@ -1,15 +1,13 @@
 import { useDeferredValue, useEffect, useMemo, useState, type CSSProperties } from 'react';
-import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, Factory, Flag, LayoutList, Layers, MessageSquare, Search, User, X } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, Factory, LayoutList, Layers, MessageSquare, Search, User, X } from 'lucide-react';
 import {
   useAssignWorker,
   useChapanCatalogs,
   useClaimProductionTask,
-  useFlagTask,
   usePendingChangeRequests,
   useApproveChangeRequest,
   useRejectChangeRequest,
   useProductionTasks,
-  useUnflagTask,
   useUpdateProductionStatus,
   useWorkshopTasks,
 } from '../../../../entities/order/queries';
@@ -152,8 +150,6 @@ export default function ChapanProductionPage() {
   const [showOnlyRunning, setShowOnlyRunning] = useState(false);
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
-  const [flagModal, setFlagModal] = useState<{ taskId: string } | null>(null);
-  const [flagReason, setFlagReason] = useState('');
   const [rejectModal, setRejectModal] = useState<{ crId: string; orderNumber: string } | null>(null);
   const [rejectReason, setRejectReason] = useState('');
 
@@ -198,8 +194,6 @@ export default function ChapanProductionPage() {
   const claimTask = useClaimProductionTask();
   const updateStatus = useUpdateProductionStatus();
   const assignWorker = useAssignWorker();
-  const flagTask = useFlagTask();
-  const unflagTask = useUnflagTask();
   const approveChangeRequest = useApproveChangeRequest();
   const rejectChangeRequest = useRejectChangeRequest();
 
@@ -240,13 +234,6 @@ export default function ChapanProductionPage() {
       return ua - ub;
     });
   }, [tasks]);
-
-  async function handleFlag() {
-    if (!flagModal || !flagReason.trim()) return;
-    await flagTask.mutateAsync({ taskId: flagModal.taskId, reason: flagReason.trim() });
-    setFlagModal(null);
-    setFlagReason('');
-  }
 
   async function handleClaim(taskId: string) {
     await claimTask.mutateAsync(taskId);
@@ -445,11 +432,6 @@ export default function ChapanProductionPage() {
                         onClaim={handleClaim}
                         onDone={handleMarkDone}
                         onReturnToQueue={handleReturnToQueue}
-                        onFlag={(task) => {
-                          setFlagModal({ taskId: task.id });
-                          setFlagReason('');
-                        }}
-                        onUnflag={(task) => unflagTask.mutate(task.id)}
                       />
                     ) : (
                       <BatchTaskCard
@@ -461,11 +443,6 @@ export default function ChapanProductionPage() {
                         onClaim={handleClaim}
                         onDone={handleMarkDone}
                         onReturnToQueue={handleReturnToQueue}
-                        onFlag={(task) => {
-                          setFlagModal({ taskId: task.id });
-                          setFlagReason('');
-                        }}
-                        onUnflag={(task) => unflagTask.mutate(task.id)}
                       />
                     )
                   ))}
@@ -491,50 +468,8 @@ export default function ChapanProductionPage() {
           onClaim={handleClaim}
           onDone={handleMarkDone}
           onReturnToQueue={handleReturnToQueue}
-          onFlag={(task) => {
-            setFlagModal({ taskId: task.id });
-            setFlagReason('');
-          }}
-          onUnflag={(task) => unflagTask.mutate(task.id)}
         />
       )}
-
-      {flagModal && (
-        <div className={styles.modalOverlay} onClick={() => setFlagModal(null)}>
-          <div className={styles.modal} onClick={(event) => event.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <span>Заблокировать карточку</span>
-              <button className={styles.modalClose} onClick={() => setFlagModal(null)}>
-                <X size={16} />
-              </button>
-            </div>
-            <div className={styles.modalBody}>
-              <label className={styles.modalLabel}>Причина</label>
-              <input
-                className={styles.modalInput}
-                value={flagReason}
-                onChange={(event) => setFlagReason(event.target.value)}
-                placeholder="Например: не хватает ткани или найден дефект"
-                autoFocus
-                onKeyDown={(event) => event.key === 'Enter' && handleFlag()}
-              />
-            </div>
-            <div className={styles.modalFooter}>
-              <button className={styles.modalCancel} onClick={() => setFlagModal(null)}>
-                Отмена
-              </button>
-              <button
-                className={styles.modalSubmit}
-                onClick={handleFlag}
-                disabled={!flagReason.trim() || flagTask.isPending}
-              >
-                Заблокировать
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
 
       {rejectModal && (
         <div className={styles.modalOverlay} onClick={() => setRejectModal(null)}>
@@ -612,8 +547,6 @@ interface TaskListCardProps {
   onClaim: (taskId: string) => Promise<void>;
   onDone: (taskId: string) => Promise<void>;
   onReturnToQueue: (taskId: string) => Promise<void>;
-  onFlag: (task: ProductionTask) => void;
-  onUnflag: (task: ProductionTask) => void;
 }
 
 function TaskListCard({
@@ -624,35 +557,27 @@ function TaskListCard({
   onClaim,
   onDone,
   onReturnToQueue,
-  onFlag,
-  onUnflag,
 }: TaskListCardProps) {
   const deadline = formatDeadline(task.order.dueDate);
   const isUrgent = (task.order.urgency ?? task.order.priority) === 'urgent';
   const isDemanding = task.order.isDemandingClient ?? (task.order.priority === 'vip');
-  const canClaim = !task.isBlocked && (!task.assignedTo || task.assignedTo === currentWorkerName);
+  const canClaim = !task.assignedTo || task.assignedTo === currentWorkerName;
 
   const itemLine = buildItemLine({ productName: task.productName, color: task.color, gender: task.gender }) || task.productName;
 
   return (
     <article
-      className={`${styles.taskListCard} ${task.isBlocked ? styles.taskListCardBlocked : ''} ${isUrgent ? styles.taskListCardUrgent : ''} ${isDemanding && !isUrgent ? styles.taskListCardDemanding : ''}`}
+      className={`${styles.taskListCard} ${isUrgent ? styles.taskListCardUrgent : ''} ${isDemanding && !isUrgent ? styles.taskListCardDemanding : ''}`}
     >
-      {isUrgent && !task.isBlocked && (
+      {isUrgent && (
         <div className={styles.taskListCardUrgentBanner}>
           <AlertTriangle size={11} />
           <span>Срочно</span>
         </div>
       )}
-      {isDemanding && !isUrgent && !task.isBlocked && (
+      {isDemanding && !isUrgent && (
         <div className={styles.taskListCardDemandBanner}>
           <span>⭐ Требовательный</span>
-        </div>
-      )}
-      {task.isBlocked && task.blockReason && (
-        <div className={styles.taskListCardBlockBanner}>
-          <AlertTriangle size={11} />
-          <span>{task.blockReason}</span>
         </div>
       )}
 
@@ -700,28 +625,9 @@ function TaskListCard({
           <button
             className={`${styles.taskListCardActionBtn} ${styles.taskListCardActionSuccess}`}
             onClick={() => onDone(task.id)}
-            disabled={task.isBlocked}
           >
             ✓ Готово
           </button>
-        )}
-
-        {mode === 'manager' && (
-          task.isBlocked ? (
-            <button
-              className={styles.taskListCardActionBtn}
-              onClick={() => onUnflag(task)}
-            >
-              Снять блок
-            </button>
-          ) : (
-            <button
-              className={styles.taskListCardActionBtn}
-              onClick={() => onFlag(task)}
-            >
-              🚩 Блок
-            </button>
-          )
         )}
       </div>
     </article>
@@ -738,8 +644,6 @@ interface ProductionListViewProps {
   onClaim: (taskId: string) => Promise<void>;
   onDone: (taskId: string) => Promise<void>;
   onReturnToQueue: (taskId: string) => Promise<void>;
-  onFlag: (task: ProductionTask) => void;
-  onUnflag: (task: ProductionTask) => void;
 }
 
 function ProductionListView({
@@ -752,8 +656,6 @@ function ProductionListView({
   onClaim,
   onDone,
   onReturnToQueue,
-  onFlag,
-  onUnflag,
 }: ProductionListViewProps) {
   const displayQueuedGroups = grouped ? buildTaskGroups(queuedTasks) : queuedTasks.map((task) => ({ kind: 'single' as const, task }));
   const displayRunningGroups = grouped ? buildTaskGroups(runningTasks) : runningTasks.map((task) => ({ kind: 'single' as const, task }));
@@ -769,7 +671,6 @@ function ProductionListView({
             <div className={styles.taskListHeaderContent}>
               <div className={styles.taskListHeaderLabel}>Товар</div>
               <div className={styles.taskListHeaderLabel}>Цвет</div>
-              <div className={styles.taskListHeaderLabel}>Ткань</div>
               <div className={styles.taskListHeaderLabel}>Размер</div>
               <div className={styles.taskListHeaderLabel}>Длина</div>
               <div className={styles.taskListHeaderLabel}>Кол-во</div>
@@ -789,8 +690,6 @@ function ProductionListView({
             onClaim={onClaim}
             onDone={onDone}
             onReturnToQueue={onReturnToQueue}
-            onFlag={onFlag}
-            onUnflag={onUnflag}
           />
         ))}
       </CollapsibleSection>
@@ -802,7 +701,6 @@ function ProductionListView({
             <div className={styles.taskListHeaderContent}>
               <div className={styles.taskListHeaderLabel}>Товар</div>
               <div className={styles.taskListHeaderLabel}>Цвет</div>
-              <div className={styles.taskListHeaderLabel}>Ткань</div>
               <div className={styles.taskListHeaderLabel}>Размер</div>
               <div className={styles.taskListHeaderLabel}>Длина</div>
               <div className={styles.taskListHeaderLabel}>Кол-во</div>
@@ -822,8 +720,6 @@ function ProductionListView({
             onClaim={onClaim}
             onDone={onDone}
             onReturnToQueue={onReturnToQueue}
-            onFlag={onFlag}
-            onUnflag={onUnflag}
           />
         ))}
       </CollapsibleSection>
@@ -936,8 +832,6 @@ interface TaskCardProps {
   onClaim: (taskId: string) => Promise<void>;
   onDone: (taskId: string) => Promise<void>;
   onReturnToQueue: (taskId: string) => Promise<void>;
-  onFlag: (task: ProductionTask) => void;
-  onUnflag: (task: ProductionTask) => void;
 }
 
 function TaskCard({
@@ -948,36 +842,28 @@ function TaskCard({
   onClaim,
   onDone,
   onReturnToQueue,
-  onFlag,
-  onUnflag,
 }: TaskCardProps) {
   const deadline = formatDeadline(task.order.dueDate);
-  const canClaim = !task.isBlocked && (!task.assignedTo || task.assignedTo === currentWorkerName);
+  const canClaim = !task.assignedTo || task.assignedTo === currentWorkerName;
   const isUrgent = (task.order.urgency ?? task.order.priority) === 'urgent';
   const isDemanding = task.order.isDemandingClient ?? (task.order.priority === 'vip');
 
   return (
-    <article className={`${styles.card} ${task.isBlocked ? styles.cardBlocked : ''} ${isUrgent ? styles.cardUrgent : ''} ${isDemanding && !isUrgent ? styles.cardDemanding : ''}`}>
-      {isUrgent && !task.isBlocked && (
+    <article className={`${styles.card} ${isUrgent ? styles.cardUrgent : ''} ${isDemanding && !isUrgent ? styles.cardDemanding : ''}`}>
+      {isUrgent && (
         <div className={styles.urgentBanner}>
           <AlertTriangle size={11} />
           <span>Срочно</span>
         </div>
       )}
-      {isDemanding && !isUrgent && !task.isBlocked && (
+      {isDemanding && !isUrgent && (
         <div className={styles.demandBanner}>
           <span>⭐ Требовательный клиент</span>
         </div>
       )}
-      {isUrgent && isDemanding && !task.isBlocked && (
+      {isUrgent && isDemanding && (
         <div className={styles.demandBanner} style={{ marginTop: 2 }}>
           <span>⭐ Требовательный</span>
-        </div>
-      )}
-      {task.isBlocked && task.blockReason && (
-        <div className={styles.blockBanner}>
-          <AlertTriangle size={12} />
-          <span>{task.blockReason}</span>
         </div>
       )}
 
@@ -1034,7 +920,6 @@ function TaskCard({
             <button
               className={styles.successAction}
               onClick={() => onDone(task.id)}
-              disabled={task.isBlocked}
             >
               <CheckCircle2 size={13} />
               Готово
@@ -1045,18 +930,6 @@ function TaskCard({
               </button>
             )}
           </>
-        )}
-
-        {mode === 'manager' && (
-          task.isBlocked ? (
-            <button className={styles.ghostAction} onClick={() => onUnflag(task)}>
-              Снять блок
-            </button>
-          ) : (
-            <button className={styles.iconAction} onClick={() => onFlag(task)} title="Заблокировать">
-              <Flag size={12} />
-            </button>
-          )
         )}
       </div>
 
@@ -1073,8 +946,6 @@ interface BatchTaskCardProps {
   onClaim: (taskId: string) => Promise<void>;
   onDone: (taskId: string) => Promise<void>;
   onReturnToQueue: (taskId: string) => Promise<void>;
-  onFlag: (task: ProductionTask) => void;
-  onUnflag: (task: ProductionTask) => void;
 }
 
 function BatchTaskCard({
@@ -1085,14 +956,11 @@ function BatchTaskCard({
   onClaim,
   onDone,
   onReturnToQueue,
-  onFlag,
-  onUnflag,
 }: BatchTaskCardProps) {
   const [expanded, setExpanded] = useState(false);
   const firstTask = tasks[0];
   const batchColor = getTaskBatchColor(firstTask);
   const totalQty = tasks.reduce((sum, task) => sum + task.quantity, 0);
-  const blockedCount = tasks.filter((task) => task.isBlocked).length;
 
   const dateRange = useMemo(() => {
     const dated = tasks
@@ -1109,7 +977,7 @@ function BatchTaskCard({
 
   async function handleClaimAll() {
     for (const task of tasks) {
-      const canClaim = !task.isBlocked && (!task.assignedTo || task.assignedTo === currentWorkerName);
+      const canClaim = !task.assignedTo || task.assignedTo === currentWorkerName;
       if (canClaim) {
         await onClaim(task.id);
       }
@@ -1118,9 +986,7 @@ function BatchTaskCard({
 
   async function handleDoneAll() {
     for (const task of tasks) {
-      if (!task.isBlocked) {
-        await onDone(task.id);
-      }
+      await onDone(task.id);
     }
   }
 
@@ -1132,12 +998,6 @@ function BatchTaskCard({
         <div className={styles.batchHead}>
           <span className={styles.batchBadge}>{tasks.length}</span>
           <span className={styles.batchLabel}>карточки</span>
-          {blockedCount > 0 && (
-            <span className={styles.batchBlocked}>
-              <AlertTriangle size={10} />
-              {blockedCount}
-            </span>
-          )}
           <button className={styles.batchExpand} onClick={() => setExpanded((value) => !value)}>
             {expanded ? 'Скрыть' : 'Открыть'}
           </button>
@@ -1163,7 +1023,7 @@ function BatchTaskCard({
         {column === 'in_progress' && (
           <button className={styles.successAction} onClick={handleDoneAll}>
             <CheckCircle2 size={13} />
-            Готово ×{tasks.filter((task) => !task.isBlocked).length}
+            Готово ×{tasks.length}
           </button>
         )}
       </div>
@@ -1180,8 +1040,6 @@ function BatchTaskCard({
               onClaim={onClaim}
               onDone={onDone}
               onReturnToQueue={onReturnToQueue}
-              onFlag={onFlag}
-              onUnflag={onUnflag}
             />
           ))}
         </div>

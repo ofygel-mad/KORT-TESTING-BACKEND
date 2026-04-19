@@ -344,7 +344,6 @@ export interface AddPaymentDto {
 // Backend returns string[] for catalogs (not {id,name}[])
 export interface ChapanCatalogs {
   productCatalog: string[];
-  fabricCatalog: string[];
   sizeCatalog: string[];
   workers: string[];
   paymentMethodCatalog: string[];   // Sprint 4: user-managed payment methods

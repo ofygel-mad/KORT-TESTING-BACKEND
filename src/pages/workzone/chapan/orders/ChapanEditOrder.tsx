@@ -97,8 +97,9 @@ function SearchableSelect({ options, placeholder, className, value, onChange, on
 }
 
 function parseOptionalAmount(value: string) {
-  if (!value.trim()) return undefined;
-  const n = Number(value);
+  const digits = value.replace(/[^\d]/g, '');
+  if (!digits) return undefined;
+  const n = Number(digits);
   return Number.isFinite(n) ? n : undefined;
 }
 
@@ -790,7 +791,7 @@ export default function ChapanEditOrderPage() {
                 <label className={styles.label}>Сумма доставки (₸)</label>
                 <Controller control={control} name="deliveryFee" render={({ field }) => (
                   <input
-                    type="number" min="0" inputMode="numeric"
+                    type="text" inputMode="numeric"
                     className={styles.input}
                     placeholder="0 ₸"
                     value={field.value ?? ''}
@@ -826,7 +827,7 @@ export default function ChapanEditOrderPage() {
                 <div className={styles.discountCompound}>
                   <Controller control={control} name="orderDiscount" render={({ field }) => (
                     <input
-                      type="number" min="0" inputMode="numeric"
+                      type="text" inputMode="numeric"
                       className={`${styles.finInput} ${styles.discountAmtInput}`}
                       placeholder="0 ₸"
                       value={field.value ?? ''}
@@ -1002,7 +1003,7 @@ export default function ChapanEditOrderPage() {
                     <span className={styles.mixedLabel}>{m.label}</span>
                     <Controller control={control} name={`paymentBreakdown.${m.value}`} render={({ field }) => (
                       <input
-                        type="number" min="0" inputMode="numeric"
+                        type="text" inputMode="numeric"
                         className={styles.mixedInput}
                         placeholder="0 ₸"
                         value={field.value ?? ''}

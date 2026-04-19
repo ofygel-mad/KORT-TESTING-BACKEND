@@ -22,7 +22,6 @@ const TABLE_KEYS = [
 ] as const satisfies ReadonlyArray<keyof InvoiceDocumentRow>;
 
 const WAREHOUSE_PRICE_LABEL = 'Внутр. цена';
-const ALL_ORDERS_FILTER = '__all__';
 
 function cloneDocument(document: InvoiceDocumentPayload): InvoiceDocumentPayload {
   return JSON.parse(JSON.stringify(document)) as InvoiceDocumentPayload;
@@ -44,10 +43,6 @@ function formatSourceOrders(sourceOrders?: InvoiceDocumentSourceOrder[]) {
   return sourceOrders.map((sourceOrder) => `#${sourceOrder.orderNumber}`).join(' / ');
 }
 
-function rowContainsOrder(row: InvoiceDocumentRow, orderId: string) {
-  return (row.sourceOrders ?? []).some((sourceOrder) => sourceOrder.orderId === orderId);
-}
-
 function calculateTotals(document: InvoiceDocumentPayload | null) {
   if (!document) {
     return { totalQuantity: 0, totalAmount: 0 };
@@ -65,39 +60,6 @@ function calculateRowTotals(rows: InvoiceDocumentRow[]) {
     },
     { totalQuantity: 0, totalAmount: 0 },
   );
-}
-
-function collectSourceOrders(document: InvoiceDocumentPayload | null) {
-  if (!document) {
-    return [];
-  }
-
-  const orderMap = new Map<string, {
-    orderId: string;
-    orderNumber: string;
-    rowCount: number;
-    rows: string[];
-  }>();
-
-  for (const row of document.rows) {
-    for (const sourceOrder of row.sourceOrders ?? []) {
-      const existing = orderMap.get(sourceOrder.orderId);
-      if (existing) {
-        existing.rowCount += 1;
-        existing.rows.push(row.id);
-        continue;
-      }
-
-      orderMap.set(sourceOrder.orderId, {
-        orderId: sourceOrder.orderId,
-        orderNumber: sourceOrder.orderNumber,
-        rowCount: 1,
-        rows: [row.id],
-      });
-    }
-  }
-
-  return Array.from(orderMap.values()).sort((a, b) => a.orderNumber.localeCompare(b.orderNumber, 'ru'));
 }
 
 interface Props {
@@ -130,7 +92,6 @@ export default function ChapanInvoicePreviewModal({
   const [editing, setEditing] = useState(false);
   const [confirmCloseOpen, setConfirmCloseOpen] = useState(false);
   const [downloading, setDownloading] = useState(false);
-  const [activeOrderId, setActiveOrderId] = useState<string>(ALL_ORDERS_FILTER);
   const [activeRowId, setActiveRowId] = useState<string | null>(null);
 
   const sourceDocument = invoiceMode ? (invoice?.documentPayload ?? null) : (draftDocument ?? null);
@@ -145,7 +106,6 @@ export default function ChapanInvoicePreviewModal({
     setSavedSnapshot('');
     setEditing(false);
     setConfirmCloseOpen(false);
-    setActiveOrderId(ALL_ORDERS_FILTER);
     setActiveRowId(null);
   }, [invoiceId, open, draftTitle]);
 
@@ -156,40 +116,12 @@ export default function ChapanInvoicePreviewModal({
     setSavedSnapshot(serializeDocument(next));
     setEditing(false);
     setConfirmCloseOpen(false);
-    setActiveOrderId(ALL_ORDERS_FILTER);
     setActiveRowId(next.rows[0]?.id ?? null);
   }, [open, sourceDocument]);
 
   const dirty = draft !== null && serializeDocument(draft) !== savedSnapshot;
   const totals = useMemo(() => calculateTotals(draft), [draft]);
-  const sourceOrders = useMemo(() => collectSourceOrders(draft), [draft]);
-
-  const visibleRows = useMemo(() => {
-    if (!draft) {
-      return [];
-    }
-
-    if (activeOrderId === ALL_ORDERS_FILTER) {
-      return draft.rows;
-    }
-
-    return draft.rows.filter((row) => rowContainsOrder(row, activeOrderId));
-  }, [activeOrderId, draft]);
-  const visibleTotals = useMemo(() => calculateRowTotals(visibleRows), [visibleRows]);
-  const activeOrder = useMemo(
-    () => sourceOrders.find((order) => order.orderId === activeOrderId) ?? null,
-    [activeOrderId, sourceOrders],
-  );
-
-  useEffect(() => {
-    if (!draft) {
-      return;
-    }
-
-    if (activeOrderId !== ALL_ORDERS_FILTER && !sourceOrders.some((order) => order.orderId === activeOrderId)) {
-      setActiveOrderId(ALL_ORDERS_FILTER);
-    }
-  }, [activeOrderId, draft, sourceOrders]);
+  const visibleRows = draft?.rows ?? [];
 
   useEffect(() => {
     if (!visibleRows.some((row) => row.id === activeRowId)) {
@@ -281,7 +213,6 @@ export default function ChapanInvoicePreviewModal({
     setDraft(next);
     setSavedSnapshot(serializeDocument(next));
     setEditing(false);
-    setActiveOrderId(ALL_ORDERS_FILTER);
     setActiveRowId(next.rows[0]?.id ?? null);
   }
 
@@ -364,48 +295,6 @@ export default function ChapanInvoicePreviewModal({
 
           {!effectiveLoading && draft && (
             <div className={styles.workspace}>
-              <aside className={styles.ordersPanel}>
-                <div className={styles.panelHead}>
-                  <div className={styles.panelTitle}>Заказы в накладной</div>
-                  <div className={styles.panelSubTitle}>
-                    Нажмите на заказ, чтобы увидеть только связанные строки
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  className={`${styles.orderCard} ${activeOrderId === ALL_ORDERS_FILTER ? styles.orderCardActive : ''}`}
-                  onClick={() => setActiveOrderId(ALL_ORDERS_FILTER)}
-                >
-                  <div className={styles.orderCardTop}>
-                    <strong>Все заказы</strong>
-                    <span>{draft.rows.length} строк</span>
-                  </div>
-                  <div className={styles.orderCardMeta}>
-                    Общая сводная таблица по текущей накладной
-                  </div>
-                </button>
-
-                <div className={styles.orderList}>
-                  {sourceOrders.map((order) => (
-                    <button
-                      key={order.orderId}
-                      type="button"
-                      className={`${styles.orderCard} ${activeOrderId === order.orderId ? styles.orderCardActive : ''}`}
-                      onClick={() => setActiveOrderId(order.orderId)}
-                    >
-                      <div className={styles.orderCardTop}>
-                        <strong>#{order.orderNumber}</strong>
-                        <span>{order.rowCount} строк</span>
-                      </div>
-                      <div className={styles.orderCardMeta}>
-                        Входит в {order.rowCount} сводн{order.rowCount === 1 ? 'ую строку' : order.rowCount < 5 ? 'ые строки' : 'ых строк'}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </aside>
-
               <section className={styles.content}>
                 <div className={styles.summaryGrid}>
                   <div className={styles.summaryCard}>
@@ -421,39 +310,16 @@ export default function ChapanInvoicePreviewModal({
                     <strong>{visibleRows.length}</strong>
                   </div>
                   <div className={styles.summaryCard}>
-                    <span>{activeOrder ? 'Итого в фильтре' : 'Итого по документу'}</span>
-                    <strong>{formatMoney(activeOrder ? visibleTotals.totalAmount : totals.totalAmount)} ₸</strong>
+                    <span>Итого по документу</span>
+                    <strong>{formatMoney(totals.totalAmount)} ₸</strong>
                   </div>
                 </div>
-
-                {activeOrder && (
-                  <div className={styles.filterBanner}>
-                    <div className={styles.filterBannerText}>
-                      Сейчас открыт заказ <strong>#{activeOrder.orderNumber}</strong>.
-                      В таблице показаны только связанные строки, количество: <strong>{visibleRows.length}</strong>.
-                    </div>
-                    <button
-                      type="button"
-                      className={styles.filterReset}
-                      onClick={() => setActiveOrderId(ALL_ORDERS_FILTER)}
-                    >
-                      Показать всю накладную
-                    </button>
-                  </div>
-                )}
 
                 <div className={styles.section}>
                   <div className={styles.sectionHeader}>
                     <div>
                       <div className={styles.sectionTitle}>Таблица накладной</div>
-                      <div className={styles.sectionSubtitle}>
-                        {activeOrderId === ALL_ORDERS_FILTER
-                          ? 'Показана полная сводная таблица'
-                          : 'Показаны только строки по выбранному заказу'}
-                      </div>
-                    </div>
-                    <div className={styles.sectionBadge}>
-                      {activeOrder ? `Заказ #${activeOrder.orderNumber}` : 'Все заказы'}
+                      <div className={styles.sectionSubtitle}>Показана полная сводная таблица</div>
                     </div>
                   </div>
 
@@ -502,10 +368,9 @@ export default function ChapanInvoicePreviewModal({
                                           <button
                                             key={sourceOrder.orderId}
                                             type="button"
-                                            className={`${styles.orderChip} ${activeOrderId === sourceOrder.orderId ? styles.orderChipActive : ''}`}
+                                            className={styles.orderChip}
                                             onClick={(event) => {
                                               event.stopPropagation();
-                                              setActiveOrderId(sourceOrder.orderId);
                                               setActiveRowId(row.id);
                                             }}
                                           >

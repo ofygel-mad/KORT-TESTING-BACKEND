@@ -4,7 +4,7 @@ const KEY_RU: Record<string, string> = {
 const VAL_RU: Record<string, string> = {
   female: 'Женский', male: 'Мужской',
 };
-const SKIP_KEYS = new Set(['fabric']);
+const SKIP_KEYS = new Set<string>();
 
 export function localizeAttrSummary(s: string | null | undefined): string {
   if (!s) return '';

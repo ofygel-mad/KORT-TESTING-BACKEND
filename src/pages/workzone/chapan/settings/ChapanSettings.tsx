@@ -13,32 +13,8 @@ import {
 } from '../../../../shared/lib/chapanCatalogDefaults';
 import styles from './ChapanSettings.module.css';
 
-type CatalogKey = 'productCatalog' | 'fabricCatalog' | 'sizeCatalog' | 'workers' | 'paymentMethodCatalog';
+type CatalogKey = 'productCatalog' | 'sizeCatalog' | 'workers' | 'paymentMethodCatalog';
 type SettingsTab = 'catalogs' | 'profile' | 'clients' | 'account';
-
-const PRESET_COLORS: Array<{ name: string; hex: string }> = [
-  { name: 'Синий',                hex: '#1d4ed8' },
-  { name: 'Светлый беж',          hex: '#e8d5b0' },
-  { name: 'Голубой',              hex: '#38bdf8' },
-  { name: 'Мокрый асфальт',       hex: '#4a5568' },
-  { name: 'Верблюжка',            hex: '#c19a6b' },
-  { name: 'Черный',               hex: '#111111' },
-  { name: 'Оранжевый',            hex: '#f97316' },
-  { name: 'Коричневый',           hex: '#7c4a1e' },
-  { name: 'Серый',                hex: '#9ca3af' },
-  { name: 'Изумруд',              hex: '#059669' },
-  { name: 'Шоколадный',           hex: '#5c2e0e' },
-  { name: 'Розовый',              hex: '#f472b6' },
-  { name: 'Белый',                hex: '#f5f5f5' },
-  { name: 'Красный',              hex: '#dc2626' },
-  { name: 'Зеленый',              hex: '#16a34a' },
-  { name: 'Бордовый',             hex: '#9b1c1c' },
-  { name: 'Фиолетовый',           hex: '#7c3aed' },
-  { name: 'Кофе',                 hex: '#6f4e37' },
-  { name: 'Желтый',               hex: '#eab308' },
-  { name: 'Темно мокрый',         hex: '#1e2a3a' },
-  { name: 'Хаки (темно-зеленый)', hex: '#4a5e2e' },
-];
 
 export default function ChapanSettingsPage() {
   const { isAbsolute } = useEmployeePermissions();
@@ -81,7 +57,7 @@ export default function ChapanSettingsPage() {
 // ── Catalogs tab ──────────────────────────────────────────────────────────────
 
 function emptyDraft(): ChapanCatalogs {
-  return { productCatalog: [], fabricCatalog: [], sizeCatalog: [], workers: [], paymentMethodCatalog: [] };
+  return { productCatalog: [], sizeCatalog: [], workers: [], paymentMethodCatalog: [] };
 }
 
 function CatalogsTab() {
@@ -131,11 +107,6 @@ function CatalogsTab() {
     setList('paymentMethodCatalog', normalizePaymentCatalog(getList('paymentMethodCatalog')));
   }
 
-  function toggleColor(name: string) {
-    const active = getList('fabricCatalog');
-    setList('fabricCatalog', active.includes(name) ? active.filter(v => v !== name) : [...active, name]);
-  }
-
   async function handleSave() {
     if (!draft) return;
     await saveCatalogs.mutateAsync({
@@ -164,8 +135,6 @@ function CatalogsTab() {
           </div>
         </div>
       )}
-
-      <ColorCatalogSection activeColors={getList('fabricCatalog')} onToggle={toggleColor} />
 
       <div className={styles.catalogGrid}>
         <CatalogSection
@@ -288,49 +257,6 @@ function CatalogSection({
         {items.length === 0 && <div className={styles.catalogEmpty}>Список пуст</div>}
       </div>
       {hint && hint}
-    </div>
-  );
-}
-
-// ── Color catalog section ─────────────────────────────────────────────────────
-
-function ColorCatalogSection({
-  activeColors,
-  onToggle,
-}: {
-  activeColors: string[];
-  onToggle: (name: string) => void;
-}) {
-  return (
-    <div className={styles.colorSection}>
-      <div className={styles.colorSectionHead}>
-        <span className={styles.catalogTitle}>Цвета товаров</span>
-        <span className={styles.colorSectionHint}>
-          {activeColors.length > 0 ? `Выбрано: ${activeColors.length}` : 'Нажмите на цвет, чтобы включить его'}
-        </span>
-      </div>
-      <div className={styles.colorGrid}>
-        {PRESET_COLORS.map((c) => {
-          const active = activeColors.includes(c.name);
-          return (
-            <button
-              key={c.name}
-              type="button"
-              className={`${styles.colorChip} ${active ? styles.colorChipActive : ''}`}
-              onClick={() => onToggle(c.name)}
-            >
-              <span
-                className={styles.colorDot}
-                style={{
-                  background: c.hex,
-                  border: c.name === 'Белый' ? '1px solid rgba(255,255,255,0.3)' : undefined,
-                }}
-              />
-              <span>{c.name}</span>
-            </button>
-          );
-        })}
-      </div>
     </div>
   );
 }
