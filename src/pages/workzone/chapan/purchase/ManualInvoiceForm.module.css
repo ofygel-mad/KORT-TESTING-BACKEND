@@ -1,0 +1,124 @@
+/* ── Overlay ── */
+.overlay {
+  position: fixed; inset: 0; z-index: 800;
+  background: rgba(0, 0, 0, .45);
+  display: flex; align-items: flex-end; justify-content: center;
+  padding: 0;
+}
+@media (min-width: 640px) {
+  .overlay { align-items: center; padding: 24px; }
+}
+
+/* ── Dialog ── */
+.dialog {
+  background: var(--ch-surface);
+  border: 1px solid var(--ch-border);
+  border-radius: 16px 16px 0 0;
+  width: 100%; max-width: 780px;
+  max-height: 92vh;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+@media (min-width: 640px) {
+  .dialog { border-radius: 16px; }
+}
+
+/* ── Header ── */
+.dialogHeader {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--ch-border);
+  flex-shrink: 0;
+}
+.dialogTitle { font-size: 15px; font-weight: 700; color: var(--ch-text); }
+.closeBtn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: 8px;
+  border: 1px solid var(--ch-border); background: transparent;
+  color: var(--ch-text-muted); cursor: pointer;
+  transition: border-color 140ms, color 140ms;
+}
+.closeBtn:hover { border-color: var(--ch-plat-border); color: var(--ch-text); }
+
+/* ── Body ── */
+.dialogBody { padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; flex: 1; }
+
+/* ── Fields ── */
+.field { display: flex; flex-direction: column; gap: 5px; }
+.label { font-size: 12px; font-weight: 600; color: var(--ch-text-muted); text-transform: uppercase; letter-spacing: .04em; }
+.input {
+  padding: 9px 12px; border-radius: 8px;
+  border: 1px solid var(--ch-border); background: var(--ch-card);
+  color: var(--ch-text); font: inherit; font-size: 13px;
+  transition: border-color 140ms;
+}
+.input:focus { outline: none; border-color: var(--ch-plat-border); }
+.textarea { resize: vertical; min-height: 64px; }
+
+/* ── Items table ── */
+.itemsSection { display: flex; flex-direction: column; gap: 10px; }
+.itemsHeader { display: flex; align-items: center; justify-content: space-between; }
+.itemsLabel { font-size: 12px; font-weight: 600; color: var(--ch-text-muted); text-transform: uppercase; letter-spacing: .04em; }
+.addRowBtn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 10px; border-radius: 7px;
+  border: 1px solid var(--ch-border); background: transparent;
+  color: var(--ch-text-muted); font: inherit; font-size: 12px;
+  cursor: pointer; transition: border-color 140ms, color 140ms;
+}
+.addRowBtn:hover { border-color: var(--ch-plat-border); color: var(--ch-plat-bright); }
+
+.itemsTable { width: 100%; border-collapse: collapse; font-size: 12px; }
+.itemsTable th {
+  padding: 7px 8px; text-align: left;
+  color: var(--ch-text-muted); font-weight: 600;
+  text-transform: uppercase; letter-spacing: .04em;
+  border-bottom: 1px solid var(--ch-border); white-space: nowrap;
+}
+.itemsTable td { padding: 5px 4px; vertical-align: middle; }
+.cellInput {
+  width: 100%; padding: 6px 8px; border-radius: 6px;
+  border: 1px solid var(--ch-border); background: var(--ch-card);
+  color: var(--ch-text); font: inherit; font-size: 12px;
+  transition: border-color 140ms;
+}
+.cellInput:focus { outline: none; border-color: var(--ch-plat-border); }
+.cellInput[type='number'] { text-align: right; }
+.removeRow {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border-radius: 6px;
+  border: none; background: transparent;
+  color: var(--ch-text-muted); cursor: pointer;
+  transition: color 140ms, background 140ms;
+}
+.removeRow:hover { color: #EF4444; background: color-mix(in srgb, #EF4444 10%, transparent); }
+
+/* ── Total ── */
+.totalRow {
+  display: flex; justify-content: flex-end; align-items: center; gap: 10px;
+  padding-top: 10px; border-top: 1px solid var(--ch-border);
+  font-size: 14px; font-weight: 600; color: var(--ch-text);
+}
+.totalLabel { color: var(--ch-text-muted); font-weight: 400; }
+
+/* ── Footer ── */
+.dialogFooter {
+  display: flex; justify-content: flex-end; gap: 10px;
+  padding: 14px 20px; border-top: 1px solid var(--ch-border);
+  flex-shrink: 0;
+}
+.cancelBtn {
+  padding: 8px 16px; border-radius: 8px;
+  border: 1px solid var(--ch-border); background: transparent;
+  color: var(--ch-text-muted); font: inherit; font-size: 13px;
+  cursor: pointer; transition: border-color 140ms, color 140ms;
+}
+.cancelBtn:hover { border-color: var(--ch-plat-border); color: var(--ch-text); }
+.saveBtn {
+  padding: 8px 18px; border-radius: 8px;
+  border: none; background: var(--ch-plat); color: #fff;
+  font: inherit; font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: opacity 140ms;
+}
+.saveBtn:hover:not(:disabled) { opacity: .88; }
+.saveBtn:disabled { opacity: .5; cursor: not-allowed; }

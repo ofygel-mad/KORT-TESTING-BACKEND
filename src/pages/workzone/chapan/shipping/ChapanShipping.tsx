@@ -1,21 +1,11 @@
-import { useState, useDeferredValue } from 'react';
+import { useDeferredValue, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, CircleCheck, Check, X, AlertCircle, ExternalLink } from 'lucide-react';
+import { AlertCircle, ExternalLink, Package, Search, Truck } from 'lucide-react';
 import { useOrders } from '../../../../entities/order/queries';
 import type { ChapanOrder, OrderStatus } from '../../../../entities/order/types';
-import styles from './ChapanArchive.module.css';
+import styles from './ChapanShipping.module.css';
 
-const STATUS_LABEL: Record<OrderStatus, string> = {
-  new: 'Новый',
-  confirmed: 'Подтверждён',
-  in_production: 'В цехе',
-  ready: 'Готов',
-  transferred: 'Передан',
-  on_warehouse: 'На складе',
-  shipped: 'Отправлен',
-  completed: 'Завершён',
-  cancelled: 'Отменён',
-};
+type ShippingTab = 'pending' | 'shipped';
 
 const STATUS_COLOR: Record<OrderStatus, string> = {
   new: '#7C3AED',
@@ -47,31 +37,63 @@ function fmt(n: number) {
 
 function fmtDate(d: string | null) {
   if (!d) return '';
-  return new Date(d).toLocaleDateString('ru-KZ', { day: '2-digit', month: 'short', year: 'numeric' });
+  return new Date(d).toLocaleDateString('ru-KZ', { day: '2-digit', month: 'short' });
 }
 
-export default function ChapanArchivePage() {
+export default function ChapanShippingPage() {
   const navigate = useNavigate();
+  const [tab, setTab] = useState<ShippingTab>('pending');
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
   const deferred = useDeferredValue(search);
 
-  const { data, isLoading, isError } = useOrders({
-    statuses: statusFilter || 'completed,cancelled',
+  const pendingQuery = useOrders({
+    statuses: 'on_warehouse',
     search: deferred || undefined,
     limit: 200,
   });
 
-  const orders: ChapanOrder[] = data?.results ?? [];
+  const shippedQuery = useOrders({
+    statuses: 'shipped',
+    search: deferred || undefined,
+    limit: 200,
+  });
+
+  const activeQuery = tab === 'pending' ? pendingQuery : shippedQuery;
+  const orders: ChapanOrder[] = activeQuery.data?.results ?? [];
 
   return (
     <div className={`${styles.root} kort-page-enter`}>
       <div className={styles.header}>
         <div className={styles.headerTitle}>
-          <CircleCheck size={18} />
-          <span>Завершённые заказы</span>
+          <Truck size={18} />
+          <span>Отправка</span>
         </div>
-        <div className={styles.headerSub}>Выполненные и отменённые заказы</div>
+        <div className={styles.headerSub}>Управление отгрузкой заказов клиентам</div>
+      </div>
+
+      <div className={styles.tabs}>
+        <button
+          type="button"
+          className={`${styles.tab} ${tab === 'pending' ? styles.tabActive : ''}`}
+          onClick={() => setTab('pending')}
+        >
+          <Package size={14} />
+          <span>На складе</span>
+          {pendingQuery.data && (
+            <span className={styles.tabBadge}>{pendingQuery.data.count}</span>
+          )}
+        </button>
+        <button
+          type="button"
+          className={`${styles.tab} ${tab === 'shipped' ? styles.tabActive : ''}`}
+          onClick={() => setTab('shipped')}
+        >
+          <Truck size={14} />
+          <span>Отправлены</span>
+          {shippedQuery.data && (
+            <span className={styles.tabBadge}>{shippedQuery.data.count}</span>
+          )}
+        </button>
       </div>
 
       <div className={styles.toolbar}>
@@ -84,51 +106,48 @@ export default function ChapanArchivePage() {
             placeholder="Номер, клиент, модель..."
           />
         </div>
-        <select
-          className={styles.statusSelect}
-          value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value)}
-        >
-          <option value="">Все</option>
-          <option value="completed">Завершённые</option>
-          <option value="cancelled">Отменённые</option>
-        </select>
       </div>
 
-      {!isLoading && <div className={styles.count}>{data?.count ?? 0} заказов</div>}
+      {!activeQuery.isLoading && (
+        <div className={styles.count}>{activeQuery.data?.count ?? 0} заказов</div>
+      )}
 
-      {isLoading && (
+      {activeQuery.isLoading && (
         <div className={styles.loading}>
-          {Array.from({ length: 6 }).map((_, i) => <div key={i} className={styles.skeleton} />)}
+          {Array.from({ length: 5 }).map((_, i) => <div key={i} className={styles.skeleton} />)}
         </div>
       )}
 
-      {isError && (
+      {activeQuery.isError && (
         <div className="kort-inline-error">
           <AlertCircle size={16} />
-          Не удалось загрузить заказы. Проверьте соединение и попробуйте обновить страницу.
+          Не удалось загрузить данные. Проверьте соединение и обновите страницу.
         </div>
       )}
 
-      {!isLoading && !isError && orders.length === 0 && (
+      {!activeQuery.isLoading && !activeQuery.isError && orders.length === 0 && (
         <div className={styles.emptyState}>
-          <CircleCheck size={36} className={styles.emptyIcon} />
-          <div className={styles.emptyTitle}>Нет завершённых заказов</div>
+          <Truck size={36} className={styles.emptyIcon} />
+          <div className={styles.emptyTitle}>
+            {tab === 'pending' ? 'Нет заказов на складе' : 'Нет отправленных заказов'}
+          </div>
           <div className={styles.emptyText}>
-            {search || statusFilter
-              ? 'Ничего не найдено по заданным фильтрам'
-              : 'Заказы со статусом «Завершён» или «Отменён» появятся здесь'}
+            {search
+              ? 'Ничего не найдено по заданному запросу'
+              : tab === 'pending'
+                ? 'Заказы, принятые складом через накладную, появятся здесь'
+                : 'Отправленные клиентам заказы появятся здесь'}
           </div>
         </div>
       )}
 
-      {!isLoading && !isError && orders.length > 0 && (
+      {!activeQuery.isLoading && !activeQuery.isError && orders.length > 0 && (
         <div className={styles.list}>
           {orders.map(order => (
-            <ArchiveRow
+            <ShippingRow
               key={order.id}
               order={order}
-              onClick={() => navigate(`/workzone/chapan/archive/${order.id}`)}
+              onClick={() => navigate(`/workzone/chapan/shipping/${order.id}`)}
             />
           ))}
         </div>
@@ -137,7 +156,7 @@ export default function ChapanArchivePage() {
   );
 }
 
-function ArchiveRow({ order, onClick }: { order: ChapanOrder; onClick: () => void }) {
+function ShippingRow({ order, onClick }: { order: ChapanOrder; onClick: () => void }) {
   const first = order.items?.[0];
   const more = (order.items?.length ?? 0) - 1;
 
@@ -150,7 +169,9 @@ function ArchiveRow({ order, onClick }: { order: ChapanOrder; onClick: () => voi
 
       <div className={styles.rowNum}>
         <span className={styles.cardNum}>#{order.orderNumber}</span>
-        <span className={styles.statusBadge}>{STATUS_LABEL[order.status]}</span>
+        <span className={styles.statusBadge}>
+          {order.status === 'on_warehouse' ? 'На складе' : 'Отправлен'}
+        </span>
       </div>
 
       <div className={styles.rowClient}>
@@ -181,11 +202,11 @@ function ArchiveRow({ order, onClick }: { order: ChapanOrder; onClick: () => voi
       </div>
 
       <div className={styles.rowDates}>
-        {order.status === 'completed' && order.completedAt && (
-          <span className={styles.dateLabel}><Check size={10} className={styles.dateIcon} />{fmtDate(order.completedAt)}</span>
+        {order.dueDate && (
+          <span className={styles.dateLabel}>Срок: {fmtDate(order.dueDate)}</span>
         )}
-        {order.status === 'cancelled' && order.cancelledAt && (
-          <span className={`${styles.dateLabel} ${styles.dateCancelled}`}><X size={10} className={styles.dateIcon} />{fmtDate(order.cancelledAt)}</span>
+        {order.city && (
+          <span className={styles.dateLabel}>{order.city}</span>
         )}
       </div>
 

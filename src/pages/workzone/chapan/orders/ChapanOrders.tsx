@@ -1,7 +1,7 @@
 import { memo, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Check, ChevronLeft, ChevronRight, FlaskConical, LayoutGrid, Layers, List, Plus, Search, SlidersHorizontal, Trash2, X } from 'lucide-react';
-import { useCreateOrder, useOrders, useOrderWarehouseStates, useTrashOrder, useOrgManagers } from '../../../../entities/order/queries';
+import { Bell, Check, ChevronLeft, ChevronRight, FlaskConical, LayoutGrid, Layers, List, Plus, Search, SlidersHorizontal, X } from 'lucide-react';
+import { useCreateOrder, useOrders, useOrderWarehouseStates, useOrgManagers } from '../../../../entities/order/queries';
 import { toast } from 'sonner';
 import type { ChapanOrder, OrderStatus, OrderWarehouseState } from '../../../../entities/order/types';
 import { useVariantAvailability } from '../../../../entities/warehouse/queries';
@@ -180,14 +180,6 @@ export default function ChapanOrdersPage() {
   const [calendarMonth, setCalendarMonth] = useState<Date>(new Date(today.getFullYear(), today.getMonth(), 1));
 
   const { isAbsolute } = useEmployeePermissions();
-  const trashOrder = useTrashOrder();
-
-  const handleTrash = (id: string) => {
-    if (window.confirm('Переместить заказ в корзину?')) {
-      trashOrder.mutate(id);
-    }
-  };
-
   const handleSeedOrders = async () => {
     setIsSeedingOrders(true);
     try {
@@ -586,7 +578,7 @@ const setViewMode = (mode: ViewMode) => {
             <div className={styles.grid}>
               {displayGroups.map((g, i) =>
                 g.kind === 'single'
-                  ? <OrderCard key={g.order.id} order={g.order} onSelectOrder={setSelectedOrderId} hasAlert={activeAlertOrderIds.has(g.order.id)} stockMap={stockMap} warehouseState={warehouseStatesByOrderId.get(g.order.id)} onTrash={handleTrash} />
+                  ? <OrderCard key={g.order.id} order={g.order} onSelectOrder={setSelectedOrderId} hasAlert={activeAlertOrderIds.has(g.order.id)} stockMap={stockMap} warehouseState={warehouseStatesByOrderId.get(g.order.id)} />
                   : <BatchCard key={`batch-${i}`} group={g} onSelectOrder={setSelectedOrderId} />
               )}
             </div>
@@ -594,7 +586,7 @@ const setViewMode = (mode: ViewMode) => {
             <div className={styles.list}>
               {displayGroups.map((g, i) =>
                 g.kind === 'single'
-                  ? <OrderRow key={g.order.id} order={g.order} onSelectOrder={setSelectedOrderId} hasAlert={activeAlertOrderIds.has(g.order.id)} stockMap={stockMap} warehouseState={warehouseStatesByOrderId.get(g.order.id)} onTrash={handleTrash} />
+                  ? <OrderRow key={g.order.id} order={g.order} onSelectOrder={setSelectedOrderId} hasAlert={activeAlertOrderIds.has(g.order.id)} stockMap={stockMap} warehouseState={warehouseStatesByOrderId.get(g.order.id)} />
                   : <BatchRow key={`batch-${i}`} group={g} onSelectOrder={setSelectedOrderId} />
               )}
             </div>
@@ -821,7 +813,7 @@ function MiniCalendar({
 
 // ── Single grid card ──────────────────────────────────────────────────────────
 
-const OrderCard = memo(function OrderCard({ order, onSelectOrder, hasAlert, stockMap, warehouseState, onTrash }: { order: ChapanOrder; onSelectOrder: (id: string) => void; hasAlert?: boolean; stockMap?: VariantAvailabilityMap; warehouseState?: OrderWarehouseState; onTrash?: (id: string) => void }) {
+const OrderCard = memo(function OrderCard({ order, onSelectOrder, hasAlert, stockMap, warehouseState }: { order: ChapanOrder; onSelectOrder: (id: string) => void; hasAlert?: boolean; stockMap?: VariantAvailabilityMap; warehouseState?: OrderWarehouseState }) {
   const overdue = isOverdue(order.dueDate);
   const first = order.items?.[0];
   const more = (order.items?.length ?? 0) - 1;
@@ -873,16 +865,6 @@ const OrderCard = memo(function OrderCard({ order, onSelectOrder, hasAlert, stoc
           <span className={warehouseBadge.tone === 'in' ? styles.stockPillIn : styles.stockPillOut}>
             {warehouseBadge.label}
           </span>
-        )}
-        {onTrash && (
-          <button
-            type="button"
-            className={styles.trashBtn}
-            title="В корзину"
-            onClick={(e) => { e.stopPropagation(); onTrash(order.id); }}
-          >
-            <Trash2 size={13} />
-          </button>
         )}
       </div>
       <div className={styles.cardClient}>{order.clientName}</div>
@@ -1033,7 +1015,7 @@ const BatchCard = memo(function BatchCard({ group, onSelectOrder }: { group: { o
 
 // ── Single list row ───────────────────────────────────────────────────────────
 
-const OrderRow = memo(function OrderRow({ order, onSelectOrder, hasAlert, stockMap, warehouseState, onTrash }: { order: ChapanOrder; onSelectOrder: (id: string) => void; hasAlert?: boolean; stockMap?: VariantAvailabilityMap; warehouseState?: OrderWarehouseState; onTrash?: (id: string) => void }) {
+const OrderRow = memo(function OrderRow({ order, onSelectOrder, hasAlert, stockMap, warehouseState }: { order: ChapanOrder; onSelectOrder: (id: string) => void; hasAlert?: boolean; stockMap?: VariantAvailabilityMap; warehouseState?: OrderWarehouseState }) {
   const overdue = isOverdue(order.dueDate);
   const first = order.items?.[0];
   const more = (order.items?.length ?? 0) - 1;
@@ -1117,11 +1099,6 @@ const OrderRow = memo(function OrderRow({ order, onSelectOrder, hasAlert, stockM
             : <span className={styles.rowDateEmpty}>—</span>
           }
         </div>
-        {onTrash && (
-          <button type="button" className={styles.trashBtnRow} title="В корзину" onClick={e => { e.stopPropagation(); onTrash(order.id); }}>
-            <Trash2 size={13} />
-          </button>
-        )}
       </div>
     </div>
   );

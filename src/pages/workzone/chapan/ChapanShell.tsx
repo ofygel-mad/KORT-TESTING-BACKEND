@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Archive, CheckCheck, ChevronLeft, Factory, FileText, Package, Warehouse, Undo2 } from 'lucide-react';
+import { CircleCheck, CheckCheck, ChevronLeft, Factory, FileText, Package, ShoppingCart, TrendingUp, Truck, Warehouse, Undo2 } from 'lucide-react';
 import { useAuthStore } from '../../../shared/stores/auth';
 import { useChapanPermissions } from '../../../shared/hooks/useChapanPermissions';
 import { ThemeSwitcher } from '../../../shared/ui/ThemeSwitcher';
@@ -13,8 +13,9 @@ import { useEmployeePermissions } from '../../../shared/hooks/useEmployeePermiss
 const ALL_SECTION_NAV = [
   { to: '/workzone/chapan/orders',     label: 'Заказы',       icon: Package,   perm: 'orders'     },
   { to: '/workzone/chapan/production', label: 'Цех', icon: Factory,   perm: 'production' },
-  { to: '/workzone/chapan/ready',      label: 'Готово',       icon: CheckCheck, perm: 'ready'     },
-  { to: '/workzone/chapan/archive',    label: 'Архив',        icon: Archive,   perm: 'archive'    },
+  { to: '/workzone/chapan/ready',      label: 'Готово',       icon: CheckCheck,  perm: 'ready'     },
+  { to: '/workzone/chapan/shipping',   label: 'Отправка',     icon: Truck,       perm: 'shipping'  },
+  { to: '/workzone/chapan/archive',    label: 'Завершённые',  icon: CircleCheck, perm: 'archive'   },
 ] as const;
 
 const SWIPE_EDGE_ZONE = 28;   // px from left edge to begin tracking
@@ -31,8 +32,11 @@ export default function ChapanShell() {
     canAccessProduction,
     canAccessReady,
     canAccessArchive,
+    canAccessShipping,
     canAccessWarehouseNav,
     canAccessInvoices,
+    canAccessAnalytics,
+    canAccessPurchase,
   } = useChapanPermissions();
   const invoicesDrawerOpen = useChapanUiStore((s) => s.invoicesDrawerOpen);
   const invoicesDrawerFilter = useChapanUiStore((s) => s.invoicesDrawerFilter);
@@ -113,14 +117,17 @@ export default function ChapanShell() {
     orders:     canAccessOrders,
     production: canAccessProduction,
     ready:      canAccessReady,
+    shipping:   canAccessShipping,
     archive:    canAccessArchive,
   };
 
   const navItems = [
     ...ALL_SECTION_NAV.filter((item) => sectionAccess[item.perm]),
-    ...(canAccessInvoices                  ? [{ to: '/workzone/chapan/invoices' as const,    label: 'Накладные', icon: FileText  }] : []),
-    ...((isAdmin || canAccessWarehouseNav) ? [{ to: '/workzone/chapan/warehouse' as const,    label: 'Склад',    icon: Warehouse }] : []),
-    ...(isAdmin                            ? [{ to: '/workzone/chapan/returns' as const,      label: 'Возвраты', icon: Undo2     }] : []),
+    ...(canAccessInvoices                  ? [{ to: '/workzone/chapan/invoices'  as const, label: 'Накладные', icon: FileText      }] : []),
+    ...((isAdmin || canAccessWarehouseNav) ? [{ to: '/workzone/chapan/warehouse' as const, label: 'Склад',     icon: Warehouse     }] : []),
+    ...(isAdmin                            ? [{ to: '/workzone/chapan/returns'   as const, label: 'Возвраты',  icon: Undo2         }] : []),
+    ...(canAccessPurchase                  ? [{ to: '/workzone/chapan/purchase'  as const, label: 'Закуп',     icon: ShoppingCart  }] : []),
+    ...(canAccessAnalytics                 ? [{ to: '/workzone/chapan/analytics' as const, label: 'Аналитика', icon: TrendingUp    }] : []),
   ];
 
   return (

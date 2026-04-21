@@ -38,6 +38,9 @@ export function useChapanPermissions() {
   const canConfirmInvoiceReceipt = isWarehouseOperator;
   const canShipOrders = isWarehouseOperator;
   const canRejectInvoice = isWarehouseOperator;
+  const canAccessShipping = isWarehouseOperator;
+  const canAccessAnalytics = isAdmin || isChapanAdmin;
+  const canAccessPurchase = isAdmin || isChapanAdmin;
 
   const hasAnyAccess =
     canAccessOrders
@@ -64,6 +67,9 @@ export function useChapanPermissions() {
     canConfirmInvoiceReceipt,
     canShipOrders,
     canRejectInvoice,
+    canAccessShipping,
+    canAccessAnalytics,
+    canAccessPurchase,
     hasAnyAccess,
   };
 }

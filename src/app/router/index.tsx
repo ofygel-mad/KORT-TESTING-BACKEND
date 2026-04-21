@@ -72,7 +72,9 @@ const ChapanReadyPage       = makePage(() => import('../../pages/workzone/chapan
 const ChapanInvoicesPage    = makePage(() => import('../../pages/workzone/chapan/invoices/ChapanInvoices'));
 const ChapanReturnsPage     = makePage(() => import('../../pages/workzone/chapan/returns/ChapanReturns'));
 const ChapanArchivePage     = makePage(() => import('../../pages/workzone/chapan/archive/ChapanArchive'));
-const ChapanTrashPage       = makePage(() => import('../../pages/workzone/chapan/orders/ChapanTrash'));
+const ChapanShippingPage    = makePage(() => import('../../pages/workzone/chapan/shipping/ChapanShipping'));
+const ChapanAnalyticsPage   = makePage(() => import('../../pages/workzone/chapan/analytics/ChapanAnalytics'));
+const ChapanPurchasePage    = makePage(() => import('../../pages/workzone/chapan/purchase/ChapanPurchase'));
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const user = useAuthStore((s) => s.user);
@@ -212,7 +214,8 @@ function PermissionDenied() {
 
 type PermissionCheck =
   | 'sales' | 'warehouse' | 'production' | 'financial' | 'team' | 'chapan'
-  | 'chapan_orders' | 'chapan_production' | 'chapan_ready' | 'chapan_archive';
+  | 'chapan_orders' | 'chapan_production' | 'chapan_ready' | 'chapan_archive' | 'chapan_shipping'
+  | 'chapan_analytics' | 'chapan_purchase';
 
 /**
  * Ограничивает доступ к маршруту для сотрудников без нужного права.
@@ -241,6 +244,9 @@ function RequirePermission({ check, children }: { check: PermissionCheck; childr
     case 'chapan_production': allowed = chapan.canAccessProduction; break;
     case 'chapan_ready':      allowed = chapan.canAccessReady; break;
     case 'chapan_archive':    allowed = chapan.canAccessArchive; break;
+    case 'chapan_shipping':   allowed = chapan.canAccessShipping; break;
+    case 'chapan_analytics':  allowed = chapan.canAccessAnalytics; break;
+    case 'chapan_purchase':   allowed = chapan.canAccessPurchase; break;
   }
 
   if (!allowed) return <PermissionDenied />;
@@ -391,8 +397,12 @@ export const appRouter = createBrowserRouter([
         element: <ChapanReturnsPage />,
       },
       {
-        path: 'orders/trash',
-        element: <ChapanTrashPage />,
+        path: 'shipping',
+        element: <RequirePermission check="chapan_shipping"><ChapanShippingPage /></RequirePermission>,
+      },
+      {
+        path: 'shipping/:id',
+        element: <RequirePermission check="chapan_shipping"><ChapanOrderDetailPage /></RequirePermission>,
       },
       {
         path: 'archive',
@@ -405,6 +415,14 @@ export const appRouter = createBrowserRouter([
       {
         path: 'warehouse',
         element: <ChapanWarehousePage />,
+      },
+      {
+        path: 'analytics',
+        element: <RequirePermission check="chapan_analytics"><ChapanAnalyticsPage /></RequirePermission>,
+      },
+      {
+        path: 'purchase',
+        element: <RequirePermission check="chapan_purchase"><ChapanPurchasePage /></RequirePermission>,
       },
       {
         path: 'settings',
