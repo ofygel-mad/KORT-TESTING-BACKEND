@@ -30,7 +30,7 @@ function draftKey(userId?: string) {
 function loadDraft(userId?: string): Partial<FormData> | null {
   try {
     const raw = localStorage.getItem(draftKey(userId));
-    return raw ? JSON.parse(raw) : null;
+    return raw ? sanitizeDraft(JSON.parse(raw) as Partial<FormData>) : null;
   } catch {
     return null;
   }
@@ -38,7 +38,7 @@ function loadDraft(userId?: string): Partial<FormData> | null {
 
 function saveDraft(data: Partial<FormData>, userId?: string) {
   try {
-    localStorage.setItem(draftKey(userId), JSON.stringify(data));
+    localStorage.setItem(draftKey(userId), JSON.stringify(sanitizeDraft(data)));
   } catch { /* ignore */ }
 }
 
@@ -125,6 +125,37 @@ const schema = z
   });
 
 type FormData = z.infer<typeof schema>;
+
+export function sanitizeDraft(data: Partial<FormData>): Partial<FormData> {
+  return {
+    ...data,
+    items: (data.items ?? []).map((item) => ({
+      ...item,
+      workshopNotes: '',
+    })),
+  };
+}
+
+const EMPTY_ITEM = {
+  productName: '',
+  gender: '',
+  length: '',
+  color: '',
+  size: '',
+  quantity: 1,
+  unitPrice: undefined,
+  itemDiscount: undefined,
+  workshopNotes: '',
+};
+
+function createEmptyFormDefaults(): Partial<FormData> {
+  return {
+    urgency: 'normal',
+    isDemandingClient: false,
+    orderDate: todayIso(),
+    items: [{ ...EMPTY_ITEM }],
+  } as unknown as Partial<FormData>;
+}
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const CITIES   = ['Алматы', 'Астана', 'Шымкент', 'Атырау', 'Актобе', 'Тараз', 'Павлодар', 'Другой город'];
@@ -219,7 +250,7 @@ function SearchableSelect({ options, placeholder, className, value, onChange, on
   };
 
   return (
-    <div style={{ position: 'relative', width: '100%' }}>
+    <div className={styles.searchableSelect}>
       <input
         type="text"
         value={inputText}
@@ -281,22 +312,19 @@ export default function ChapanNewOrderPage() {
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: savedDraft.current ?? {
-      urgency:  'normal',
-      isDemandingClient: false,
-      orderDate: todayIso(),
-      items: [{ productName: '', gender: '', length: '', color: '', size: '', quantity: 1, unitPrice: undefined, itemDiscount: undefined, workshopNotes: '' }],
-    },
+    defaultValues: savedDraft.current ?? createEmptyFormDefaults(),
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: 'items' });
 
   // Draft autosave — дебаунс 800 мс, не сохраняем пустой стартовый стейт
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autosaveEnabledRef = useRef(true);
   // Autosave: subscribe to form changes via watch callback (RHF v7 pattern)
   // Avoids JSON.stringify(watch()) in dep array which re-renders on every keystroke
   useEffect(() => {
     const { unsubscribe } = watch((snapshot) => {
+      if (!autosaveEnabledRef.current) return;
       if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
       autosaveTimer.current = setTimeout(() => {
         const isEmpty =
@@ -395,6 +423,23 @@ export default function ChapanNewOrderPage() {
   // rotated only after a successful submission to allow creating another order.
   const idemKeyRef = useRef(crypto.randomUUID());
 
+  function stopDraftAutosave() {
+    autosaveEnabledRef.current = false;
+    if (autosaveTimer.current) {
+      clearTimeout(autosaveTimer.current);
+      autosaveTimer.current = null;
+    }
+  }
+
+  function resetDraftState() {
+    stopDraftAutosave();
+    clearDraft(userId);
+    savedDraft.current = null;
+    reset(createEmptyFormDefaults());
+    setDraftRestored(false);
+    autosaveEnabledRef.current = true;
+  }
+
   async function onSubmit(data: FormData) {
     const hasPrepayment = (data.prepayment ?? 0) > 0;
     const isMixed = data.paymentMethod === 'mixed';
@@ -441,7 +486,9 @@ export default function ChapanNewOrderPage() {
 
     // Rotate the key so the next order from this session gets its own unique key
     idemKeyRef.current = crypto.randomUUID();
+    stopDraftAutosave();
     clearDraft(userId);
+    reset(createEmptyFormDefaults());
     navigate('/workzone/chapan/orders');
   }
 
@@ -501,15 +548,7 @@ export default function ChapanNewOrderPage() {
             type="button"
             className={styles.draftClear}
             onClick={() => {
-              clearDraft(userId);
-              savedDraft.current = null;
-              reset({
-                urgency: 'normal',
-                isDemandingClient: false,
-                orderDate: todayIso(),
-                items: [{ productName: '', gender: '', length: '', color: '', size: '', quantity: 1, unitPrice: undefined, itemDiscount: undefined, workshopNotes: '' }],
-              });
-              setDraftRestored(false);
+              resetDraftState();
             }}
           >
             Сбросить
@@ -664,7 +703,13 @@ export default function ChapanNewOrderPage() {
                   <div className={styles.itemCardHeader}>
                     <span className={styles.itemCardLabel}>Позиция {idx + 1}</span>
                     {fields.length > 1 && (
-                      <button type="button" className={styles.itemRemoveBtn} onClick={() => remove(idx)}>
+                      <button
+                        type="button"
+                        className={styles.itemRemoveBtn}
+                        aria-label={`Удалить позицию ${idx + 1}`}
+                        title={`Удалить позицию ${idx + 1}`}
+                        onClick={() => remove(idx)}
+                      >
                         <Trash2 size={12} />
                       </button>
                     )}
@@ -743,11 +788,13 @@ export default function ChapanNewOrderPage() {
                         const opts = catalogLengths.length > 0 ? catalogLengths : globalWarehouseLengths;
                         return (
                           <select
+                            id={`item-length-${idx}`}
                             value={f.value ?? ''}
                             onChange={e => f.onChange(e.target.value)}
                             onBlur={f.onBlur}
                             className={styles.input}
                             disabled={opts.length === 0}
+                            aria-label={`Длина изделия для позиции ${idx + 1}`}
                           >
                             <option value="">— выбрать —</option>
                             {opts.map(o => <option key={o} value={o}>{o}</option>)}
@@ -839,7 +886,13 @@ export default function ChapanNewOrderPage() {
                       <div className={styles.itemPhotoPreview}>
                         <img src={URL.createObjectURL(itemPhotos[idx]!)} alt="" className={styles.itemPhotoThumb} />
                         <span className={styles.itemPhotoName}>{itemPhotos[idx]!.name}</span>
-                        <button type="button" className={styles.fileRemoveBtn} onClick={() => setItemPhotos((p) => ({ ...p, [idx]: null }))}>
+                        <button
+                          type="button"
+                          className={styles.fileRemoveBtn}
+                          aria-label={`Удалить фото для позиции ${idx + 1}`}
+                          title={`Удалить фото для позиции ${idx + 1}`}
+                          onClick={() => setItemPhotos((p) => ({ ...p, [idx]: null }))}
+                        >
                           <X size={12} />
                         </button>
                       </div>
@@ -874,7 +927,7 @@ export default function ChapanNewOrderPage() {
               <button
                 type="button"
                 className={styles.addItemBtn}
-                onClick={() => append({ productName: '', gender: '', length: '', color: '', size: '', quantity: 1, unitPrice: 0, itemDiscount: 0, workshopNotes: '' })}
+                onClick={() => append({ productName: '', gender: '' as const, length: '', color: '', size: '', quantity: 1, unitPrice: 0, itemDiscount: 0, workshopNotes: '' })}
               >
                 <Plus size={13} />
                 Добавить позицию
@@ -884,7 +937,7 @@ export default function ChapanNewOrderPage() {
                   <Calculator size={13} />
                   <span>Итого по позициям:</span>
                   <strong>{fmt(itemsTotal)}</strong>
-                  <span style={{ color: 'var(--text-tertiary)', fontSize: 11, fontWeight: 400, marginLeft: 8 }}>
+                  <span className={styles.itemsTotalMeta}>
                     {items.length} {items.length === 1 ? 'позиция' : items.length < 5 ? 'позиции' : 'позиций'}
                     {' · '}
                     {items.reduce((s, i) => s + (Number(i.quantity) || 0), 0)} шт.
@@ -1031,11 +1084,11 @@ export default function ChapanNewOrderPage() {
               <div className={styles.finRow}>
                 <span className={styles.finLabel}>Комиссия банка</span>
                 <div className={styles.discountCompound}>
-                  <div className={styles.finValue} style={{ minWidth: 80 }}>
+                  <div className={`${styles.finValue} ${styles.bankCommissionValue}`}>
                     {bankCommissionAmount > 0 ? fmt(bankCommissionAmount) : '—'}
                   </div>
                   {editingRate ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <div className={styles.bankCommissionEditor}>
                       <div className={styles.discountPctWrap}>
                         <input
                           type="number" min="0" max="100" step="0.1"
@@ -1053,6 +1106,7 @@ export default function ChapanNewOrderPage() {
                       </div>
                       <button
                         type="button"
+                        className={styles.bankCommissionSaveBtn}
                         onClick={() => {
                           const v = parseFloat(rateInput);
                           const safe = isNaN(v) ? 0 : Math.min(100, Math.max(0, v));
@@ -1060,26 +1114,26 @@ export default function ChapanNewOrderPage() {
                           updateBankCommission.mutate(safe);
                           setEditingRate(false);
                         }}
-                        style={{ padding: '4px 10px', fontSize: 12, fontWeight: 600, background: 'var(--fill-accent)', color: 'var(--text-on-accent)', border: 'none', borderRadius: 6, cursor: 'pointer', flexShrink: 0 }}
                       >Сохранить</button>
                       <button
                         type="button"
+                        className={styles.bankCommissionCancelBtn}
                         onClick={() => setEditingRate(false)}
-                        style={{ padding: '4px 8px', fontSize: 12, background: 'none', color: 'var(--text-tertiary)', border: '1px solid var(--border-subtle)', borderRadius: 6, cursor: 'pointer', flexShrink: 0 }}
                       >Отмена</button>
                     </div>
                   ) : (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: bankCommissionPct > 0 ? 'var(--text-primary)' : 'var(--text-tertiary)' }}>
+                    <div className={styles.bankCommissionView}>
+                      <span className={`${styles.bankCommissionRate} ${bankCommissionPct > 0 ? styles.bankCommissionRateActive : styles.bankCommissionRateMuted}`}>
                         {bankCommissionPct > 0 ? `${bankCommissionPct}%` : '—'}
                       </span>
                       <button
                         type="button"
                         title="Изменить ставку комиссии"
                         onClick={() => { setRateInput(bankCommissionPct > 0 ? String(bankCommissionPct) : ''); setEditingRate(true); }}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', display: 'inline-flex', alignItems: 'center', color: 'var(--text-tertiary)', borderRadius: 4 }}
+                        className={styles.iconButton}
                       >
                         <Pencil size={12} />
+                        <span className={styles.srOnly}>Изменить ставку комиссии</span>
                       </button>
                     </div>
                   )}
@@ -1197,7 +1251,13 @@ export default function ChapanNewOrderPage() {
                     <div key={i} className={styles.fileItem}>
                       <Paperclip size={12} />
                       <span className={styles.fileName}>{f.name}</span>
-                      <button type="button" className={styles.fileRemoveBtn} onClick={() => setReceipts((r) => r.filter((_, j) => j !== i))}>
+                      <button
+                        type="button"
+                        className={styles.fileRemoveBtn}
+                        aria-label={`Удалить чек ${f.name}`}
+                        title={`Удалить чек ${f.name}`}
+                        onClick={() => setReceipts((r) => r.filter((_, j) => j !== i))}
+                      >
                         <X size={11} />
                       </button>
                     </div>

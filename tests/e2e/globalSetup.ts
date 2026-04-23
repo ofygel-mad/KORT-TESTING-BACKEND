@@ -5,6 +5,9 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const authDir = path.join(__dirname, '.auth');
+const E2E_HOST = process.env.E2E_HOST || '127.0.0.1';
+const E2E_FRONTEND_PORT = process.env.E2E_FRONTEND_PORT || '4174';
+const E2E_BASE_URL = process.env.E2E_BASE_URL || `http://${E2E_HOST}:${E2E_FRONTEND_PORT}`;
 
 async function globalSetup() {
   if (!fs.existsSync(authDir)) {
@@ -20,7 +23,7 @@ async function globalSetup() {
     });
 
     console.log('Navigating to login page...');
-    await page.goto('http://127.0.0.1:4173/auth/login', { waitUntil: 'networkidle' });
+    await page.goto(`${E2E_BASE_URL}/auth/login`, { waitUntil: 'networkidle' });
     console.log('Login page loaded');
 
     const email = 'admin@kort.local';

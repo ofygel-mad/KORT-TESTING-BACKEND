@@ -53,6 +53,7 @@ vi.mock('../../../../features/workzone/chapan/store', () => ({
 
 vi.mock('../../../../entities/order/queries', () => ({
   useOrders: (params: unknown) => useOrdersMock(params),
+  useCreateOrder: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useTrashOrder: () => ({ mutate: vi.fn() }),
   useOrderWarehouseStates: () => ({ data: undefined }),
   useOrgManagers: () => ({ data: [] }),
@@ -60,6 +61,7 @@ vi.mock('../../../../entities/order/queries', () => ({
 
 vi.mock('../../../../entities/warehouse/queries', () => ({
   useProductsAvailability: () => ({ data: undefined }),
+  useVariantAvailability: () => ({ data: undefined }),
 }));
 
 vi.mock('../../../../entities/alert/queries', () => ({

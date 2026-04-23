@@ -303,6 +303,11 @@
   font-weight: 500;
 }
 
+.searchableSelect {
+  position: relative;
+  width: 100%;
+}
+
 .textarea {
   background: var(--bg-surface-elevated);
   border: 1px solid var(--border-subtle);
@@ -478,6 +483,13 @@
   font-size: 16px;
   font-weight: 700;
   color: var(--text-primary);
+}
+
+.itemsTotalMeta {
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-weight: 400;
+  margin-left: 8px;
 }
 
 .priorityGroup {
@@ -1171,6 +1183,88 @@
   font-weight: 500;
   color: var(--text-primary);
   text-align: right;
+}
+
+.bankCommissionValue {
+  min-width: 80px;
+}
+
+.bankCommissionEditor {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bankCommissionView {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bankCommissionRate {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.bankCommissionRateActive {
+  color: var(--text-primary);
+}
+
+.bankCommissionRateMuted {
+  color: var(--text-tertiary);
+}
+
+.bankCommissionSaveBtn {
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--fill-accent);
+  color: var(--text-on-accent);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-family: inherit;
+}
+
+.bankCommissionCancelBtn {
+  padding: 4px 8px;
+  font-size: 12px;
+  background: none;
+  color: var(--text-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-family: inherit;
+}
+
+.iconButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-tertiary);
+  border-radius: 4px;
+}
+
+.iconButton:hover {
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--fill-accent) 10%, transparent);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .finValueBold {

@@ -10,8 +10,8 @@ const repoRoot = path.resolve(__dirname, '..', '..');
 const distDir = path.join(repoRoot, 'dist');
 const spaEntry = path.join(distDir, 'index.html');
 const host = process.env.E2E_FRONTEND_HOST || '127.0.0.1';
-const port = Number.parseInt(process.env.E2E_FRONTEND_PORT || '4173', 10);
-const backendTarget = new URL(process.env.VITE_PROXY_TARGET || 'http://127.0.0.1:8001');
+const port = Number.parseInt(process.env.E2E_FRONTEND_PORT || '4174', 10);
+const backendTarget = new URL(process.env.VITE_PROXY_TARGET || 'http://127.0.0.1:8002');
 
 const mimeTypes = new Map([
   ['.css', 'text/css; charset=utf-8'],

@@ -11,15 +11,18 @@ docker compose exec -T postgres psql -U kort -d postgres -c "CREATE DATABASE kor
 
 Set-Location $serverDir
 
+$backendPort = if ($env:E2E_BACKEND_PORT) { $env:E2E_BACKEND_PORT } else { '8002' }
+$frontendPort = if ($env:E2E_FRONTEND_PORT) { $env:E2E_FRONTEND_PORT } else { '4174' }
+
 $env:NODE_ENV = 'test'
 $env:DATABASE_URL = 'postgresql://kort:kort_secret@localhost:5432/kort_db_test'
 $env:JWT_ACCESS_SECRET = 'test-secret-access-32-chars-minimum'
 $env:JWT_REFRESH_SECRET = 'test-secret-refresh-32-chars-minimum'
 $env:JWT_ACCESS_TTL = '15m'
 $env:JWT_REFRESH_TTL = '7d'
-$env:PORT = '8001'
+$env:PORT = $backendPort
 $env:HOST = '127.0.0.1'
-$env:CORS_ORIGIN = 'http://127.0.0.1:4173,http://localhost:4173,http://127.0.0.1:3000,http://localhost:3000'
+$env:CORS_ORIGIN = "http://127.0.0.1:$frontendPort,http://localhost:$frontendPort,http://127.0.0.1:3000,http://localhost:3000"
 $env:CONSOLE_SERVICE_PASSWORD = 'test1234'
 
 pnpm db:deploy | Out-Host

@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { clearSession, preparePage } from './helpers';
 
+const E2E_API_BASE_URL = process.env.E2E_API_BASE_URL || `http://${process.env.E2E_HOST || '127.0.0.1'}:${process.env.E2E_BACKEND_PORT || '8002'}/api/v1`;
+
 test('company registration submits on Enter from password confirmation', async ({ page }) => {
   const unique = Date.now();
 
@@ -50,7 +52,7 @@ test('login rejects an invalid password for an existing account', async ({ page,
   const email = `invalid-password+${unique}@demo.kz`;
   const password = 'superpass1';
 
-  await request.post('http://127.0.0.1:8001/api/v1/auth/register/company', {
+  await request.post(`${E2E_API_BASE_URL}/auth/register/company`, {
     data: {
       company_name: `Password Check ${unique}`,
       full_name: `Password Owner ${unique}`,

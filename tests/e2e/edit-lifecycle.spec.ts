@@ -1,7 +1,7 @@
 import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 import { loginAs, navigateWithinApp } from './helpers';
 
-const API_BASE_URL = 'http://127.0.0.1:8001/api/v1';
+const API_BASE_URL = process.env.E2E_API_BASE_URL || `http://${process.env.E2E_HOST || '127.0.0.1'}:${process.env.E2E_BACKEND_PORT || '8002'}/api/v1`;
 const E2E_EMAIL = 'admin@kort.local';
 const E2E_PASSWORD = 'demo1234';
 const E2E_ORG_ID = 'org-demo';
@@ -64,7 +64,7 @@ async function openDealFromBoard(page: Page, title: string) {
 }
 
 test('deal stage update from drawer persists in backend', async ({ page, request }) => {
-  const deal = await createDeal(request, `Сделка для смены этапа ${Date.now()}`);
+  const deal = await createDeal(request, `Deal stage update ${Date.now()}`);
 
   await loginAs(page, E2E_EMAIL);
   await openDealFromBoard(page, deal.title);
@@ -80,8 +80,8 @@ test('deal stage update from drawer persists in backend', async ({ page, request
 });
 
 test('deal comment added in drawer appears in activity feed', async ({ page, request }) => {
-  const deal = await createDeal(request, `Сделка для комментария ${Date.now()}`);
-  const comment = `Комментарий ${Date.now()}`;
+  const deal = await createDeal(request, `Deal comment ${Date.now()}`);
+  const comment = `Comment ${Date.now()}`;
 
   await loginAs(page, E2E_EMAIL);
   await openDealFromBoard(page, deal.title);

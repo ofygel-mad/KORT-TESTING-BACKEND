@@ -3,6 +3,11 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const e2eHost = process.env.E2E_HOST || '127.0.0.1';
+const e2eFrontendPort = process.env.E2E_FRONTEND_PORT || '4174';
+const e2eBackendPort = process.env.E2E_BACKEND_PORT || '8002';
+const e2eBaseUrl = `http://${e2eHost}:${e2eFrontendPort}`;
+const e2eApiBaseUrl = `http://${e2eHost}:${e2eBackendPort}`;
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -16,7 +21,7 @@ export default defineConfig({
   ],
   globalSetup: path.resolve(__dirname, './tests/e2e/globalSetup.ts'),
   use: {
-    baseURL: 'http://127.0.0.1:4173',
+    baseURL: e2eBaseUrl,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -42,14 +47,14 @@ export default defineConfig({
   webServer: [
     {
       command: 'powershell -NoProfile -ExecutionPolicy Bypass -File tests/e2e/start-backend.ps1',
-      url: 'http://127.0.0.1:8001/api/v1/health',
-      reuseExistingServer: !process.env.CI,
+      url: `${e2eApiBaseUrl}/api/v1/health`,
+      reuseExistingServer: false,
       timeout: 240_000,
     },
     {
       command: 'powershell -NoProfile -ExecutionPolicy Bypass -File tests/e2e/start-frontend.ps1',
-      url: 'http://127.0.0.1:4173',
-      reuseExistingServer: !process.env.CI,
+      url: e2eBaseUrl,
+      reuseExistingServer: false,
       timeout: 240_000,
     },
   ],
