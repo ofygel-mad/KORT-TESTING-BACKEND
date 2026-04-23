@@ -70,18 +70,18 @@
   --text-placeholder: #98A2B3;
   --text-inverse:     #FFFFFF;
   --text-on-accent:   #FFFFFF;
-  --text-accent:      #9A4A1B;
+  --text-accent:      #4A8BD4;
 
   --border-subtle:  #D0D5DD;
   --border-default: #B8C2D1;
   --border-strong:  #98A2B3;
-  --border-focus:   #9A4A1B;
+  --border-focus:   #4A8BD4;
 
-  /* Light theme uses a warm accent, but the UI itself stays crisp and bright. */
-  --fill-accent:          #9A4A1B;
-  --fill-accent-soft:     rgba(154,74,27,0.14);
-  --fill-accent-subtle:   rgba(154,74,27,0.08);
-  --fill-accent-gradient: linear-gradient(135deg, #B45A22 0%, #9A4A1B 55%, #7B3714 100%);
+  /* Light theme: KORT blue accent */
+  --fill-accent:          #4A8BD4;
+  --fill-accent-soft:     rgba(74,139,212,0.14);
+  --fill-accent-subtle:   rgba(74,139,212,0.08);
+  --fill-accent-gradient: linear-gradient(135deg, #5B9BD5 0%, #4A8BD4 55%, #2E6AB5 100%);
 
   --fill-positive:      var(--p-success-500);
   --fill-positive-soft: rgba(16,185,129,0.16);
@@ -105,8 +105,8 @@
   --shadow-md:     0 8px 20px -8px rgba(16,24,40,0.18);
   --shadow-lg:     0 18px 40px -16px rgba(16,24,40,0.22);
   --shadow-xl:     0 28px 54px -20px rgba(16,24,40,0.24);
-  --shadow-focus:  0 0 0 3px rgba(154,74,27,0.18);
-  --shadow-accent: 0 8px 22px rgba(154,74,27,0.22);
+  --shadow-focus:  0 0 0 3px rgba(74,139,212,0.18);
+  --shadow-accent: 0 8px 22px rgba(74,139,212,0.22);
   --space-page-x: 28px;
   --space-page-y: 24px;
   --space-page-max: 1160px;

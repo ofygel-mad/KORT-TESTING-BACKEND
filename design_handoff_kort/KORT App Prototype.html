@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KORT — App Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<template id="__bundler_thumbnail">
+<svg viewBox="0 0 120 80" xmlns="http://www.w3.org/2000/svg">
+  <rect width="120" height="80" fill="#0c0f17"/>
+  <rect x="6" y="8" width="52" height="64" rx="4" fill="#121724"/>
+  <rect x="6" y="8" width="52" height="64" rx="4" fill="url(#grad)" opacity=".8"/>
+  <defs><linearGradient id="grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#4A8BD4" stop-opacity=".3"/><stop offset="100%" stop-color="#7C3AED" stop-opacity=".15"/></linearGradient></defs>
+  <rect x="14" y="20" width="32" height="3" rx="1.5" fill="#4A8BD4" opacity=".8"/>
+  <rect x="14" y="28" width="38" height="2" rx="1" fill="#4A5878"/>
+  <rect x="14" y="34" width="28" height="2" rx="1" fill="#4A5878" opacity=".6"/>
+  <rect x="14" y="40" width="34" height="2" rx="1" fill="#4A5878" opacity=".4"/>
+  <rect x="66" y="8" width="48" height="64" rx="4" fill="#FFFFFF"/>
+  <rect x="74" y="26" width="32" height="4" rx="2" fill="#101828"/>
+  <rect x="74" y="36" width="32" height="22" rx="3" fill="#F4F6FA" stroke="#E4E8F2" stroke-width=".5"/>
+  <rect x="74" y="66" width="32" height="4" rx="2" fill="#1a1a1a" opacity=".8"/>
+</svg>
+</template>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body,#root{height:100%;overflow:hidden}
+body{font-family:'DM Sans','Plus Jakarta Sans',-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+
+/* ── Design tokens ─────────────────────────────── */
+:root{
+  --bg-canvas:#F4F6FA;--surface:#FFFFFF;--surface-e:#F8FAFD;--surface-i:#EEF2F7;
+  --border:#D0D5DD;--border-s:#E4E8F2;
+  --tx:#101828;--tx2:#344054;--tx3:#667085;--txp:#98A2B3;
+  --ac:#4A8BD4;--ac-s:rgba(74,139,212,.12);--ac-ss:rgba(74,139,212,.06);
+  --ff:'DM Sans','Plus Jakarta Sans',-apple-system,sans-serif;
+  --ffd:'Plus Jakarta Sans',-apple-system,sans-serif;
+  --r-sm:6px;--r:8px;--r-lg:12px;--r-xl:16px;
+  --sh-xs:0 1px 2px rgba(16,24,40,.04);
+  --sh-sm:0 2px 6px rgba(16,24,40,.08);
+  --sh-md:0 8px 20px -8px rgba(16,24,40,.18);
+  --sh-lg:0 18px 40px -16px rgba(16,24,40,.22);
+  --tr:140ms cubic-bezier(0.22,1,0.36,1);
+}
+[data-theme="dark"]{
+  --bg-canvas:#07090F;--surface:#0D1018;--surface-e:#141820;--surface-i:#07090F;
+  --border:#1C2438;--border-s:#141A28;
+  --tx:#E6ECF8;--tx2:#8898B8;--tx3:#4A5878;--txp:#2E3A55;
+  --ac:#8A9AB8;--ac-s:rgba(138,154,184,.14);--ac-ss:rgba(138,154,184,.07);
+}
+
+/* ── Screen fade ───────────────────────────────── */
+.screen-fade{animation:sfade .26s cubic-bezier(0.22,1,0.36,1) both}
+@keyframes sfade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ── AUTH ──────────────────────────────────────── */
+.auth-root{display:grid;grid-template-columns:55fr 45fr;height:100dvh}
+.auth-brand{
+  position:relative;overflow:hidden;
+  background:radial-gradient(ellipse 72% 48% at 80% -8%,rgba(74,139,212,.22) 0%,transparent 58%),
+    radial-gradient(ellipse 50% 60% at 8% 95%,rgba(124,58,237,.16) 0%,transparent 52%),
+    #0c0f17;
+  display:flex;flex-direction:column;padding:36px 40px;color:#fff;
+}
+.brand-logo-row{display:flex;align-items:center;gap:10px;margin-bottom:56px;position:relative;z-index:1}
+.brand-mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#5B9BD5,#2E6AB5);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;letter-spacing:.04em;flex-shrink:0;font-family:var(--ffd)}
+.brand-name{font-family:var(--ffd);font-size:16px;font-weight:800;letter-spacing:.18em;color:rgba(228,236,248,.96);text-transform:uppercase}
+.brand-hero{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;justify-content:center}
+.brand-tagline{font-family:var(--ffd);font-size:clamp(26px,3vw,42px);font-weight:800;line-height:1.08;letter-spacing:-0.035em;color:rgba(240,245,255,.96);margin-bottom:36px}
+.brand-tagline em{font-style:normal;color:var(--ac-brand,#5B9BD5)}
+.brand-props{display:flex;flex-direction:column;gap:18px}
+.brand-prop{display:flex;align-items:flex-start;gap:14px}
+.brand-prop-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:6px}
+.brand-prop-body strong{display:block;font-size:13.5px;font-weight:700;color:rgba(228,236,248,.9);margin-bottom:2px}
+.brand-prop-body span{font-size:12px;line-height:1.6;color:rgba(138,160,196,.7)}
+.brand-deco{position:absolute;bottom:-80px;right:-80px;width:300px;height:300px;border-radius:50%;border:1px solid rgba(74,139,212,.1);background:radial-gradient(circle,rgba(74,139,212,.07) 0%,transparent 70%);pointer-events:none}
+.brand-deco::before{content:'';position:absolute;inset:44px;border-radius:50%;border:1px solid rgba(74,139,212,.08)}
+.brand-deco::after{content:'';position:absolute;inset:90px;border-radius:50%;border:1px solid rgba(74,139,212,.06)}
+.brand-bottom{position:relative;z-index:1;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-top:24px;border-top:1px solid rgba(255,255,255,.06)}
+.brand-tag{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:99px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);font-size:11px;font-weight:700;color:rgba(74,139,212,.9);letter-spacing:.04em}
+.auth-form-side{background:var(--surface);display:flex;flex-direction:column;height:100dvh}
+.auth-form-header{display:flex;align-items:center;padding:18px 32px;border-bottom:1px solid var(--border-s);min-height:64px;flex-shrink:0}
+.form-back-btn{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:var(--r-lg);border:1px solid var(--border);background:none;color:var(--tx2);font:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:background var(--tr),color var(--tr),border-color var(--tr)}
+.form-back-btn:hover{background:var(--surface-i);color:var(--tx)}
+.auth-form-content{flex:1;display:flex;align-items:center;justify-content:center;padding:32px 48px;overflow-y:auto}
+.auth-form-inner{width:100%;max-width:380px}
+.form-title{font-family:var(--ffd);font-size:24px;font-weight:700;letter-spacing:-0.022em;color:var(--tx);margin-bottom:6px;line-height:1.2}
+.form-subtitle{font-size:14px;color:var(--tx3);line-height:1.65;margin-bottom:28px}
+.form-fields{display:flex;flex-direction:column;gap:12px;margin-bottom:20px}
+.form-input{width:100%;height:52px;padding:0 14px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface-e);color:var(--tx);font:inherit;font-size:14px;outline:none;transition:border-color var(--tr),box-shadow var(--tr);box-sizing:border-box}
+.form-input::placeholder{color:var(--txp)}
+.form-input:focus{border-color:color-mix(in srgb,var(--ac) 38%,var(--border));box-shadow:0 0 0 3px color-mix(in srgb,var(--ac) 12%,transparent)}
+.pw-field{position:relative}
+.pw-field .form-input{padding-right:48px}
+.pw-toggle{position:absolute;top:50%;right:14px;transform:translateY(-50%);width:28px;height:28px;display:flex;align-items:center;justify-content:center;border:none;background:none;cursor:pointer;color:var(--tx3);transition:color var(--tr)}
+.pw-toggle:hover{color:var(--tx)}
+.form-error{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:var(--r);background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.18);font-size:13px;color:#EF4444;line-height:1.5;margin-bottom:12px}
+.login-actions{display:flex;gap:10px;align-items:center;margin-bottom:16px}
+.primary-btn{flex:1;height:50px;display:flex;align-items:center;justify-content:center;gap:9px;border-radius:var(--r);border:1px solid rgba(255,255,255,.1);background:linear-gradient(180deg,#2c2c2c 0%,#1a1a1a 100%);color:#fff;font:inherit;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.06);transition:transform var(--tr),box-shadow var(--tr),background var(--tr)}
+.primary-btn:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.06);background:linear-gradient(180deg,#363636 0%,#242424 100%)}
+.primary-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.form-footer{display:flex;align-items:center;justify-content:space-between}
+.link-btn{background:none;border:none;color:var(--tx3);font:inherit;font-size:13px;cursor:pointer;padding:0;transition:color var(--tr)}
+.link-btn:hover{color:var(--tx2)}
+
+/* ── ONBOARDING ────────────────────────────────── */
+.ob-root{min-height:100dvh;display:grid;grid-template-rows:64px 1fr 72px;background:radial-gradient(ellipse at 60% 0%,rgba(74,139,212,.12) 0%,transparent 50%),radial-gradient(ellipse at 10% 80%,rgba(92,141,255,.08) 0%,transparent 45%),linear-gradient(160deg,#131109 0%,#0e0c09 60%,#0b0a08 100%);color:rgba(228,236,248,.96)}
+.ob-header{display:flex;align-items:center;justify-content:space-between;padding:0 clamp(20px,5vw,48px);border-bottom:1px solid rgba(255,255,255,.06)}
+.ob-logo-row{display:flex;align-items:center;gap:10px}
+.ob-mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#5B9BD5,#2E6AB5);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;font-family:var(--ffd)}
+.ob-wordmark{font-family:var(--ffd);font-size:15px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}
+.ob-progress{display:flex;align-items:center;gap:8px}
+.ob-dots{display:flex;gap:5px}
+.ob-dot{width:6px;height:6px;border-radius:99px;transition:width .2s,background .2s}
+.ob-dot-done{background:rgba(255,255,255,.32)}.ob-dot-active{width:20px;background:#5B9BD5}.ob-dot-pending{background:rgba(255,255,255,.14)}
+.ob-step-label{font-size:12px;font-weight:600;color:rgba(138,160,196,.7)}
+.ob-main{overflow-y:auto;display:flex;justify-content:center;padding:clamp(32px,5vh,56px) clamp(20px,5vw,48px)}
+.ob-content{width:100%}.ob-narrow{max-width:560px}.ob-wide{max-width:940px}
+.ob-step-head{margin-bottom:32px}
+.ob-eyebrow{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#5B9BD5;margin:0 0 12px;opacity:.85}
+.ob-title{margin:0 0 10px;font-family:var(--ffd);font-size:clamp(24px,3.5vw,32px);font-weight:700;letter-spacing:-0.025em;line-height:1.1}
+.ob-desc{margin:0;font-size:14px;line-height:1.65;color:rgba(138,160,196,.8);max-width:480px}
+.ob-field-label{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:rgba(138,160,196,.6);margin:0 0 10px}
+.industry-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:28px}
+.industry-card{--ic:#5B9BD5;display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-radius:12px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.03);text-align:left;cursor:pointer;font-family:inherit;transition:border-color .16s,background .16s}
+.industry-card:hover{border-color:rgba(255,255,255,.14);background:rgba(255,255,255,.055)}
+.industry-card.selected{border-color:color-mix(in srgb,var(--ic) 45%,transparent);background:color-mix(in srgb,var(--ic) 9%,rgba(255,255,255,.02));box-shadow:0 0 0 2px color-mix(in srgb,var(--ic) 18%,transparent)}
+.ic-icon{width:38px;height:38px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--ic) 15%,rgba(255,255,255,.04));color:var(--ic)}
+.ic-meta{flex:1;min-width:0}.ic-label{font-size:13px;font-weight:700;display:block;margin-bottom:3px;color:rgba(228,236,248,.9)}
+.ic-desc{font-size:11.5px;line-height:1.5;color:rgba(138,160,196,.65);display:block}
+.ic-check{color:var(--ic);flex-shrink:0;display:flex;align-items:center}
+.size-pills{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.size-pill{padding:8px 22px;border-radius:99px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:rgba(138,160,196,.8);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;transition:border-color .15s,background .15s,color .15s}
+.size-pill:hover{border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.07);color:rgba(240,245,255,.9)}
+.size-pill.selected{border-color:color-mix(in srgb,#5B9BD5 50%,transparent);background:color-mix(in srgb,#5B9BD5 14%,rgba(255,255,255,.02));color:#5B9BD5;box-shadow:0 0 0 2px color-mix(in srgb,#5B9BD5 16%,transparent)}
+.plan-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:start}
+.plan-card{--pc:#5B9BD5;display:flex;flex-direction:column;padding:22px 20px 20px;border-radius:16px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.025);cursor:pointer;position:relative;transition:border-color .18s,background .18s,box-shadow .18s,transform .18s;font-family:inherit;text-align:left;color:inherit}
+.plan-card:hover{border-color:color-mix(in srgb,var(--pc) 35%,rgba(255,255,255,.1));background:color-mix(in srgb,var(--pc) 6%,rgba(255,255,255,.03))}
+.plan-card.plan-selected{border-color:color-mix(in srgb,var(--pc) 55%,transparent);background:color-mix(in srgb,var(--pc) 10%,rgba(255,255,255,.03));box-shadow:0 0 0 2px color-mix(in srgb,var(--pc) 22%,transparent),0 8px 28px color-mix(in srgb,var(--pc) 10%,transparent)}
+.plan-card.plan-featured{border-top:3px solid #5B9BD5;padding-top:36px;transform:scale(1.025) translateY(-4px)}
+.plan-card.plan-featured:hover{transform:scale(1.025) translateY(-7px)}
+.plan-card.plan-featured.plan-selected{box-shadow:0 0 0 2px rgba(74,139,212,.3),0 16px 44px rgba(74,139,212,.2)}
+.plan-featured-indicator{position:absolute;top:-1px;left:50%;transform:translateX(-50%);padding:4px 12px;border-radius:0 0 10px 10px;background:#5B9BD5;color:#fff;font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
+.plan-icon{width:44px;height:44px;border-radius:12px;margin-bottom:14px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--pc) 16%,rgba(255,255,255,.04));border:1px solid color-mix(in srgb,var(--pc) 22%,transparent);color:var(--pc);flex-shrink:0}
+.plan-name{font-family:var(--ffd);font-size:17px;font-weight:700;margin-bottom:3px}
+.plan-subtitle{font-size:12px;color:rgba(138,160,196,.7);margin-bottom:10px}
+.plan-for{font-size:12px;line-height:1.55;color:rgba(138,160,196,.75);margin-bottom:14px;min-height:36px}
+.plan-features{list-style:none;flex:1;display:flex;flex-direction:column;gap:7px;margin-bottom:14px}
+.plan-features li{display:flex;align-items:flex-start;gap:7px;font-size:12px;color:rgba(138,160,196,.8);line-height:1.4}
+.plan-feat-dot{width:5px;height:5px;border-radius:50%;background:var(--pc);flex-shrink:0;margin-top:5px}
+.plan-callout{padding:6px 10px;border-radius:7px;margin-bottom:14px;background:color-mix(in srgb,var(--pc) 10%,rgba(255,255,255,.04));border:1px solid color-mix(in srgb,var(--pc) 22%,transparent);font-size:11px;font-weight:700;color:color-mix(in srgb,var(--pc) 90%,white);text-align:center;letter-spacing:.02em}
+.plan-mods{display:flex;flex-wrap:wrap;gap:5px;padding-top:14px;border-top:1px solid rgba(255,255,255,.06)}
+.plan-mod{--mc:#5B9BD5;display:inline-flex;padding:3px 8px;border-radius:99px;background:color-mix(in srgb,var(--mc) 12%,rgba(255,255,255,.03));border:1px solid color-mix(in srgb,var(--mc) 22%,transparent);font-size:10.5px;font-weight:600;color:color-mix(in srgb,var(--mc) 88%,white)}
+.plan-check{position:absolute;bottom:14px;right:14px;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--pc) 18%,rgba(255,255,255,.06));border:1px solid color-mix(in srgb,var(--pc) 38%,transparent);color:color-mix(in srgb,var(--pc) 90%,white)}
+.ob-footer{display:flex;align-items:center;justify-content:space-between;padding:0 clamp(20px,5vw,48px);border-top:1px solid rgba(255,255,255,.06)}
+.ob-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 22px;border-radius:var(--r-lg);font:inherit;font-size:14px;font-weight:700;cursor:pointer;transition:all var(--tr)}
+.ob-btn-ghost{background:none;border:1px solid rgba(255,255,255,.1);color:rgba(138,160,196,.8)}
+.ob-btn-ghost:hover{border-color:rgba(255,255,255,.18);color:rgba(228,236,248,.9);background:rgba(255,255,255,.05)}
+.ob-btn-primary{background:var(--ac);border:none;color:#fff;box-shadow:0 4px 16px color-mix(in srgb,var(--ac) 35%,transparent)}
+.ob-btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 22px color-mix(in srgb,var(--ac) 46%,transparent);filter:brightness(1.08)}
+.ob-btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+/* ── APP SHELL ─────────────────────────────────── */
+.app-root{display:flex;height:100dvh;overflow:hidden;background:var(--bg-canvas)}
+.sidebar{position:relative;height:100dvh;width:56px;padding:16px 0 12px;box-sizing:border-box;background:linear-gradient(180deg,var(--surface) 0%,color-mix(in srgb,var(--surface-e) 88%,var(--surface-i)) 100%);border-right:1px solid var(--border-s);display:flex;flex-direction:column;gap:4px;z-index:40;overflow:hidden;transition:width 280ms cubic-bezier(0.34,0,0.16,1),box-shadow 280ms;flex-shrink:0}
+.sidebar:hover{width:220px;box-shadow:18px 0 60px -18px rgba(16,24,40,.2),0 0 0 1px color-mix(in srgb,var(--ac) 10%,transparent)}
+.sidebar::before{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,.06) 0%,transparent 22%)}
+.sb-logo{display:flex;align-items:center;gap:10px;padding:0 13px 14px;border-bottom:1px solid var(--border-s);flex-shrink:0;margin-bottom:4px;overflow:hidden;position:relative;z-index:1}
+.sb-mark{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#5B9BD5,#2E6AB5);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0;font-family:var(--ffd)}
+.sb-name{font-family:var(--ffd);font-size:15px;font-weight:800;letter-spacing:.16em;color:var(--tx);white-space:nowrap;opacity:0;transition:opacity 80ms;text-transform:uppercase}
+.sidebar:hover .sb-name{opacity:1;transition:opacity 200ms 60ms}
+.sb-nav{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;display:flex;flex-direction:column;gap:2px;padding:4px 0;position:relative;z-index:1;scrollbar-width:thin;scrollbar-color:rgba(138,154,184,.12) transparent}
+.sb-section-label{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--tx3);padding:5px 14px 2px;white-space:nowrap;opacity:0;max-height:0;overflow:hidden;transition:opacity 80ms,max-height 280ms cubic-bezier(0.34,0,0.16,1),padding 280ms;pointer-events:none}
+.sidebar:hover .sb-section-label{opacity:1;max-height:22px;transition:opacity 200ms 60ms,max-height 280ms,padding 280ms}
+.sidebar:not(:hover) .sb-section-label{max-height:0;padding-top:0;padding-bottom:0}
+.sb-item{display:flex;align-items:center;gap:10px;min-height:42px;padding:10px 14px;border-radius:10px;font-size:13.5px;font-weight:600;color:var(--tx2);cursor:pointer;border:none;background:none;width:100%;text-align:left;white-space:nowrap;overflow:hidden;transition:background 130ms,color 130ms;text-decoration:none;box-sizing:border-box}
+.sb-item:hover{background:color-mix(in srgb,var(--ac-s) 44%,var(--bg-canvas));color:var(--tx)}
+.sb-item.active{background:color-mix(in srgb,var(--ac-s) 56%,var(--surface-i));color:var(--tx);border-left:2px solid var(--ac);padding-left:12px}
+.sb-item.active .sb-icon{color:var(--ac)}
+.sb-icon{flex-shrink:0;color:var(--tx3);transition:color 130ms}
+.sb-label{flex:1;overflow:hidden;text-overflow:ellipsis;opacity:0;transition:opacity 80ms}
+.sidebar:hover .sb-label{opacity:1;transition:opacity 200ms 60ms}
+.sb-bottom{position:relative;z-index:1;display:flex;flex-direction:column;gap:2px;border-top:1px solid var(--border-s);padding-top:8px}
+.sb-logout{display:flex;align-items:center;gap:9px;padding:9px 14px;border-radius:9px;font-size:13.5px;font-weight:500;color:var(--tx3);background:none;border:none;cursor:pointer;width:100%;text-align:left;transition:background 130ms,color 130ms;white-space:nowrap;overflow:hidden}
+.sb-logout:hover{background:rgba(239,68,68,.08);color:#EF4444}
+.topbar{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;background:color-mix(in srgb,var(--surface) 92%,transparent);border-bottom:1px solid var(--border-s);flex-shrink:0;backdrop-filter:blur(8px)}
+.topbar-crumb{font-size:14px;font-weight:600;color:var(--tx)}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.tb-icon-btn{width:36px;height:36px;border-radius:9px;border:1px solid var(--border-s);background:color-mix(in srgb,var(--surface-e) 88%,transparent);color:var(--tx3);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background 130ms,color 130ms,border-color 130ms}
+.tb-icon-btn:hover{background:var(--bg-canvas);color:var(--tx);border-color:var(--border)}
+.tb-search{display:flex;align-items:center;gap:8px;padding:7px 14px;border-radius:9px;border:1px solid var(--border-s);background:color-mix(in srgb,var(--surface-e) 88%,transparent);color:var(--tx3);font:inherit;font-size:13px;cursor:pointer;transition:background 130ms,border-color 130ms}
+.tb-search:hover{background:var(--bg-canvas);border-color:var(--border);color:var(--tx2)}
+.tb-kbd{padding:2px 6px;border-radius:4px;border:1px solid var(--border);font-size:11px;font-family:monospace;color:var(--tx3);background:var(--surface-i)}
+.tb-avatar{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,color-mix(in srgb,var(--ac) 24%,var(--surface-e)),color-mix(in srgb,var(--ac) 12%,var(--surface-e)));border:1.5px solid color-mix(in srgb,var(--ac) 22%,var(--border));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--ac);cursor:pointer;transition:transform 130ms;font-family:var(--ffd)}
+.tb-avatar:hover{transform:scale(1.05)}
+.app-main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+.app-scroll{flex:1;overflow-y:auto;overflow-x:hidden}
+.dash{padding:28px;max-width:1160px}
+.dash-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:28px;flex-wrap:wrap}
+.dash-title{font-family:var(--ffd);font-size:22px;font-weight:700;letter-spacing:-0.022em;color:var(--tx);margin-bottom:4px}
+.dash-subtitle{font-size:14px;color:var(--tx3)}
+.dash-actions{display:flex;gap:8px}
+.dash-btn{display:flex;align-items:center;gap:7px;padding:9px 16px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface);color:var(--tx2);font:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:background 130ms,border-color 130ms,color 130ms}
+.dash-btn:hover{background:var(--bg-canvas);color:var(--tx)}
+.dash-btn.primary{background:linear-gradient(180deg,#2c2c2c 0%,#1a1a1a 100%);border-color:rgba(255,255,255,.1);color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.dash-btn.primary:hover{background:linear-gradient(180deg,#363636 0%,#242424 100%)}
+.kpi-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:24px}
+.kpi-card{--kc:var(--ac);padding:18px 20px;background:var(--surface);border:1px solid var(--border-s);border-radius:var(--r-xl);box-shadow:var(--sh-xs);transition:box-shadow var(--tr)}
+.kpi-card:hover{box-shadow:var(--sh-md)}
+.kpi-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--tx3);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.kpi-icon{color:var(--kc);opacity:.65}
+.kpi-value{font-family:var(--ffd);font-size:26px;font-weight:800;letter-spacing:-0.04em;color:var(--tx);margin-bottom:6px}
+.kpi-delta{font-size:12px;font-weight:600;display:flex;align-items:center;gap:4px}
+.kpi-delta.pos{color:#10B981}.kpi-delta.neg{color:#EF4444}
+.dash-grid{display:grid;grid-template-columns:1fr 360px;gap:16px}
+.surface-card{background:var(--surface);border:1px solid var(--border-s);border-radius:var(--r-xl);box-shadow:var(--sh-xs);overflow:hidden}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border-s)}
+.card-title{font-size:14px;font-weight:700;color:var(--tx)}
+.card-action{font-size:12px;font-weight:600;color:var(--tx3);background:none;border:none;cursor:pointer;transition:color 130ms}
+.card-action:hover{color:var(--ac)}
+.deals-table{width:100%;border-collapse:collapse}
+.deals-table th{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--tx3);padding:10px 20px;text-align:left;background:var(--surface-e);border-bottom:1px solid var(--border-s)}
+.deals-table td{padding:13px 20px;border-bottom:1px solid var(--border-s);font-size:13px;color:var(--tx2)}
+.deals-table tr:last-child td{border-bottom:none}
+.deals-table tr:hover td{background:var(--surface-i)}
+.deal-name{font-weight:600;color:var(--tx)}
+.deal-badge{display:inline-flex;padding:3px 8px;border-radius:99px;font-size:11px;font-weight:700}
+.badge-new{background:rgba(92,141,255,.12);color:#5C8DFF;border:1px solid rgba(92,141,255,.22)}
+.badge-prog{background:rgba(245,158,11,.12);color:#F59E0B;border:1px solid rgba(245,158,11,.22)}
+.badge-won{background:rgba(16,185,129,.12);color:#10B981;border:1px solid rgba(16,185,129,.22)}
+.badge-lost{background:rgba(239,68,68,.1);color:#EF4444;border:1px solid rgba(239,68,68,.18)}
+.activity-list{padding:4px 0}
+.activity-item{display:flex;align-items:flex-start;gap:12px;padding:14px 20px;border-bottom:1px solid var(--border-s)}
+.activity-item:last-child{border-bottom:none}
+.activity-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.activity-body{flex:1;min-width:0}
+.activity-text{font-size:13px;color:var(--tx2);line-height:1.5}
+.activity-text strong{color:var(--tx);font-weight:600}
+.activity-time{font-size:11px;color:var(--tx3);margin-top:2px}
+
+/* ── TWEAKS ────────────────────────────────────── */
+.tweaks-panel{position:fixed;bottom:20px;right:20px;z-index:999;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;width:220px;box-shadow:var(--sh-lg);display:none;flex-direction:column;gap:12px}
+.tweaks-panel.open{display:flex}
+.tw-head{font-size:13px;font-weight:700;color:var(--tx);display:flex;align-items:center;justify-content:space-between}
+.tw-close{background:none;border:none;color:var(--tx3);cursor:pointer;padding:2px;display:flex;align-items:center;justify-content:center;transition:color var(--tr)}
+.tw-close:hover{color:var(--tx)}
+.tw-lbl{font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--tx3);margin-bottom:6px}
+.tw-row{display:flex;flex-direction:column;gap:4px}
+.tw-opt{width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border-s);background:var(--surface-e);color:var(--tx2);font:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:background var(--tr),color var(--tr),border-color var(--tr);text-align:left}
+.tw-opt:hover{background:var(--bg-canvas);color:var(--tx)}
+.tw-opt.on{border-color:color-mix(in srgb,var(--ac) 38%,var(--border));background:var(--ac-ss);color:var(--tx)}
+
+/* ── RESPONSIVE ────────────────────────────────── */
+@media(max-width:768px){
+  .auth-root{grid-template-columns:1fr}
+  .auth-brand{display:none}
+  .auth-form-content{padding:28px 24px}
+  .kpi-row{grid-template-columns:repeat(2,1fr)}
+  .dash-grid{grid-template-columns:1fr}
+  .plan-grid{grid-template-columns:1fr;max-width:460px}
+  .plan-card.plan-featured{transform:none}
+  .plan-card.plan-featured:hover{transform:translateY(-3px)}
+  .industry-grid{grid-template-columns:1fr}
+  .dash{padding:16px}
+  .tweaks-panel{bottom:12px;right:12px;width:200px}
+}
+@media(max-width:480px){
+  .kpi-row{grid-template-columns:1fr 1fr}
+  .auth-form-content{padding:20px 16px}
+  .tb-search span,.tb-kbd{display:none}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+
+// ── Auth Screen Component ─────────────────────────────────────────────────────
+// Exports: window.KortAuthScreen
+
+const { useState } = React;
+
+function EyeIcon({ open, size = 16 }) {
+  return open ? (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>
+  ) : (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22"/>
+    </svg>
+  );
+}
+
+function PwField({ value, onChange, placeholder, autoComplete }) {
+  const [visible, setVisible] = useState(false);
+  return (
+    <div className="pw-field">
+      <input
+        className="form-input"
+        type={visible ? 'text' : 'password'}
+        value={value} onChange={e => onChange(e.target.value)}
+        placeholder={placeholder} autoComplete={autoComplete}
+      />
+      <button type="button" className="pw-toggle" onClick={() => setVisible(v => !v)} aria-label="Показать пароль">
+        <EyeIcon open={visible} size={15} />
+      </button>
+    </div>
+  );
+}
+
+function BrandPanel() {
+  const props = [
+    { color: '#5B9BD5', title: 'CRM и воронки продаж', desc: 'Лиды, сделки и клиенты — в едином рабочем потоке.' },
+    { color: '#5C8DFF', title: 'Склад и логистика', desc: 'Учёт товаров, инвентаризация и цифровой двойник.' },
+    { color: '#10B981', title: 'Финансы и аналитика', desc: 'Выручка, платежи и отчёты в реальном времени.' },
+    { color: '#7C3AED', title: 'Производство', desc: 'Кастомные рабочие зоны для сложных операций.' },
+  ];
+  return (
+    <div className="auth-brand">
+      <div className="brand-logo-row">
+        <div className="brand-mark">K</div>
+        <span className="brand-name">KORT</span>
+      </div>
+      <div className="brand-hero">
+        <div className="brand-tagline">
+          Управляйте<br/>бизнесом в<br/><em>едином контуре</em>
+        </div>
+        <div className="brand-props">
+          {props.map(p => (
+            <div key={p.title} className="brand-prop">
+              <div className="brand-prop-dot" style={{ background: p.color }} />
+              <div className="brand-prop-body">
+                <strong>{p.title}</strong>
+                <span>{p.desc}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="brand-bottom">
+        <span className="brand-bottom-tag">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Казахстанская разработка
+        </span>
+        <span className="brand-bottom-tag" style={{ marginLeft: 'auto' }}>ERP нового поколения</span>
+      </div>
+      <div className="brand-deco" />
+    </div>
+  );
+}
+
+function LoginForm({ onLogin, onGoRegister }) {
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (!identifier.trim() || !password.trim()) { setError('Введите логин и пароль.'); return; }
+    setLoading(true); setError('');
+    setTimeout(() => { setLoading(false); onLogin(); }, 900);
+  }
+
+  return (
+    <form className="auth-form-inner screen-transition" onSubmit={handleSubmit}>
+      <div className="form-title">Вход в систему</div>
+      <div className="form-subtitle">Войдите по email или номеру телефона.</div>
+      <div className="form-fields">
+        <input className="form-input" type="text" value={identifier} onChange={e => { setIdentifier(e.target.value); setError(''); }} placeholder="Email или номер телефона" autoComplete="username" />
+        <PwField value={password} onChange={v => { setPassword(v); setError(''); }} placeholder="Пароль" autoComplete="current-password" />
+      </div>
+      {error && <div className="form-error" style={{ marginBottom: 12 }}>{error}</div>}
+      <div className="login-actions" style={{ marginBottom: 16 }}>
+        <button type="submit" className="primary-btn" disabled={loading}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          {loading ? 'Входим...' : 'Войти'}
+        </button>
+      </div>
+      <div className="form-footer">
+        <button type="button" className="link-btn">Забыли пароль?</button>
+        <button type="button" className="link-btn" onClick={onGoRegister}>Создать компанию →</button>
+      </div>
+    </form>
+  );
+}
+
+function RegisterForm({ onRegister, onBack }) {
+  const [companyName, setCompanyName] = useState('');
+  const [ownerName, setOwnerName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (!companyName.trim() || !ownerName.trim() || !email.trim() || !password.trim()) { setError('Заполните все обязательные поля.'); return; }
+    if (password !== confirm) { setError('Пароли не совпадают.'); return; }
+    if (password.length < 6) { setError('Пароль должен содержать не менее 6 символов.'); return; }
+    setLoading(true); setError('');
+    setTimeout(() => { setLoading(false); onRegister(); }, 1000);
+  }
+
+  return (
+    <form className="auth-form-inner screen-transition" onSubmit={handleSubmit} style={{ maxWidth: 400, paddingBottom: 8 }}>
+      <div className="form-title">Регистрация компании</div>
+      <div className="form-subtitle">Компания создаётся сразу с правами руководителя.</div>
+      <div className="form-fields">
+        <input className="form-input" value={companyName} onChange={e => { setCompanyName(e.target.value); setError(''); }} placeholder="Название компании *" />
+        <input className="form-input" value={ownerName} onChange={e => { setOwnerName(e.target.value); setError(''); }} placeholder="ФИО руководителя *" autoComplete="name" />
+        <input className="form-input" type="email" value={email} onChange={e => { setEmail(e.target.value); setError(''); }} placeholder="Email *" autoComplete="email" />
+        <PwField value={password} onChange={v => { setPassword(v); setError(''); }} placeholder="Пароль *" autoComplete="new-password" />
+        <PwField value={confirm} onChange={v => { setConfirm(v); setError(''); }} placeholder="Подтверждение пароля *" autoComplete="new-password" />
+      </div>
+      {error && <div className="form-error" style={{ marginBottom: 12 }}>{error}</div>}
+      <button type="submit" className="primary-btn" style={{ width: '100%', marginBottom: 4 }} disabled={loading}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18M3 7V21M21 7V21M6 21V11M15 21V11M9 7h6M9 11h6M9 15h6M6 3h12l3 4H3z"/></svg>
+        {loading ? 'Создаём компанию...' : 'Создать компанию'}
+      </button>
+    </form>
+  );
+}
+
+function KortAuthScreen({ onComplete }) {
+  const [mode, setMode] = useState('login'); // 'login' | 'register'
+  return (
+    <div className="auth-root">
+      <BrandPanel />
+      <div className="auth-form-side">
+        <div className="auth-form-header">
+          <div style={{ minHeight: 40, display: 'flex', alignItems: 'center' }}>
+            {mode === 'register' && (
+              <button className="form-back-btn" onClick={() => setMode('login')}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                Назад
+              </button>
+            )}
+          </div>
+          <div style={{ width: 40 }} />
+        </div>
+        <div className="auth-form-content">
+          {mode === 'login'
+            ? <LoginForm onLogin={onComplete} onGoRegister={() => setMode('register')} />
+            : <RegisterForm onRegister={onComplete} onBack={() => setMode('login')} />
+          }
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { KortAuthScreen });
+
+</script>
+<script type="text/babel">
+
+// ── Onboarding Screen Component ───────────────────────────────────────────────
+// Exports: window.KortOnboardingScreen
+
+const { useState: useStateOB } = React;
+
+const BUSINESS_TYPES = [
+  { value: 'retail', label: 'Розничная торговля', desc: 'Точки продаж, онлайн-заказы и повторные покупки.', color: '#4A8BD4',
+    icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> },
+  { value: 'services', label: 'Услуги', desc: 'Запись клиентов, повторные касания и сервис.', color: '#5C8DFF',
+    icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> },
+  { value: 'sales', label: 'B2B и продажи', desc: 'Лиды, переговоры и коммерческие предложения.', color: '#2E9D84',
+    icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg> },
+  { value: 'production', label: 'Производство', desc: 'Длинный цикл сделки, согласования и этапы.', color: '#7C3AED',
+    icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg> },
+  { value: 'other', label: 'Другое направление', desc: 'Гибкая настройка под ваш процесс.', color: '#8FA4C8',
+    icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l2 7h7l-5.5 4 2 7L12 16l-5.5 4 2-7L3 9h7z"/></svg> },
+];
+
+const SIZES = [
+  { value: '1_5', label: '1–5' },
+  { value: '6_20', label: '6–20' },
+  { value: '21_100', label: '21–100' },
+  { value: '100_plus', label: '100+' },
+];
+
+const PLANS = [
+  {
+    mode: 'basic', title: 'Базовый', subtitle: 'Для малого бизнеса', color: '#5C8DFF',
+    for: 'Команды до 20 человек, которые только начинают работать с CRM',
+    features: ['Единая база клиентов и лидов', 'Управление складом', 'Настройка команды'],
+    modules: [{ label: 'Лиды', color: '#5C8DFF' }, { label: 'Клиенты', color: '#5C8DFF' }, { label: 'Склад', color: '#8A9AB8' }],
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>,
+  },
+  {
+    mode: 'advanced', title: 'Продвинутый', subtitle: 'Для растущей команды', color: '#4A8BD4',
+    featured: true, badge: 'Рекомендуем',
+    for: 'Бизнес с активными продажами, аналитикой и разделением ролей',
+    features: ['Воронки продаж и этапы сделок', 'Задачи и контроль исполнения', 'Финансы и аналитика', 'Управление сотрудниками'],
+    modules: [{ label: 'Лиды', color: '#5C8DFF' }, { label: 'Сделки', color: '#4A8BD4' }, { label: 'Клиенты', color: '#5C8DFF' }, { label: 'Задачи', color: '#2E9D84' }, { label: 'Склад', color: '#8A9AB8' }, { label: 'Финансы', color: '#2E9D84' }],
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
+  },
+  {
+    mode: 'industrial', title: 'Промышленный', subtitle: 'Для сложных процессов', color: '#7C3AED',
+    callout: 'Индивидуальная интеграция',
+    for: 'Производства и предприятия с уникальными операционными цепочками',
+    features: ['Всё из «Продвинутого»', 'Кастомные рабочие зоны', 'API и расширенный аудит', 'Индивидуальные интеграции'],
+    modules: [{ label: 'Все модули', color: '#7C3AED' }, { label: 'Chapan', color: '#7C3AED' }],
+    icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>,
+  },
+];
+
+const STEPS = ['Ваш бизнес', 'Режим KORT', 'Готово'];
+
+function BusinessTypeStep({ industry, setIndustry, size, setSize }) {
+  return (
+    <div className="ob-content ob-narrow screen-transition">
+      <div className="ob-step-head">
+        <p className="ob-eyebrow">Настройка рабочего контура</p>
+        <h1 className="ob-title">Расскажите о вашем бизнесе</h1>
+        <p className="ob-desc">KORT нужен только стартовый контекст, чтобы открыть нужные модули и убрать лишние.</p>
+      </div>
+      <p className="ob-field-label">Тип бизнеса</p>
+      <div className="industry-grid">
+        {BUSINESS_TYPES.map(item => {
+          const sel = industry === item.value;
+          return (
+            <button key={item.value} type="button" onClick={() => setIndustry(item.value)}
+              className={`industry-card${sel ? ' selected' : ''}`}
+              style={{ '--ic': item.color }}>
+              <span className="ic-icon">{item.icon}</span>
+              <span className="ic-meta">
+                <span className="ic-label" style={sel ? { color: item.color } : {}}>{item.label}</span>
+                <span className="ic-desc">{item.desc}</span>
+              </span>
+              {sel && (
+                <span className="ic-check">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      <p className="ob-field-label">Размер команды</p>
+      <div className="size-pills">
+        {SIZES.map(s => (
+          <button key={s.value} type="button" onClick={() => setSize(s.value)}
+            className={`size-pill${size === s.value ? ' selected' : ''}`}>
+            {s.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PlanStep({ selectedMode, setMode }) {
+  return (
+    <div className="ob-content ob-wide screen-transition">
+      <div className="ob-step-head">
+        <p className="ob-eyebrow">Режим продукта</p>
+        <h1 className="ob-title">Выберите режим KORT</h1>
+        <p className="ob-desc">Режим определяет, какие модули откроются для вашей команды. Изменить можно позже в настройках.</p>
+      </div>
+      <div className="plan-grid">
+        {PLANS.map(plan => {
+          const sel = selectedMode === plan.mode;
+          return (
+            <button key={plan.mode} type="button" onClick={() => setMode(plan.mode)}
+              className={`plan-card${plan.featured ? ' plan-featured' : ''}${sel ? ' plan-selected' : ''}`}
+              style={{ '--pc': plan.color }}>
+              {plan.badge && <div className="plan-featured-indicator">{plan.badge}</div>}
+              <div className="plan-icon">{plan.icon}</div>
+              <div className="plan-name">{plan.title}</div>
+              <div className="plan-subtitle">{plan.subtitle}</div>
+              <div className="plan-for">{plan.for}</div>
+              <ul className="plan-features">
+                {plan.features.map(f => (
+                  <li key={f}><span className="plan-feat-dot" />{f}</li>
+                ))}
+              </ul>
+              {plan.callout && <div className="plan-callout">{plan.callout}</div>}
+              <div className="plan-mods">
+                {plan.modules.map(m => (
+                  <span key={m.label} className="plan-mod" style={{ '--mc': m.color }}>{m.label}</span>
+                ))}
+              </div>
+              {sel && (
+                <div className="plan-check">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function SuccessStep({ onDone }) {
+  return (
+    <div className="ob-content ob-narrow screen-transition" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', gap: 16, paddingTop: 32 }}>
+      <div style={{ width: 72, height: 72, borderRadius: 20, background: 'rgba(16,185,129,.14)', border: '1px solid rgba(16,185,129,.26)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10B981' }}>
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <h1 className="ob-title" style={{ marginBottom: 0 }}>Вы готовы к работе</h1>
+      <p className="ob-desc" style={{ maxWidth: 340, textAlign: 'center' }}>KORT настроен и готов к первому полезному действию. Перейдите в рабочее пространство.</p>
+      <button className="ob-btn ob-btn-primary" style={{ marginTop: 8 }} onClick={onDone}>
+        Открыть KORT
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  );
+}
+
+function KortOnboardingScreen({ onComplete }) {
+  const [step, setStep] = useStateOB(0);
+  const [industry, setIndustry] = useStateOB('');
+  const [size, setSize] = useStateOB('');
+  const [selectedMode, setMode] = useStateOB('advanced');
+
+  const canNext = step === 0 ? (industry !== '' && size !== '') : true;
+
+  return (
+    <div className="ob-root">
+      {/* Header */}
+      <header className="ob-header">
+        <div className="ob-logo-row">
+          <div className="ob-mark">K</div>
+          <span className="ob-wordmark">KORT</span>
+        </div>
+        <div className="ob-progress">
+          <div className="ob-dots">
+            {STEPS.map((_, i) => (
+              <span key={i} className={`ob-dot ${i === step ? 'ob-dot-active' : i < step ? 'ob-dot-done' : 'ob-dot-pending'}`} />
+            ))}
+          </div>
+          <span className="ob-step-label">{STEPS[step]}</span>
+        </div>
+      </header>
+
+      {/* Main */}
+      <main className="ob-main">
+        {step === 0 && <BusinessTypeStep industry={industry} setIndustry={setIndustry} size={size} setSize={setSize} />}
+        {step === 1 && <PlanStep selectedMode={selectedMode} setMode={setMode} />}
+        {step === 2 && <SuccessStep onDone={onComplete} />}
+      </main>
+
+      {/* Footer */}
+      <footer className="ob-footer">
+        <button
+          className="ob-btn ob-btn-ghost"
+          onClick={() => step > 0 && setStep(s => s - 1)}
+          style={{ visibility: step === 0 ? 'hidden' : 'visible' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          Назад
+        </button>
+        {step < 2 ? (
+          <button className="ob-btn ob-btn-primary" disabled={!canNext} onClick={() => setStep(s => s + 1)}>
+            Продолжить
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+        ) : null}
+      </footer>
+    </div>
+  );
+}
+
+Object.assign(window, { KortOnboardingScreen });
+
+</script>
+<script type="text/babel">
+
+// ── App Shell Component ───────────────────────────────────────────────────────
+// Exports: window.KortAppShell
+
+const { useState: useStateApp } = React;
+
+const NAV_ITEMS = [
+  { id: 'home', label: 'Главная', path: '/', icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> },
+  { id: 'sep0', sep: true },
+  { id: 'sec-crm', label: 'CRM', section: true },
+  { id: 'leads', label: 'Лиды', icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
+  { id: 'deals', label: 'Сделки', icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg> },
+  { id: 'customers', label: 'Клиенты', icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> },
+  { id: 'tasks', label: 'Задачи', icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> },
+  { id: 'sep1', sep: true },
+  { id: 'sec-ops', label: 'Операции', section: true },
+  { id: 'warehouse', label: 'Склад', icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> },
+  { id: 'finance', label: 'Финансы', icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> },
+  { id: 'reports', label: 'Отчёты', icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> },
+];
+
+const RECENT_DEALS = [
+  { id: 1, name: 'ТОО «Алатау Групп»', stage: 'Переговоры', amount: '₸ 1.4М', status: 'prog', manager: 'А.Б.' },
+  { id: 2, name: 'ИП Серикбаев М.', stage: 'Новый лид', amount: '₸ 280К', status: 'new', manager: 'Д.К.' },
+  { id: 3, name: 'АО «Казцемент»', stage: 'Сделка закрыта', amount: '₸ 8.2М', status: 'won', manager: 'А.Б.' },
+  { id: 4, name: 'ТОО «СтройМаш»', stage: 'Коммерческое предложение', amount: '₸ 560К', status: 'prog', manager: 'Н.О.' },
+  { id: 5, name: 'ИП Джаксыбеков', stage: 'Отказ', amount: '₸ 120К', status: 'lost', manager: 'Д.К.' },
+];
+
+const ACTIVITY = [
+  { color: '#5C8DFF', text: <><strong>Новый лид</strong> добавлен — ТОО «Строй Плюс»</>, time: '3 мин назад' },
+  { color: '#10B981', text: <><strong>Сделка закрыта</strong> — АО «Казцемент» на ₸8.2М</>, time: '42 мин назад' },
+  { color: '#F59E0B', text: <><strong>Задача просрочена</strong> — Коммерческое предложение СтройМаш</>, time: '1 ч назад' },
+  { color: '#4A8BD4', text: <><strong>Поступление на склад</strong> — 240 позиций из Алматы</>, time: '2 ч назад' },
+  { color: '#8A9AB8', text: <><strong>Новый сотрудник</strong> добавлен — Нурлан Оспанов</>, time: '3 ч назад' },
+];
+
+const BADGE_CLASS = { new: 'badge-new', prog: 'badge-prog', won: 'badge-won', lost: 'badge-lost' };
+const BADGE_LABEL = { new: 'Новый', prog: 'В работе', won: 'Закрыт', lost: 'Отказ' };
+
+function Sidebar({ active, setActive, onLogout }) {
+  return (
+    <aside className="sidebar">
+      <div className="sb-logo">
+        <div className="sb-mark">K</div>
+        <span className="sb-name">KORT</span>
+      </div>
+      <nav className="sb-nav">
+        {NAV_ITEMS.map(item => {
+          if (item.sep) return <div key={item.id} style={{ height: 1, background: 'var(--border-s)', margin: '4px 0' }} />;
+          if (item.section) return (
+            <div key={item.id} className="sb-section-label">{item.label}</div>
+          );
+          return (
+            <button key={item.id} className={`sb-item${active === item.id ? ' active' : ''}`}
+              onClick={() => setActive(item.id)}>
+              <span className="sb-icon">{item.icon}</span>
+              <span className="sb-label">{item.label}</span>
+            </button>
+          );
+        })}
+      </nav>
+      <div className="sb-bottom">
+        <button className="sb-item" onClick={() => setActive('settings')}>
+          <span className="sb-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </span>
+          <span className="sb-label">Настройки</span>
+        </button>
+        <button className="sb-logout" onClick={onLogout}>
+          <span className="sb-icon" style={{ color: 'inherit' }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+          </span>
+          <span className="sb-label">Выйти</span>
+        </button>
+      </div>
+    </aside>
+  );
+}
+
+function Topbar({ page }) {
+  const PAGE_NAMES = { home: 'Главная', leads: 'Лиды', deals: 'Сделки', customers: 'Клиенты', tasks: 'Задачи', warehouse: 'Склад', finance: 'Финансы', reports: 'Отчёты', settings: 'Настройки' };
+  return (
+    <header className="topbar">
+      <div className="topbar-left">
+        <span className="topbar-crumb">{PAGE_NAMES[page] || 'KORT'}</span>
+      </div>
+      <div className="topbar-right">
+        <button className="tb-search">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <span>Поиск</span>
+          <kbd className="tb-kbd">⌘K</kbd>
+        </button>
+        <button className="tb-icon-btn" aria-label="Уведомления">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        </button>
+        <button className="tb-icon-btn" aria-label="Тема">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        </button>
+        <div className="tb-avatar" title="Адиль Бекенов">АБ</div>
+      </div>
+    </header>
+  );
+}
+
+function Dashboard({ onNav }) {
+  const kpis = [
+    { label: 'Выручка', value: '₸ 14.8М', delta: '+18%', dir: 'pos', color: '#2E6AB5',
+      icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> },
+    { label: 'Сделки', value: '47', delta: '+6', dir: 'pos', color: '#4A8BD4',
+      icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg> },
+    { label: 'Клиенты', value: '284', delta: '+12', dir: 'pos', color: '#5C8DFF',
+      icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
+    { label: 'Задачи', value: '23', delta: '-4', dir: 'neg', color: '#EF4444',
+      icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> },
+  ];
+  return (
+    <div className="dash">
+      {/* Header */}
+      <div className="dash-header">
+        <div>
+          <div className="dash-title">Добро пожаловать, Адиль</div>
+          <div className="dash-subtitle">Вторник, 22 апреля 2025 · KORT готов к работе</div>
+        </div>
+        <div className="dash-header-actions">
+          <button className="dash-action-btn" onClick={() => onNav('customers')}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Клиент
+          </button>
+          <button className="dash-action-btn primary" onClick={() => onNav('deals')}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            Новая сделка
+          </button>
+        </div>
+      </div>
+
+      {/* KPI */}
+      <div className="kpi-row">
+        {kpis.map(k => (
+          <div key={k.label} className="kpi-card" style={{ '--kc': k.color }}>
+            <div className="kpi-label">
+              {k.label}
+              <span className="kpi-icon">{k.icon}</span>
+            </div>
+            <div className="kpi-value">{k.value}</div>
+            <div className={`kpi-delta ${k.dir}`}>
+              {k.dir === 'pos'
+                ? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 15l-6-6-6 6"/></svg>
+                : <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 9l6 6 6-6"/></svg>
+              }
+              {k.delta} за месяц
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Grid */}
+      <div className="dash-grid">
+        {/* Deals table */}
+        <div className="surface-card">
+          <div className="card-header">
+            <span className="card-title">Активные сделки</span>
+            <button className="card-action" onClick={() => onNav('deals')}>Все сделки →</button>
+          </div>
+          <table className="deals-table">
+            <thead>
+              <tr>
+                <th>Клиент</th>
+                <th>Этап</th>
+                <th>Сумма</th>
+                <th>Статус</th>
+              </tr>
+            </thead>
+            <tbody>
+              {RECENT_DEALS.map(d => (
+                <tr key={d.id}>
+                  <td><span className="deal-name">{d.name}</span></td>
+                  <td>{d.stage}</td>
+                  <td style={{ fontVariantNumeric: 'tabular-nums', fontWeight: 600, color: 'var(--tx)' }}>{d.amount}</td>
+                  <td><span className={`deal-badge ${BADGE_CLASS[d.status]}`}>{BADGE_LABEL[d.status]}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Activity feed */}
+        <div className="surface-card">
+          <div className="card-header">
+            <span className="card-title">Лента событий</span>
+            <button className="card-action">Все →</button>
+          </div>
+          <div className="activity-list">
+            {ACTIVITY.map((a, i) => (
+              <div key={i} className="activity-item">
+                <div className="activity-dot" style={{ background: a.color }} />
+                <div className="activity-body">
+                  <div className="activity-text">{a.text}</div>
+                  <div className="activity-time">{a.time}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PagePlaceholder({ name }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 14, color: 'var(--tx3)', padding: 48 }}>
+      <div style={{ width: 56, height: 56, borderRadius: 16, border: '1px dashed var(--border)', background: 'var(--surface)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+      </div>
+      <div style={{ fontSize: 15, fontWeight: 600 }}>{name}</div>
+      <div style={{ fontSize: 13, color: 'var(--tx3)', opacity: .7 }}>Это раздел в прототипе не заполнен</div>
+    </div>
+  );
+}
+
+function KortAppShell({ onLogout }) {
+  const [active, setActive] = useStateApp('home');
+  return (
+    <div className="app-root">
+      <Sidebar active={active} setActive={setActive} onLogout={onLogout} />
+      <div className="app-main">
+        <Topbar page={active} />
+        <div className="app-scroll">
+          {active === 'home' ? <Dashboard onNav={setActive} /> : <PagePlaceholder name={active} />}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { KortAppShell });
+
+</script>
+
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+// ── Tweaks Panel ─────────────────────────────────────────────────────────────
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "theme": "light",
+  "screen": "auth"
+}/*EDITMODE-END*/;
+
+function TweaksPanel({ screen, setScreen, open, onClose }) {
+  const [theme, setThemeState] = useState(TWEAK_DEFAULTS.theme);
+
+  function setTheme(t) {
+    setThemeState(t);
+    document.documentElement.setAttribute('data-theme', t === 'dark' ? 'dark' : '');
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { theme: t } }, '*');
+  }
+
+  return (
+    <div className={`tweaks-panel${open ? ' open' : ''}`} id="tweaks-panel">
+      <div className="tw-head">
+        Tweaks
+        <button className="tw-close" onClick={onClose}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <div className="tw-row">
+        <div className="tw-lbl">Экран</div>
+        {['auth', 'onboarding', 'app'].map(s => (
+          <button key={s} className={`tw-opt${screen === s ? ' on' : ''}`} onClick={() => {
+            setScreen(s);
+            window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { screen: s } }, '*');
+          }}>
+            {{ auth: 'Авторизация', onboarding: 'Онбординг', app: 'Главный экран' }[s]}
+          </button>
+        ))}
+      </div>
+
+      <div className="tw-row">
+        <div className="tw-lbl">Тема приложения</div>
+        <button className={`tw-opt${theme === 'light' ? ' on' : ''}`} onClick={() => setTheme('light')}>Светлая</button>
+        <button className={`tw-opt${theme === 'dark' ? ' on' : ''}`} onClick={() => setTheme('dark')}>Тёмная</button>
+      </div>
+    </div>
+  );
+}
+
+// ── App ──────────────────────────────────────────────────────────────────────
+function App() {
+  const [screen, setScreen] = useState(TWEAK_DEFAULTS.screen || 'auth');
+  const [tweaksOpen, setTweaksOpen] = useState(false);
+
+  useEffect(() => {
+    window.addEventListener('message', e => {
+      if (e.data?.type === '__activate_edit_mode') setTweaksOpen(true);
+      if (e.data?.type === '__deactivate_edit_mode') setTweaksOpen(false);
+    });
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+    // Apply stored theme
+    if (TWEAK_DEFAULTS.theme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  }, []);
+
+  const { KortAuthScreen, KortOnboardingScreen, KortAppShell } = window;
+
+  return (
+    <>
+      {screen === 'auth' && (
+        <div className="screen-fade">
+          <KortAuthScreen onComplete={() => setScreen('onboarding')} />
+        </div>
+      )}
+      {screen === 'onboarding' && (
+        <div className="screen-fade">
+          <KortOnboardingScreen onComplete={() => setScreen('app')} />
+        </div>
+      )}
+      {screen === 'app' && (
+        <div className="screen-fade" style={{ height: '100dvh' }}>
+          <KortAppShell onLogout={() => setScreen('auth')} />
+        </div>
+      )}
+      <TweaksPanel
+        screen={screen} setScreen={setScreen}
+        open={tweaksOpen} onClose={() => setTweaksOpen(false)}
+      />
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

@@ -308,13 +308,21 @@
 .profilePopoverStatus {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
   font-size: 12px;
   color: var(--text-secondary);
   background: var(--bg-surface-inset);
   border-radius: 8px;
   padding: 4px 10px;
   margin-top: 2px;
+}
+
+.profilePopoverStatusDot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
 .profilePopoverLink {

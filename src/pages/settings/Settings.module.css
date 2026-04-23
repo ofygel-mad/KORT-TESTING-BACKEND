@@ -893,13 +893,13 @@
   color: var(--text-secondary);
 }
 
-.moodGrid {
+.onlineStatusGrid {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
 }
 
-.moodItem {
+.onlineStatusItem {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -915,24 +915,26 @@
   transition: border-color 0.12s, background 0.12s, color 0.12s;
 }
 
-.moodItem:hover {
+.onlineStatusItem:hover {
   border-color: var(--border-default);
   color: var(--text-primary);
   background: var(--bg-surface);
 }
 
-.moodItemActive {
+.onlineStatusItemActive {
   border-color: var(--fill-accent);
   background: color-mix(in srgb, var(--fill-accent) 8%, var(--bg-surface));
   color: var(--text-primary);
 }
 
-.moodEmoji {
-  font-size: 15px;
-  line-height: 1;
+.onlineStatusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
-.moodLabel {
+.onlineStatusLabel {
   white-space: nowrap;
 }
 

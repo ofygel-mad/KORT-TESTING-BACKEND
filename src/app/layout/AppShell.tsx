@@ -15,6 +15,7 @@ import { useIsMobile } from '../../shared/hooks/useIsMobile';
 import { useDevicePerformance } from '../../shared/hooks/useDevicePerformance';
 import { useViewportProfile } from '../../shared/hooks/useViewportProfile';
 import { useAuthStore } from '../../shared/stores/auth';
+import { useActivityTracker } from '../../shared/stores/profile';
 import { pageTransition } from '../../shared/motion/presets';
 import { addDocumentListener } from '../../shared/lib/browser';
 import styles from './AppShell.module.css';
@@ -52,6 +53,7 @@ export function AppShell() {
   const user = useAuthStore((s) => s.user);
   const performance = useDevicePerformance();
   useViewportProfile();
+  useActivityTracker();
 
   // Reactively read the resolved data-theme attribute (kept in sync by applyTheme)
   const resolvedTheme = useSyncExternalStore(

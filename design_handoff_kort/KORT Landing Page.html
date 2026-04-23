@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KORT — ERP нового поколения</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<template id="__bundler_thumbnail">
+<svg viewBox="0 0 120 80" xmlns="http://www.w3.org/2000/svg">
+  <rect width="120" height="80" fill="#0c0f17"/>
+  <rect x="20" y="28" width="80" height="8" rx="4" fill="#4A8BD4" opacity=".8"/>
+  <rect x="30" y="44" width="60" height="4" rx="2" fill="#4A5878"/>
+  <rect x="40" y="54" width="40" height="4" rx="2" fill="#4A5878" opacity=".5"/>
+</svg>
+</template>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0c0f17;--bg-s:#111620;--bg-e:#181f30;
+  --bd:#1c2840;--bd-s:#141c2e;
+  --tx:#e4ecf8;--tx2:#7a90b8;--tx3:#3e5070;
+  --ac:#4A8BD4;--ac-s:rgba(74,139,212,.12);--ac-ss:rgba(74,139,212,.06);
+  --bl:#5C8DFF;--pu:#7C3AED;--gn:#10B981;
+  --ff:'Plus Jakarta Sans',-apple-system,sans-serif;
+}
+html{scroll-behavior:smooth;overflow-x:hidden}
+body{font-family:var(--ff);background:var(--bg);color:var(--tx);line-height:1.5;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#1c2840;border-radius:99px}
+.c{width:min(100%,1180px);margin:0 auto;padding:0 28px}
+
+/* ── Nav ──────────────────────────────────────────────── */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;height:64px;display:flex;align-items:center;background:rgba(12,15,23,.82);backdrop-filter:blur(18px);border-bottom:1px solid transparent;transition:border-color .2s}
+.nav.scrolled{border-bottom-color:var(--bd-s)}
+.nav .c{display:flex;align-items:center;gap:0}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;margin-right:auto}
+.nav-logo-mark{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#5B9BD5,#2E6AB5);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;letter-spacing:.04em}
+.nav-logo-text{font-size:16px;font-weight:800;letter-spacing:.14em;color:var(--tx)}
+.nav-links{display:flex;align-items:center;gap:2px}
+.nav-link{padding:8px 14px;border-radius:8px;font-size:13.5px;font-weight:500;color:var(--tx2);text-decoration:none;transition:color .15s,background .15s}
+.nav-link:hover{color:var(--tx);background:rgba(255,255,255,.05)}
+.nav-actions{display:flex;align-items:center;gap:8px;margin-left:16px}
+.btn-g{padding:9px 18px;border-radius:9px;border:1px solid var(--bd);font-size:13px;font-weight:600;color:var(--tx2);background:none;cursor:pointer;transition:color .15s,border-color .15s,background .15s;text-decoration:none;display:inline-flex;align-items:center}
+.btn-g:hover{color:var(--tx);border-color:rgba(255,255,255,.1);background:rgba(255,255,255,.04)}
+.btn-a{padding:9px 18px;border-radius:9px;border:none;font-size:13px;font-weight:700;color:#fff;background:var(--ac);cursor:pointer;transition:opacity .15s,transform .1s;display:inline-flex;align-items:center;gap:6px;text-decoration:none}
+.btn-a:hover{opacity:.88;transform:translateY(-1px)}
+
+/* ── Hero ─────────────────────────────────────────────── */
+.hero{min-height:100vh;display:block;text-align:center;padding:120px 24px 80px;position:relative}
+.hero-bg{position:absolute;inset:0;pointer-events:none;z-index:0;background:radial-gradient(ellipse 70% 55% at 72% -5%,rgba(74,139,212,.18) 0%,transparent 58%),radial-gradient(ellipse 50% 55% at 10% 92%,rgba(124,58,237,.14) 0%,transparent 54%),radial-gradient(ellipse 38% 38% at 88% 86%,rgba(92,141,255,.09) 0%,transparent 50%)}
+.hero-badge{position:relative;z-index:1;display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:99px;border:1px solid color-mix(in srgb,var(--ac) 28%,transparent);background:color-mix(in srgb,var(--ac) 8%,transparent);color:var(--ac);font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-bottom:26px}
+.hero-badge-dot{width:6px;height:6px;border-radius:50%;background:var(--ac);animation:dot-pulse 2s ease infinite}
+@keyframes dot-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(1.4)}}
+.hero h1{position:relative;z-index:1;font-size:clamp(34px,5vw,68px);font-weight:800;line-height:1.06;letter-spacing:-0.04em;color:var(--tx);max-width:820px;margin:0 auto 24px}
+.hero h1 em{font-style:normal;color:var(--ac)}
+.hero-sub{position:relative;z-index:1;font-size:clamp(14px,1.6vw,17px);color:var(--tx2);max-width:520px;line-height:1.7;margin:0 auto 38px}
+.hero-ctas{position:relative;z-index:1;display:flex;align-items:center;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:56px}
+.btn-primary{padding:14px 28px;border-radius:12px;border:none;font-size:15px;font-weight:700;letter-spacing:.01em;color:#fff;background:var(--ac);box-shadow:0 8px 24px color-mix(in srgb,var(--ac) 40%,transparent);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:transform .15s,box-shadow .15s,background .15s;font-family:var(--ff)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 12px 32px color-mix(in srgb,var(--ac) 52%,transparent);filter:brightness(1.08)}
+.btn-outline{padding:14px 28px;border-radius:12px;border:1px solid var(--bd);font-size:15px;font-weight:600;color:var(--tx2);background:rgba(255,255,255,.03);cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:8px;transition:color .15s,border-color .15s,background .15s;font-family:var(--ff)}
+.btn-outline:hover{color:var(--tx);border-color:rgba(255,255,255,.12);background:rgba(255,255,255,.06)}
+
+/* screenshot frame */
+.hero-frame{width:min(100%,1000px);position:relative;z-index:1;overflow:hidden;border-radius:14px;margin:0 auto}
+.bc{background:var(--bg-e);border:1px solid var(--bd);border-radius:14px 14px 0 0;padding:11px 16px;display:flex;align-items:center;gap:8px}
+.bc-dots{display:flex;gap:5px}
+.bc-dot{width:10px;height:10px;border-radius:50%}
+.bc-dot:nth-child(1){background:rgba(239,68,68,.44)}
+.bc-dot:nth-child(2){background:rgba(245,158,11,.44)}
+.bc-dot:nth-child(3){background:rgba(16,185,129,.44)}
+.bc-url{flex:1;height:22px;background:var(--bg-s);border-radius:5px;display:flex;align-items:center;padding:0 10px;font-size:10.5px;color:var(--tx3);font-family:monospace}
+.ss-area{position:relative;background:var(--bg-s);border:1px solid var(--bd);border-top:none;border-radius:0 0 14px 14px;aspect-ratio:16/9;overflow:hidden;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.ss-stripe{position:absolute;inset:0;background-image:repeating-linear-gradient(-45deg,transparent 0,transparent 14px,rgba(255,255,255,.016) 14px,rgba(255,255,255,.016) 15px)}
+.ss-ph{position:relative;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+.ss-ph-icon{width:52px;height:52px;border-radius:14px;background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.09);display:flex;align-items:center;justify-content:center;color:var(--tx3)}
+.ss-ph span{font-size:13px;font-weight:500;color:var(--tx3)}
+.ss-ph small{font-size:11px;color:var(--tx3);opacity:.6}
+.ss-hover-label{position:absolute;inset:0;background:rgba(74,139,212,.07);border:2px dashed rgba(74,139,212,.28);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:var(--ac);opacity:0;transition:opacity .15s;pointer-events:none}
+.ss-area:hover .ss-hover-label{opacity:1}
+.ss-area img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.ss-input{display:none}
+.hero-glow{position:absolute;bottom:-60px;left:50%;transform:translateX(-50%);width:70%;height:100px;background:radial-gradient(ellipse,rgba(74,139,212,.13) 0%,transparent 70%);pointer-events:none}
+
+/* ── Metrics ──────────────────────────────────────────── */
+.metrics{padding:48px 0;border-top:1px solid var(--bd-s);border-bottom:1px solid var(--bd-s)}
+.metrics .c{display:grid;grid-template-columns:repeat(3,1fr)}
+.met{display:flex;flex-direction:column;align-items:center;text-align:center;padding:20px 24px;border-right:1px solid var(--bd-s)}
+.met:last-child{border-right:none}
+.met-val{font-size:clamp(28px,4vw,44px);font-weight:800;letter-spacing:-0.04em;color:var(--tx);margin-bottom:4px}
+.met-val em{color:var(--ac);font-style:normal}
+.met-lbl{font-size:13px;color:var(--tx2);font-weight:500}
+
+/* ── Sections ─────────────────────────────────────────── */
+.section{padding:96px 0}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ac);margin-bottom:12px}
+.sec-title{font-size:clamp(26px,3.5vw,44px);font-weight:800;letter-spacing:-0.03em;line-height:1.08;color:var(--tx);margin-bottom:14px;max-width:560px}
+.sec-sub{font-size:15px;color:var(--tx2);line-height:1.7;max-width:500px}
+.sec-head{margin-bottom:52px}
+
+/* ── Features ─────────────────────────────────────────── */
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.feat-card{--fc:var(--ac);padding:26px;border-radius:16px;border:1px solid var(--bd-s);background:rgba(255,255,255,.02);transition:border-color .18s,background .18s,transform .18s}
+.feat-card:hover{border-color:color-mix(in srgb,var(--fc) 32%,var(--bd));background:color-mix(in srgb,var(--fc) 5%,rgba(255,255,255,.02));transform:translateY(-2px)}
+.feat-icon{width:44px;height:44px;border-radius:12px;background:color-mix(in srgb,var(--fc) 14%,rgba(255,255,255,.04));border:1px solid color-mix(in srgb,var(--fc) 20%,transparent);display:flex;align-items:center;justify-content:center;color:var(--fc);margin-bottom:16px}
+.feat-title{font-size:15px;font-weight:700;color:var(--tx);margin-bottom:7px}
+.feat-desc{font-size:13px;color:var(--tx2);line-height:1.65}
+.feat-list{list-style:none;margin-top:14px;display:flex;flex-direction:column;gap:7px}
+.feat-list li{font-size:12px;color:var(--tx3);display:flex;align-items:center;gap:7px}
+.feat-list li::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--fc);flex-shrink:0}
+
+/* ── Steps ────────────────────────────────────────────── */
+.steps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:32px;position:relative}
+.steps-grid::before{content:'';position:absolute;top:27px;left:calc(16.67% + 16px);right:calc(16.67% + 16px);height:1px;background:linear-gradient(90deg,var(--ac),var(--bl),var(--pu));opacity:.25}
+.step{display:flex;flex-direction:column;gap:14px}
+.step-num{width:54px;height:54px;border-radius:15px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;letter-spacing:-0.04em;position:relative;z-index:1}
+.step-n1{background:rgba(74,139,212,.14);color:var(--ac);border:1px solid rgba(74,139,212,.22)}
+.step-n2{background:rgba(92,141,255,.14);color:var(--bl);border:1px solid rgba(92,141,255,.22)}
+.step-n3{background:rgba(16,185,129,.14);color:var(--gn);border:1px solid rgba(16,185,129,.22)}
+.step-title{font-size:17px;font-weight:700;color:var(--tx)}
+.step-desc{font-size:13px;color:var(--tx2);line-height:1.65}
+
+/* ── Screenshots section ──────────────────────────────── */
+.screens-section{padding:96px 0;background:linear-gradient(180deg,var(--bg) 0%,var(--bg-s) 50%,var(--bg) 100%)}
+.ss-tabs{display:flex;gap:4px;padding:4px;background:var(--bg-e);border-radius:12px;border:1px solid var(--bd);width:fit-content;margin-bottom:24px}
+.ss-tab{padding:9px 20px;border-radius:9px;border:none;font-size:13px;font-weight:600;color:var(--tx2);background:none;cursor:pointer;transition:color .15s,background .15s;font-family:var(--ff)}
+.ss-tab.active{background:var(--bg-s);color:var(--tx);box-shadow:0 1px 4px rgba(0,0,0,.5)}
+.ss-tab:hover:not(.active){color:var(--tx);background:rgba(255,255,255,.04)}
+.ss-frame{border-radius:16px;overflow:hidden;border:1px solid var(--bd);box-shadow:0 24px 72px -28px rgba(0,0,0,.7)}
+.ss-chrome{background:var(--bg-e);padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--bd)}
+.ss-c-dots{display:flex;gap:5px}
+.ss-c-dots span{width:9px;height:9px;border-radius:50%}
+.ss-c-dots span:nth-child(1){background:rgba(239,68,68,.38)}
+.ss-c-dots span:nth-child(2){background:rgba(245,158,11,.38)}
+.ss-c-dots span:nth-child(3){background:rgba(16,185,129,.38)}
+.ss-c-url{flex:1;height:21px;background:var(--bg-s);border-radius:5px;display:flex;align-items:center;padding:0 9px;font-size:11px;color:var(--tx3);font-family:monospace}
+.ss-body{background:var(--bg-s);aspect-ratio:16/9;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.ss-body:hover .ss-upload-hover{opacity:1}
+.ss-body img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.ss-stripe-bg{position:absolute;inset:0;background-image:repeating-linear-gradient(-45deg,transparent 0,transparent 16px,rgba(255,255,255,.015) 16px,rgba(255,255,255,.015) 17px)}
+.ss-ph-inner{position:relative;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+.ss-ph-ico{width:52px;height:52px;border-radius:14px;background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;color:var(--tx3)}
+.ss-lbl{font-size:14px;font-weight:600;color:var(--tx3)}
+.ss-hint{font-size:11px;color:var(--tx3);opacity:.55}
+.ss-upload-hover{position:absolute;inset:0;background:rgba(74,139,212,.07);border:2px dashed rgba(74,139,212,.28);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:var(--ac);opacity:0;transition:opacity .15s;pointer-events:none}
+.ss-file-input{display:none}
+
+/* ── Pricing ──────────────────────────────────────────── */
+.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-items:center}
+.plan{--pc:var(--ac);padding:28px;border-radius:18px;border:1px solid var(--bd-s);background:rgba(255,255,255,.025);position:relative;transition:transform .18s}
+.plan:hover{transform:translateY(-3px)}
+.plan.featured{border-color:color-mix(in srgb,var(--ac) 50%,transparent);background:color-mix(in srgb,var(--ac) 7%,rgba(255,255,255,.03));box-shadow:0 0 0 1px color-mix(in srgb,var(--ac) 20%,transparent),0 24px 56px rgba(74,139,212,.13);transform:scale(1.025) translateY(-4px)}
+.plan.featured:hover{transform:scale(1.025) translateY(-6px)}
+.plan-badge{position:absolute;top:-1px;left:50%;transform:translateX(-50%);padding:4px 14px;border-radius:0 0 10px 10px;background:var(--ac);color:#fff;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.plan-icon{width:46px;height:46px;border-radius:13px;background:color-mix(in srgb,var(--pc) 13%,rgba(255,255,255,.04));border:1px solid color-mix(in srgb,var(--pc) 20%,transparent);display:flex;align-items:center;justify-content:center;color:var(--pc);margin-bottom:18px}
+.plan-name{font-size:20px;font-weight:800;color:var(--tx);margin-bottom:4px;letter-spacing:-0.02em}
+.plan-sub{font-size:12px;color:var(--tx2);margin-bottom:18px}
+.plan-feats{list-style:none;margin:16px 0;display:flex;flex-direction:column;gap:9px}
+.plan-feats li{font-size:13px;color:var(--tx2);display:flex;align-items:flex-start;gap:8px}
+.pf-check{flex-shrink:0;margin-top:2px;width:15px;height:15px;border-radius:4px;background:color-mix(in srgb,var(--pc) 14%,rgba(255,255,255,.04));border:1px solid color-mix(in srgb,var(--pc) 22%,transparent);display:flex;align-items:center;justify-content:center;color:var(--pc)}
+.plan-mods{display:flex;flex-wrap:wrap;gap:5px;padding-top:14px;border-top:1px solid var(--bd-s);margin-bottom:18px}
+.plan-mod{--mc:var(--ac);padding:3px 8px;border-radius:99px;background:color-mix(in srgb,var(--mc) 12%,rgba(255,255,255,.03));border:1px solid color-mix(in srgb,var(--mc) 22%,transparent);font-size:11px;font-weight:600;color:color-mix(in srgb,var(--mc) 88%,white)}
+.plan-btn{width:100%;padding:13px;border-radius:10px;border:none;font-size:14px;font-weight:700;cursor:pointer;transition:transform .12s,box-shadow .12s,opacity .12s;font-family:var(--ff)}
+.plan-btn:hover{transform:translateY(-1px)}
+.plan-btn.pri{background:var(--ac);color:#fff;box-shadow:0 6px 18px color-mix(in srgb,var(--ac) 35%,transparent)}
+.plan-btn.pri:hover{filter:brightness(1.08);box-shadow:0 8px 26px color-mix(in srgb,var(--ac) 46%,transparent)}
+.plan-btn.sec{background:rgba(255,255,255,.06);color:var(--tx);border:1px solid var(--bd)}
+.plan-btn.sec:hover{background:rgba(255,255,255,.09)}
+
+/* ── CTA ──────────────────────────────────────────────── */
+.cta{padding:100px 0;text-align:center;position:relative;overflow:hidden}
+.cta-bg{position:absolute;inset:0;background:radial-gradient(ellipse 60% 80% at 50% 50%,color-mix(in srgb,var(--ac) 10%,transparent) 0%,transparent 70%);pointer-events:none}
+.cta h2{font-size:clamp(28px,4vw,52px);font-weight:800;letter-spacing:-0.03em;color:var(--tx);margin-bottom:14px}
+.cta p{font-size:16px;color:var(--tx2);margin-bottom:36px;line-height:1.65}
+.cta-form{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.cta-input{height:52px;padding:0 18px;border-radius:12px;border:1px solid var(--bd);background:rgba(255,255,255,.04);color:var(--tx);font-family:var(--ff);font-size:14px;outline:none;min-width:280px;transition:border-color .15s}
+.cta-input:focus{border-color:color-mix(in srgb,var(--ac) 55%,transparent)}
+.cta-input::placeholder{color:var(--tx3)}
+.cta-sub-btn{height:52px;padding:0 28px;border-radius:12px;border:none;background:var(--ac);color:#fff;font-family:var(--ff);font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 8px 24px color-mix(in srgb,var(--ac) 35%,transparent);transition:transform .12s,box-shadow .12s,background .12s}
+.cta-sub-btn:hover{transform:translateY(-2px);box-shadow:0 12px 32px color-mix(in srgb,var(--ac) 48%,transparent);filter:brightness(1.08)}
+.cta-note{margin-top:14px;font-size:12px;color:var(--tx3)}
+
+/* ── Footer ───────────────────────────────────────────── */
+.footer{padding:40px 0;border-top:1px solid var(--bd-s)}
+.footer .c{display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap}
+.footer-brand{display:flex;align-items:center;gap:10px}
+.footer-mark{width:28px;height:28px;border-radius:8px;background:var(--ac);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;letter-spacing:.04em}
+.footer-name{font-size:14px;font-weight:700;letter-spacing:.12em;color:var(--tx)}
+.footer-links{display:flex;gap:22px}
+.footer-link{font-size:13px;color:var(--tx3);text-decoration:none;transition:color .15s}
+.footer-link:hover{color:var(--tx2)}
+.footer-copy{font-size:12px;color:var(--tx3)}
+
+/* ── Tweaks panel ─────────────────────────────────────── */
+.tweaks-panel{position:fixed;bottom:20px;right:20px;z-index:999;background:var(--bg-e);border:1px solid var(--bd);border-radius:14px;padding:16px;width:220px;box-shadow:0 16px 40px rgba(0,0,0,.5);display:none;flex-direction:column;gap:12px}
+.tweaks-panel.open{display:flex}
+.tw-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--tx3);margin-bottom:2px}
+.tw-title{font-size:13px;font-weight:700;color:var(--tx);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+.tw-close{background:none;border:none;color:var(--tx3);cursor:pointer;padding:2px;display:flex;align-items:center;justify-content:center}
+.tw-row{display:flex;flex-direction:column;gap:4px}
+.tw-colors{display:flex;gap:6px;flex-wrap:wrap}
+.tw-color{width:22px;height:22px;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:transform .1s,border-color .1s}
+.tw-color:hover{transform:scale(1.1)}
+.tw-color.active{border-color:rgba(255,255,255,.4)}
+.tw-toggle{width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--bd);background:rgba(255,255,255,.04);color:var(--tx2);font-family:var(--ff);font-size:12px;font-weight:600;cursor:pointer;transition:background .15s,color .15s;text-align:left}
+.tw-toggle:hover{background:rgba(255,255,255,.08);color:var(--tx)}
+
+/* ── Responsive ───────────────────────────────────────── */
+@media(max-width:960px){
+  .feat-grid{grid-template-columns:repeat(2,1fr)}
+  .pricing-grid{grid-template-columns:1fr;max-width:440px;margin:0 auto}
+  .plan.featured{transform:none}.plan.featured:hover{transform:translateY(-3px)}
+  .steps-grid{grid-template-columns:1fr}.steps-grid::before{display:none}
+}
+@media(max-width:640px){
+  .nav-links{display:none}
+  .feat-grid{grid-template-columns:1fr}
+  .metrics .c{grid-template-columns:1fr}
+  .met{border-right:none;border-bottom:1px solid var(--bd-s)}
+  .met:last-child{border-bottom:none}
+  .hero-ctas{flex-direction:column;align-items:stretch}
+  .btn-primary,.btn-outline{justify-content:center}
+  .footer .c{flex-direction:column;align-items:flex-start}
+  .hero-badge,.eyebrow{font-size:10px}
+}
+</style>
+</head>
+<body>
+
+<!-- ── Nav ───────────────────────────────────────────────── -->
+<nav class="nav" id="nav">
+  <div class="c">
+    <a class="nav-logo" href="#">
+      <div class="nav-logo-mark">K</div>
+      <span class="nav-logo-text">KORT</span>
+    </a>
+    <div class="nav-links">
+      <a class="nav-link" href="#features">Возможности</a>
+      <a class="nav-link" href="#how">Как работает</a>
+      <a class="nav-link" href="#pricing">Тарифы</a>
+    </div>
+    <div class="nav-actions">
+      <a class="btn-g" href="#">Войти</a>
+      <a class="btn-a" href="#">Начать бесплатно</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Hero ──────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-badge">
+    <span class="hero-badge-dot"></span>
+    Новое поколение ERP
+  </div>
+  <h1>Управляйте бизнесом<br>в <em>едином контуре</em></h1>
+  <p class="hero-sub">KORT объединяет CRM, склад, финансы и производство в одном рабочем пространстве — без лишних интеграций и сложных настроек.</p>
+  <div class="hero-ctas">
+    <a class="btn-primary" href="#">
+      Начать бесплатно
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+    <a class="btn-outline" href="#">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Смотреть демо
+    </a>
+  </div>
+  <div class="hero-frame">
+    <div class="bc">
+      <div class="bc-dots"><div class="bc-dot"></div><div class="bc-dot"></div><div class="bc-dot"></div></div>
+      <div class="bc-url">app.kort.kz/dashboard</div>
+    </div>
+    <div class="ss-area" id="hero-ss" onclick="document.getElementById('hero-file').click()">
+      <div class="ss-stripe"></div>
+      <div class="ss-ph">
+        <div class="ss-ph-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        </div>
+        <span>Скриншот интерфейса</span>
+        <small>Нажмите чтобы добавить изображение</small>
+      </div>
+      <div class="ss-hover-label">+ Добавить скриншот</div>
+    </div>
+    <input type="file" id="hero-file" class="ss-input" accept="image/*">
+    <div class="hero-glow"></div>
+  </div>
+</section>
+
+<!-- ── Metrics ────────────────────────────────────────────── -->
+<div class="metrics">
+  <div class="c">
+    <div class="met"><div class="met-val"><em>12</em>+</div><div class="met-lbl">модулей в системе</div></div>
+    <div class="met"><div class="met-val"><em>3</em></div><div class="met-lbl">тарифных плана</div></div>
+    <div class="met"><div class="met-val"><em>100</em>%</div><div class="met-lbl">Казахстанская разработка</div></div>
+  </div>
+</div>
+
+<!-- ── Features ───────────────────────────────────────────── -->
+<section class="section" id="features">
+  <div class="c">
+    <div class="sec-head">
+      <p class="eyebrow">Возможности</p>
+      <h2 class="sec-title">Всё что нужно вашему бизнесу</h2>
+      <p class="sec-sub">Каждый модуль работает самостоятельно и усиливает другие. Выберите нужные — без лишних инструментов.</p>
+    </div>
+    <div class="feat-grid">
+      <div class="feat-card" style="--fc:#5C8DFF">
+        <div class="feat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+        <div class="feat-title">CRM</div>
+        <div class="feat-desc">Единая база клиентов, лидов и сделок. Воронки продаж и история взаимодействий.</div>
+        <ul class="feat-list"><li>Лиды и квалификация</li><li>Канбан-доска сделок</li><li>История контактов</li></ul>
+      </div>
+      <div class="feat-card" style="--fc:#4A8BD4">
+        <div class="feat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>
+        <div class="feat-title">Склад</div>
+        <div class="feat-desc">Учёт товаров, приходы, расходы и инвентаризация. Цифровой двойник склада.</div>
+        <ul class="feat-list"><li>Приход и расход товаров</li><li>Инвентаризация</li><li>Цифровой двойник</li></ul>
+      </div>
+      <div class="feat-card" style="--fc:#10B981">
+        <div class="feat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
+        <div class="feat-title">Финансы</div>
+        <div class="feat-desc">Выручка, расходы, платежи и аналитика. Финансовая картина бизнеса в реальном времени.</div>
+        <ul class="feat-list"><li>Контроль платежей</li><li>P&L и движение средств</li><li>Финансовые отчёты</li></ul>
+      </div>
+      <div class="feat-card" style="--fc:#7C3AED">
+        <div class="feat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+        <div class="feat-title">Рабочие зоны</div>
+        <div class="feat-desc">Индивидуальные кабинеты для производства и сложных операционных процессов. Модуль Chapan.</div>
+        <ul class="feat-list"><li>Производственные заказы</li><li>Кастомные рабочие зоны</li><li>Командные кабинеты</li></ul>
+      </div>
+      <div class="feat-card" style="--fc:#F59E0B">
+        <div class="feat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>
+        <div class="feat-title">Документы</div>
+        <div class="feat-desc">Счета, накладные и акты. Формирование и отправка документов прямо из сделки.</div>
+        <ul class="feat-list"><li>Счета и накладные</li><li>Пакетный экспорт в Excel</li><li>История документов</li></ul>
+      </div>
+      <div class="feat-card" style="--fc:#EC4899">
+        <div class="feat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+        <div class="feat-title">Аналитика</div>
+        <div class="feat-desc">Отчёты, воронки и ключевые метрики. Понимайте что происходит без лишних таблиц.</div>
+        <ul class="feat-list"><li>Воронка конверсий</li><li>Отчёты по менеджерам</li><li>Дашборд метрик</li></ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── How it works ────────────────────────────────────────── -->
+<section class="section" id="how" style="background:linear-gradient(180deg,var(--bg) 0%,var(--bg-s) 100%)">
+  <div class="c">
+    <div class="sec-head">
+      <p class="eyebrow">Как это работает</p>
+      <h2 class="sec-title">Три шага до рабочей системы</h2>
+      <p class="sec-sub">Без долгого внедрения. Без технических знаний.</p>
+    </div>
+    <div class="steps-grid">
+      <div class="step">
+        <div class="step-num step-n1">01</div>
+        <div class="step-title">Зарегистрируйте компанию</div>
+        <div class="step-desc">Создайте аккаунт, введите данные компании и добавьте первых сотрудников. Занимает 2 минуты.</div>
+      </div>
+      <div class="step">
+        <div class="step-num step-n2">02</div>
+        <div class="step-title">Настройте рабочий режим</div>
+        <div class="step-desc">Выберите тип бизнеса и нужные модули. KORT сам откроет подходящий набор инструментов.</div>
+      </div>
+      <div class="step">
+        <div class="step-num step-n3">03</div>
+        <div class="step-title">Начните работать</div>
+        <div class="step-desc">Добавьте первого клиента, создайте сделку. Система настроена и готова к работе сразу.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Screenshots ─────────────────────────────────────────── -->
+<section class="screens-section">
+  <div class="c">
+    <div class="sec-head">
+      <p class="eyebrow">Интерфейс</p>
+      <h2 class="sec-title">Продуманный дизайн для работы</h2>
+      <p class="sec-sub">Чистый интерфейс, быстрый отклик, поддержка тёмной и светлой темы на любом устройстве.</p>
+    </div>
+    <div class="ss-tabs" id="ss-tabs">
+      <button class="ss-tab active" data-tab="0">Главная</button>
+      <button class="ss-tab" data-tab="1">CRM</button>
+      <button class="ss-tab" data-tab="2">Склад</button>
+    </div>
+    <div class="ss-frame">
+      <div class="ss-chrome">
+        <div class="ss-c-dots"><span></span><span></span><span></span></div>
+        <div class="ss-c-url" id="ss-url">app.kort.kz/dashboard</div>
+      </div>
+      <div class="ss-body" id="ss-body" onclick="document.getElementById('ss-file').click()">
+        <div class="ss-stripe-bg"></div>
+        <div class="ss-ph-inner" id="ss-placeholder">
+          <div class="ss-ph-ico">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+          </div>
+          <div class="ss-lbl" id="ss-tab-label">Главная — дашборд с метриками</div>
+          <div class="ss-hint">Нажмите чтобы добавить скриншот</div>
+        </div>
+        <div class="ss-upload-hover">+ Добавить скриншот</div>
+      </div>
+    </div>
+    <input type="file" id="ss-file" class="ss-file-input" accept="image/*">
+  </div>
+</section>
+
+<!-- ── Pricing ─────────────────────────────────────────────── -->
+<section class="section" id="pricing">
+  <div class="c">
+    <div class="sec-head">
+      <p class="eyebrow">Тарифы</p>
+      <h2 class="sec-title">Выберите подходящий план</h2>
+      <p class="sec-sub">Начните с базового и расширяйте по мере роста бизнеса.</p>
+    </div>
+    <div class="pricing-grid">
+      <!-- Basic -->
+      <div class="plan" style="--pc:#5C8DFF">
+        <div class="plan-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
+        <div class="plan-name">Базовый</div>
+        <div class="plan-sub">Для малого бизнеса, до 20 человек</div>
+        <ul class="plan-feats">
+          <li><span class="pf-check"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></span>Единая база клиентов и лидов</li>
+          <li><span class="pf-check"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></span>Управление складом</li>
+          <li><span class="pf-check"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></span>Настройка команды</li>
+        </ul>
+        <div class="plan-mods">
+          <span class="plan-mod" style="--mc:#5C8DFF">Лиды</span>
+          <span class="plan-mod" style="--mc:#5C8DFF">Клиенты</span>
+          <span class="plan-mod" style="--mc:#4A8BD4">Склад</span>
+        </div>
+        <button class="plan-btn sec">Начать бесплатно</button>
+      </div>
+      <!-- Advanced (featured) -->
+      <div class="plan featured" style="--pc:#4A8BD4">
+        <div class="plan-badge">Рекомендуем</div>
+        <div class="plan-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+        <div class="plan-name">Продвинутый</div>
+        <div class="plan-sub">Для растущей команды с активными продажами</div>
+        <ul class="plan-feats">
+          <li><span class="pf-check"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></span>Воронки продаж и этапы сделок</li>
+          <li><span class="pf-check"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></span>Задачи и контроль исполнения</li>
+          <li><span class="pf-check"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></span>Финансы и аналитика</li>
+          <li><span class="pf-check"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></span>Управление сотрудниками</li>
+        </ul>
+        <div class="plan-mods">
+          <span class="plan-mod" style="--mc:#5C8DFF">Лиды</span>
+          <span class="plan-mod" style="--mc:#4A8BD4">Сделки</span>
+          <span class="plan-mod" style="--mc:#5C8DFF">Клиенты</span>
+          <span class="plan-mod" style="--mc:#10B981">Задачи</span>
+          <span class="plan-mod" style="--mc:#4A8BD4">Склад</span>
+          <span class="plan-mod" style="--mc:#10B981">Финансы</span>
+        </div>
+        <button class="plan-btn pri">Выбрать план</button>
+      </div>
+      <!-- Industrial -->
+      <div class="plan" style="--pc:#7C3AED">
+        <div class="plan-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div>
+        <div class="plan-name">Промышленный</div>
+        <div class="plan-sub">Для производств и сложных процессов</div>
+        <ul class="plan-feats">
+          <li><span class="pf-check"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></span>Всё из «Продвинутого»</li>
+          <li><span class="pf-check"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></span>Кастомные рабочие зоны</li>
+          <li><span class="pf-check"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></span>API и расширенный аудит</li>
+          <li><span class="pf-check"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg></span>Индивидуальные интеграции</li>
+        </ul>
+        <div class="plan-mods">
+          <span class="plan-mod" style="--mc:#7C3AED">Все модули</span>
+          <span class="plan-mod" style="--mc:#7C3AED">Chapan</span>
+        </div>
+        <button class="plan-btn sec">Обсудить проект</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA ────────────────────────────────────────────────── -->
+<section class="cta">
+  <div class="cta-bg"></div>
+  <div class="c">
+    <h2>Готовы начать?</h2>
+    <p>Зарегистрируйтесь и настройте систему за 5 минут.</p>
+    <div class="cta-form">
+      <input type="email" class="cta-input" placeholder="Ваш рабочий email">
+      <button class="cta-sub-btn">Начать бесплатно →</button>
+    </div>
+    <p class="cta-note">Без кредитной карты. Бесплатный период 14 дней.</p>
+  </div>
+</section>
+
+<!-- ── Footer ─────────────────────────────────────────────── -->
+<footer class="footer">
+  <div class="c">
+    <div class="footer-brand">
+      <div class="footer-mark">K</div>
+      <span class="footer-name">KORT</span>
+    </div>
+    <div class="footer-links">
+      <a class="footer-link" href="#">Возможности</a>
+      <a class="footer-link" href="#">Тарифы</a>
+      <a class="footer-link" href="#">Поддержка</a>
+      <a class="footer-link" href="#">Войти</a>
+    </div>
+    <span class="footer-copy">© 2025 KORT. Казахстан</span>
+  </div>
+</footer>
+
+<!-- ── Tweaks panel ────────────────────────────────────────── -->
+<div class="tweaks-panel" id="tweaks">
+  <div class="tw-title">
+    Tweaks
+    <button class="tw-close" onclick="document.getElementById('tweaks').classList.remove('open')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div class="tw-row">
+    <div class="tw-label">Акцентный цвет</div>
+    <div class="tw-colors">
+      <div class="tw-color active" style="background:#4A8BD4" onclick="setAccent('#4A8BD4','#2E6AB5',this)"></div>
+      <div class="tw-color" style="background:#5C8DFF" onclick="setAccent('#5C8DFF','#3B6AD4',this)"></div>
+      <div class="tw-color" style="background:#10B981" onclick="setAccent('#10B981','#047857',this)"></div>
+      <div class="tw-color" style="background:#7C3AED" onclick="setAccent('#7C3AED','#5B21B6',this)"></div>
+      <div class="tw-color" style="background:#EC4899" onclick="setAccent('#EC4899','#BE185D',this)"></div>
+    </div>
+  </div>
+  <div class="tw-row">
+    <button class="tw-toggle" onclick="toggleBg()">Переключить фон</button>
+  </div>
+</div>
+
+<script>
+// Nav scroll
+window.addEventListener('scroll',()=>{
+  document.getElementById('nav').classList.toggle('scrolled',scrollY>20)
+})
+
+// Screenshot upload — hero
+const heroFile = document.getElementById('hero-file')
+const heroSS = document.getElementById('hero-ss')
+heroFile.addEventListener('change', e => {
+  const f = e.target.files[0]; if(!f) return
+  const url = URL.createObjectURL(f)
+  heroSS.querySelector('.ss-stripe').style.display='none'
+  heroSS.querySelector('.ss-ph').style.display='none'
+  heroSS.querySelector('.ss-hover-label').textContent='Заменить скриншот'
+  let img = heroSS.querySelector('img')
+  if(!img){ img = document.createElement('img'); heroSS.appendChild(img) }
+  img.src = url
+})
+
+// Screenshot tabs
+const tabData = [
+  {label:'Главная — дашборд с метриками', url:'app.kort.kz/dashboard'},
+  {label:'CRM — клиенты и сделки', url:'app.kort.kz/crm/customers'},
+  {label:'Склад — каталог товаров', url:'app.kort.kz/warehouse'}
+]
+const ssImages = [null, null, null]
+let activeTab = 0
+
+document.getElementById('ss-tabs').addEventListener('click', e => {
+  const btn = e.target.closest('.ss-tab'); if(!btn) return
+  activeTab = +btn.dataset.tab
+  document.querySelectorAll('.ss-tab').forEach((t,i) => t.classList.toggle('active', i===activeTab))
+  updateSS()
+})
+
+document.getElementById('ss-file').addEventListener('change', e => {
+  const f = e.target.files[0]; if(!f) return
+  ssImages[activeTab] = URL.createObjectURL(f)
+  e.target.value=''
+  updateSS()
+})
+
+function updateSS(){
+  const body = document.getElementById('ss-body')
+  const ph = document.getElementById('ss-placeholder')
+  document.getElementById('ss-url').textContent = tabData[activeTab].url
+  document.getElementById('ss-tab-label').textContent = tabData[activeTab].label
+  let img = body.querySelector('img')
+  if(ssImages[activeTab]){
+    if(!img){ img=document.createElement('img'); body.appendChild(img) }
+    img.src = ssImages[activeTab]
+    ph.style.display='none'
+    body.querySelector('.ss-stripe-bg').style.display='none'
+    body.querySelector('.ss-upload-hover').textContent='Заменить скриншот'
+  } else {
+    if(img) img.remove()
+    ph.style.display=''
+    body.querySelector('.ss-stripe-bg').style.display=''
+    body.querySelector('.ss-upload-hover').textContent='+ Добавить скриншот'
+  }
+}
+
+// Tweaks
+function setAccent(a, _b, el){
+  document.documentElement.style.setProperty('--ac', a)
+  document.documentElement.style.setProperty('--ac-s', a.replace(')',', .12)').replace('rgb','rgba'))
+  document.querySelectorAll('.tw-color').forEach(c=>c.classList.remove('active'))
+  el.classList.add('active')
+}
+let bgAlt = false
+function toggleBg(){
+  bgAlt = !bgAlt
+  document.documentElement.style.setProperty('--bg', bgAlt ? '#07090f' : '#0c0f17')
+  document.documentElement.style.setProperty('--bg-s', bgAlt ? '#0a0d16' : '#111620')
+}
+
+// Expose tweaks toggle to host
+window.addEventListener('message', e => {
+  if(e.data?.type==='__activate_edit_mode') document.getElementById('tweaks').classList.add('open')
+  if(e.data?.type==='__deactivate_edit_mode') document.getElementById('tweaks').classList.remove('open')
+})
+window.parent.postMessage({type:'__edit_mode_available'},'*')
+</script>
+</body>
+</html>

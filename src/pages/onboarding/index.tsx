@@ -339,7 +339,7 @@ export default function OnboardingPage() {
                         whileHover={{ y: -3 }}
                         whileTap={{ scale: 0.985 }}
                         onClick={() => setMode(mode.mode)}
-                        className={`${s.planCard} ${isSelected ? s.planCardSelected : ''}`}
+                        className={`${s.planCard} ${mode.badge ? s.planCardFeatured : ''} ${isSelected ? s.planCardSelected : ''}`}
                         style={{
                           '--plan-color': mode.color,
                         } as CSSProperties}

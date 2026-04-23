@@ -913,7 +913,7 @@
 
 .input {
   width: 100%;
-  min-height: 46px;
+  min-height: 52px;
   padding: 0 14px;
   border-radius: 8px;
   border: 1px solid var(--brand-panel-border);
@@ -987,7 +987,7 @@
   border: 1px solid rgba(255, 255, 255, 0.10);
   background: linear-gradient(180deg, #2c2c2c 0%, #1a1a1a 100%);
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   letter-spacing: 0.01em;
   transition:
     transform var(--motion-fast) var(--motion-ease),

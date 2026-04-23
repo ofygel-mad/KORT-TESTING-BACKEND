@@ -1,0 +1,302 @@
+/* ─── Home Page — KPI + Active Deals + Activity Feed ──────────── */
+
+.page {
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ─── Header ───────────────────────────────────────────────────── */
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.title {
+  margin: 0 0 4px;
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+
+/* ─── KPI Row ──────────────────────────────────────────────────── */
+
+.kpiRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.kpiCard {
+  --kc: var(--fill-accent);
+  padding: 18px 20px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-xs);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kpiLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--kc) 88%, var(--text-tertiary));
+}
+
+.kpiIcon {
+  color: var(--kc);
+  opacity: 0.84;
+}
+
+.kpiValue {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.kpiDelta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fill-positive);
+}
+
+.kpiDelta.down {
+  color: var(--fill-negative);
+}
+
+.kpiDelta svg {
+  flex-shrink: 0;
+}
+
+/* ─── Content Grid ─────────────────────────────────────────────── */
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 16px;
+}
+
+.card {
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.cardTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.cardAction {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 130ms ease;
+}
+
+.cardAction:hover {
+  color: var(--fill-accent);
+}
+
+/* ─── Table ────────────────────────────────────────────────────── */
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table thead {
+  background: var(--bg-surface-inset);
+}
+
+.table th {
+  padding: 11px 20px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.table tbody tr {
+  border-bottom: 1px solid var(--border-subtle);
+  transition: background 130ms ease;
+}
+
+.table tbody tr:last-child {
+  border-bottom: 0;
+}
+
+.table tbody tr:hover {
+  background: var(--bg-hover);
+}
+
+.table td {
+  padding: 12px 20px;
+  color: var(--text-primary);
+}
+
+.dealName {
+  font-weight: 500;
+}
+
+.amount {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+/* ─── Status Badges ────────────────────────────────────────────── */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.badgeNew {
+  background: color-mix(in srgb, #3B82F6 12%, transparent);
+  color: #1D4ED8;
+}
+
+.badgeProg {
+  background: color-mix(in srgb, #F59E0B 12%, transparent);
+  color: #B45309;
+}
+
+.badgeWon {
+  background: color-mix(in srgb, #10B981 12%, transparent);
+  color: #047857;
+}
+
+.badgeLost {
+  background: color-mix(in srgb, #EF4444 12%, transparent);
+  color: #B91C1C;
+}
+
+/* ─── Activity Feed ────────────────────────────────────────────── */
+
+.activityList {
+  padding: 12px 0;
+  display: flex;
+  flex-direction: column;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.activityItem {
+  display: flex;
+  gap: 12px;
+  padding: 12px 20px;
+  transition: background 130ms ease;
+}
+
+.activityItem:hover {
+  background: var(--bg-hover);
+}
+
+.activityDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.activityBody {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.activityText {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.activityTime {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+/* ─── Responsive ───────────────────────────────────────────────── */
+
+@media (max-width: 1200px) {
+  .kpiRow {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: 20px;
+    gap: 20px;
+  }
+
+  .kpiRow {
+    grid-template-columns: 1fr;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .header {
+    flex-direction: column;
+  }
+
+  .title {
+    font-size: 24px;
+  }
+}

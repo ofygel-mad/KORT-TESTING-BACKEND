@@ -36,7 +36,7 @@ import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
 import { getDeviceId, usePinStore } from '../../shared/stores/pin';
 import { useAuthStore } from '../../shared/stores/auth';
 import { useUIStore, type Theme, type ThemePack } from '../../shared/stores/ui';
-import { useProfileStore, MOODS } from '../../shared/stores/profile';
+import { useProfileStore, ONLINE_STATUSES } from '../../shared/stores/profile';
 import { Badge } from '../../shared/ui/Badge';
 import { Button } from '../../shared/ui/Button';
 import { CompanyAccessGate } from '../../shared/ui/CompanyAccessGate';
@@ -1040,7 +1040,7 @@ function ProfileSection() {
   const userAuth = useAuthStore((state) => state.user);
   const setUser = useAuthStore((state) => state.setUser);
   const queryClient = useQueryClient();
-  const { mood, statusText, setMood, setStatusText } = useProfileStore();
+  const { onlineStatus, setOnlineStatus } = useProfileStore();
 
   const [fullName, setFullName] = useState(userAuth?.full_name ?? '');
   const [phone, setPhone] = useState(userAuth?.phone ?? '');
@@ -1124,32 +1124,24 @@ function ProfileSection() {
           </div>
         </div>
 
-        <div className={s.field}>
-          <label className={s.fieldLabel}>Статус</label>
-          <input
-            className="kort-input"
-            value={statusText}
-            onChange={(e) => setStatusText(e.target.value)}
-            placeholder="Что сейчас делаете?"
-            maxLength={80}
-          />
-        </div>
-
         <div>
-          <div className={s.fieldLabel} style={{ marginBottom: 8 }}>Настроение</div>
-          <div className={s.moodGrid}>
-            {MOODS.map((m) => (
+          <div className={s.fieldLabel} style={{ marginBottom: 8 }}>Статус онлайн</div>
+          <div className={s.onlineStatusGrid}>
+            {ONLINE_STATUSES.map((s_item) => (
               <button
-                key={m.key}
+                key={s_item.key}
                 type="button"
-                className={[s.moodItem, mood === m.key ? s.moodItemActive : ''].join(' ')}
-                onClick={() => setMood(m.key)}
-                title={m.label}
+                className={[s.onlineStatusItem, onlineStatus === s_item.key ? s.onlineStatusItemActive : ''].join(' ')}
+                onClick={() => setOnlineStatus(s_item.key)}
+                title={s_item.label}
               >
-                <span className={s.moodEmoji}>{m.emoji || '○'}</span>
-                <span className={s.moodLabel}>{m.label}</span>
+                <span className={s.onlineStatusDot} style={{ background: s_item.color }} />
+                <span className={s.onlineStatusLabel}>{s_item.label}</span>
               </button>
             ))}
+          </div>
+          <div className={s.fieldHint}>
+            Онлайн: активно используете приложение · Отошёл: неактивны 15+ минут · Офлайн: неактивны 60+ минут
           </div>
         </div>
       </div>

@@ -302,6 +302,11 @@
   background: color-mix(in srgb, var(--plan-color) 6%, rgba(255,255,255,0.035));
 }
 
+.planCardFeatured {
+  transform: scale(1.025) translateY(-4px);
+  border-top: 3px solid var(--plan-color);
+}
+
 .planCardSelected {
   border-color: color-mix(in srgb, var(--plan-color) 55%, transparent);
   background: color-mix(in srgb, var(--plan-color) 10%, rgba(255,255,255,0.03));

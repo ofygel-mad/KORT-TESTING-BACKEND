@@ -12,7 +12,7 @@ import { useT } from '../../shared/i18n';
 import { popoverVariants, t } from '../../shared/motion/presets';
 import { useCommandPalette } from '../../shared/stores/commandPalette';
 import { useAuthStore } from '../../shared/stores/auth';
-import { useProfileStore, MOODS } from '../../shared/stores/profile';
+import { useProfileStore, ONLINE_STATUSES, getComputedOnlineStatus } from '../../shared/stores/profile';
 import { useSharedBus } from '../../features/shared-bus';
 import type { GlobalNotifEvent } from '../../features/shared-bus';
 import styles from './Topbar.module.css';
@@ -233,7 +233,7 @@ export function Topbar({ chromeTone = 'dark' }: { chromeTone?: 'canvas' | 'dark'
   const isDashboard = location.pathname === '/';
   const showBack = location.pathname !== '/' && location.pathname !== '/onboarding';
   const backTarget = resolveBackTarget(location.pathname);
-  const { mood, statusText } = useProfileStore();
+  const { onlineStatus, lastActivityAt } = useProfileStore();
   const [profileHover, setProfileHover] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
   const hoverTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -246,7 +246,8 @@ export function Topbar({ chromeTone = 'dark' }: { chromeTone?: 'canvas' | 'dark'
     .join('')
     .toUpperCase();
 
-  const currentMood = MOODS.find((m) => m.key === mood);
+  const computedStatus = getComputedOnlineStatus(lastActivityAt, onlineStatus);
+  const currentStatus = ONLINE_STATUSES.find((s) => s.key === computedStatus);
 
   function handleProfileMouseEnter() {
     if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
@@ -331,11 +332,10 @@ export function Topbar({ chromeTone = 'dark' }: { chromeTone?: 'canvas' | 'dark'
                     {user.email ?? user.phone}
                   </div>
                 )}
-                {(currentMood?.key !== 'none' || statusText) && (
+                {currentStatus && (
                   <div className={styles.profilePopoverStatus}>
-                    {currentMood?.key !== 'none' && <span>{currentMood?.emoji}</span>}
-                    {statusText && <span>{statusText}</span>}
-                    {!statusText && currentMood?.key !== 'none' && <span>{currentMood?.label}</span>}
+                    <span className={styles.profilePopoverStatusDot} style={{ background: currentStatus.color }} />
+                    <span>{currentStatus.label}</span>
                   </div>
                 )}
                 <button
