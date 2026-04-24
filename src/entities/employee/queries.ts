@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { employeeApi } from './api';
+import { readApiErrorMessage } from '../../shared/api/errors';
 import type { CreateEmployeeDto, UpdateEmployeeDto, Employee } from './types';
 
 export const employeeKeys = {
@@ -48,7 +49,7 @@ export const useDismissEmployee = () => {
   return useMutation({
     mutationFn: (id: string) => employeeApi.dismiss(id),
     onSuccess: () => { qc.invalidateQueries({ queryKey: employeeKeys.all }); toast.success('Сотрудник деактивирован'); },
-    onError: () => toast.error('Не удалось деактивировать'),
+    onError: (e: any) => toast.error(readApiErrorMessage(e, 'Не удалось деактивировать')),
   });
 };
 
@@ -56,7 +57,7 @@ export const useResetPassword = () =>
   useMutation({
     mutationFn: (id: string) => employeeApi.resetPassword(id),
     onSuccess: (data) => toast.success(`Временный пароль: ${data.tempPassword}`),
-    onError: () => toast.error('Не удалось сбросить пароль'),
+    onError: (e: any) => toast.error(readApiErrorMessage(e, 'Не удалось сбросить пароль')),
   });
 
 export const useRemoveEmployee = () => {
@@ -64,6 +65,6 @@ export const useRemoveEmployee = () => {
   return useMutation({
     mutationFn: (id: string) => employeeApi.remove(id),
     onSuccess: () => { qc.invalidateQueries({ queryKey: employeeKeys.all }); toast.success('Сотрудник удалён'); },
-    onError: () => toast.error('Не удалось удалить сотрудника'),
+    onError: (e: any) => toast.error(readApiErrorMessage(e, 'Не удалось удалить сотрудника')),
   });
 };
