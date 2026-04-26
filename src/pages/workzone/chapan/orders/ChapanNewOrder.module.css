@@ -1378,3 +1378,23 @@
 }
 
 .uploadBadge { font-size: 9px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; background: rgba(180,192,210,.12); color: var(--text-tertiary); margin-left: 4px; }
+
+/* ── Wholesale table (секция 02 в оптовом режиме) ─────────────────────────── */
+.wtable { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--border-subtle); border-radius: 10px; overflow: hidden; overflow-x: auto; }
+.wtableHead { display: grid; grid-template-columns: 2fr 72px 90px 90px 70px 60px 80px 80px 80px 80px 32px; gap: 0; background: var(--bg-surface-elevated); border-bottom: 1px solid var(--border-subtle); padding: 0 4px; }
+.wtableHead > span { padding: 8px 6px; font-size: 11px; font-weight: 600; color: var(--ch-text-muted); text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
+.wtableRow { display: grid; grid-template-columns: 2fr 72px 90px 90px 70px 60px 80px 80px 80px 80px 32px; gap: 0; border-bottom: 1px solid var(--border-subtle); align-items: center; padding: 4px 4px; transition: background 100ms; }
+.wtableRow:last-child { border-bottom: none; }
+.wtableRow:hover { background: var(--bg-surface-elevated); }
+.wtableCell { padding: 2px 4px; min-width: 0; }
+.wtableInput { width: 100%; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--text-primary); font-family: inherit; font-size: 13px; padding: 6px 8px; outline: none; transition: border-color 140ms; }
+.wtableInput:focus { border-color: var(--fill-accent); }
+.wtableNum { width: 100%; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--text-primary); font-family: inherit; font-size: 13px; padding: 6px 6px; outline: none; text-align: right; transition: border-color 140ms; }
+.wtableNum:focus { border-color: var(--fill-accent); }
+.wtableSel { width: 100%; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 6px; color: var(--text-primary); font-family: inherit; font-size: 13px; padding: 6px 4px; outline: none; cursor: pointer; transition: border-color 140ms; }
+.wtableSel:focus { border-color: var(--fill-accent); }
+.wtableGender { display: flex; gap: 3px; }
+.wtableGenderBtn { padding: 4px 6px; border-radius: 5px; font-size: 11px; font-weight: 500; border: 1px solid var(--border-subtle); background: transparent; color: var(--ch-text-muted); cursor: pointer; transition: all 120ms; white-space: nowrap; }
+.wtableGenderBtn:hover { background: var(--bg-surface-elevated); color: var(--ch-text); }
+.wtableGenderBtnActive { background: var(--fill-accent); color: #fff; border-color: var(--fill-accent); }
+.wtableTotalCell { font-size: 13px; font-weight: 600; color: var(--ch-text); text-align: right; white-space: nowrap; }

@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { AlertTriangle, Calculator, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Calculator, Pencil, Plus, Star, Trash2, X } from 'lucide-react';
 import { useOrder, useUpdateOrder, useChapanCatalogs, useChapanProfile, useRequestItemChange, useUpdateBankCommission } from '../../../../entities/order/queries';
 import type { Urgency } from '../../../../entities/order/types';
 import { formatPersonNameInput } from '../../../../shared/utils/person';
@@ -754,7 +754,7 @@ export default function ChapanEditOrderPage() {
                     className={`${styles.priorityBtn} ${styles.priorityBtnUrgent} ${urgency === 'urgent' ? styles.priorityBtnActive : ''}`}
                     onClick={() => setValue('urgency', 'urgent')}
                   >
-                    🔴 Срочно
+                    <AlertTriangle size={11} /> Срочно
                   </button>
                 </div>
                 <label className={styles.demandingToggle}>
@@ -764,7 +764,7 @@ export default function ChapanEditOrderPage() {
                     onChange={e => setValue('isDemandingClient', e.target.checked)}
                     className={styles.demandingCheckbox}
                   />
-                  <span>⭐ Требовательный клиент</span>
+                  <span><Star size={11} /> Требовательный клиент</span>
                 </label>
               </div>
             </div>

@@ -7,6 +7,9 @@ server/dist
 .env.*
 server/.env
 server/.env.*
+_database-report
+*.dump
+server/coverage
 coverage
 playwright-report
 test-results

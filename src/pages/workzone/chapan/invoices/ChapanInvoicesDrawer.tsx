@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { X, FileText, Check, Clock, Download } from 'lucide-react';
+import { ClipboardList, X, FileText, Check, Clock, Download } from 'lucide-react';
 import { useInvoices, useConfirmSeamstress, useConfirmWarehouse, useArchiveInvoice } from '../../../../entities/order/queries';
 import type { ChapanInvoice, InvoiceStatus } from '../../../../entities/order/types';
 import { useChapanPermissions } from '../../../../shared/hooks/useChapanPermissions';
@@ -140,7 +140,7 @@ export default function ChapanInvoicesDrawer({ open, onClose, initialFilter = 'a
 
             {!isLoading && invoices.length === 0 && (
               <div className={styles.empty}>
-                <div className={styles.emptyIcon}>📋</div>
+                <div className={styles.emptyIcon}><ClipboardList size={28} /></div>
                 <div>
                   {filter === 'all' ? 'Накладных пока нет' : 'Нет накладных в этом разделе'}
                 </div>

@@ -1,0 +1,46 @@
+
+> @kort/web@0.1.0 dev C:\Users\user\Documents\EXPERIMENTAL\KORT-TESTING-FRONTEND
+> vite "--host" "127.0.0.1"
+
+
+  [32m[1mVITE[22m v5.4.21[39m  [2mready in [0m[1m1104[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://127.0.0.1:[1m5173[22m/[39m
+[2m19:18:42[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/reports/AdsReport.tsx[22m
+[2m19:18:42[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/reports/AdsReport.tsx[22m
+[2m19:19:02[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/reports/AdsReport.tsx[22m
+[2m19:19:20[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/reports/AdsReport.tsx[22m
+[2m19:19:39[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/reports/AdsReport.tsx[22m
+[2m19:19:53[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/reports/AdsReport.tsx[22m
+[2m19:20:33[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/reports/AdsReport.tsx[22m
+[2m19:21:14[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/reports/AdsReport.tsx[22m
+[2m19:34:43[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mdesign_handoff_production_redesign/Производство.html[22m
+[2m19:34:43[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mdesign_handoff_production_redesign/Производство.html[22m
+[2m19:34:52[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mdesign_handoff_production_redesign/Производство.html[22m
+[2m19:34:52[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mdesign_handoff_production_redesign/Производство.html[22m
+[2m19:35:16[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mdesign_handoff_production_redesign/Производство.html[22m
+[2m19:35:16[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mdesign_handoff_production_redesign/Производство.html[22m
+[2m19:35:21[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mdesign_handoff_production_redesign/Производство.html[22m
+[2m19:36:06[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mdesign_handoff_production_redesign/производство.html[22m
+[2m19:36:14[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mdesign_handoff_production_redesign/производство.html[22m
+[2m19:48:52[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/reports/index.tsx, /src/pages/reports/AdsReport.tsx[22m
+[2m19:49:01[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/reports/AdsReport.tsx[22m
+[2m19:49:12[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/reports/AdsReport.tsx[22m
+[2m19:49:18[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/reports/index.tsx, /src/pages/reports/AdsReport.tsx[22m
+[2m19:58:53[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/reports/AdsReport.tsx[22m
+[2m19:59:01[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/reports/AdsReport.tsx[22m
+[2m19:59:06[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/reports/AdsReport.tsx[22m
+[2m19:59:13[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/reports/AdsReport.tsx[22m
+[2m19:59:47[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/reports/index.tsx, /src/pages/reports/AdsReport.tsx[22m
+[2m20:00:07[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/reports/AdsReport.tsx[22m
+[2m20:00:24[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/reports/AdsReport.tsx[22m
+[2m20:00:50[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/reports/AdsReport.tsx[22m
+[2m20:01:02[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/reports/AdsReport.tsx[22m
+[2m20:01:08[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/reports/AdsReport.tsx[22m
+[2m20:01:40[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/reports/AdsReport.tsx[22m
+[2m20:01:58[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/reports/AdsReport.tsx[22m
+[2m20:02:18[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/reports/AdsReport.tsx[22m
+[2m20:02:53[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/reports/index.tsx, /src/pages/reports/AdsReport.tsx[22m
+[2m20:16:02[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/reports/index.tsx[22m
+[2m20:16:11[22m [36m[1m[vite][22m[39m [32mhmr update [39m[2m/src/pages/reports/index.tsx[22m
+[2m20:19:03[22m [36m[1m[vite][22m[39m [32mpage reload [39m[2mdesign_handoff_production_redesign/производство.html[22m

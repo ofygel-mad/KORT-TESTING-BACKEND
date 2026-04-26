@@ -153,18 +153,41 @@ jobs:
         env:
           DATABASE_URL: postgresql://kort:kort_secret@localhost:5432/kort_db_test
           PORT: 8000
+          HOST: 127.0.0.1
           NODE_ENV: test
           JWT_ACCESS_SECRET: "test-secret-key-for-ci-only-min32chars!!"
           JWT_REFRESH_SECRET: "test-refresh-key-for-ci-only-min32chars!!"
-          CORS_ORIGIN: "http://localhost:5173"
+          CORS_ORIGIN: "http://127.0.0.1:4173,http://localhost:4173"
         run: |
-          node dist/index.js &
-          sleep 3
+          nohup node dist/index.js > ../lhci-backend.log 2>&1 &
+          echo "Waiting for backend to be ready..."
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:8000/api/v1/health > /dev/null; then
+              echo "Backend is ready"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Backend failed to start"
+          cat ../lhci-backend.log || true
+          exit 1
 
       - name: Start preview server
+        env:
+          VITE_PROXY_TARGET: http://127.0.0.1:8000
         run: |
-          pnpm preview --host 127.0.0.1 --port 4173 &
-          sleep 5
+          nohup pnpm preview --host 127.0.0.1 --port 4173 --strictPort > lhci-frontend.log 2>&1 &
+          echo "Waiting for frontend to be ready..."
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4173 > /dev/null; then
+              echo "Frontend is ready"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Frontend failed to start"
+          cat lhci-frontend.log || true
+          exit 1
 
       - name: Run Lighthouse CI
         uses: treosh/lighthouse-ci-action@v10

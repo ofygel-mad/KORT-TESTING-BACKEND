@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FileText, Check, Clock, X, Download, AlertTriangle } from 'lucide-react';
+import { ClipboardList, FileText, Check, Clock, X, Download, AlertTriangle } from 'lucide-react';
 import {
   useInvoices,
   useConfirmWarehouse,
@@ -152,7 +152,7 @@ export default function ChapanInvoicesPage() {
 
       {!isLoading && !isError && invoices.length === 0 && (
         <div className={styles.emptyState}>
-          <div className={styles.emptyIcon}>📋</div>
+          <div className={styles.emptyIcon}><ClipboardList size={28} /></div>
           <div className={styles.emptyTitle}>Накладных пока нет</div>
           <div className={styles.emptyText}>
             {tab

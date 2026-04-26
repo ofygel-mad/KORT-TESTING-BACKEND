@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { CheckCircle2, Clock, CreditCard, MessageSquare, AlertTriangle, Pencil, ArchiveIcon, RotateCcw, Download, Package, XCircle, FileText, Paperclip, Trash2, Upload, Undo2 } from 'lucide-react';
+import { Building2, CalendarDays, CheckCircle2, Clock, CreditCard, Megaphone, MessageSquare, AlertTriangle, Pencil, ArchiveIcon, RotateCcw, Download, Package, Star, User, XCircle, FileText, Paperclip, Trash2, Upload, Undo2 } from 'lucide-react';
 import { useOrder, useChangeOrderStatus, useAddPayment, useAddOrderActivity, useRestoreOrder, useCloseOrder, useCreateInvoice, useSetRequiresInvoice, useRouteSingleItem, useUploadAttachment, useDeleteAttachment, useReassignManager, useOrgManagers, useReturns, useCreateReturn, useConfirmReturn, useDeleteReturnDraft } from '../../../../entities/order/queries';
 import { useChapanPermissions } from '../../../../shared/hooks/useChapanPermissions';
 import { useProductsAvailability } from '../../../../entities/warehouse/queries';
@@ -69,9 +69,9 @@ const PROD_STATUS_LABEL: Record<string, string> = {
 
 const URGENCY_LABEL: Record<Urgency, string> = {
   normal: '',
-  urgent: '🔴 Срочно',
+  urgent: 'Срочно',
 };
-const DEMANDING_LABEL = '⭐ Требовательный';
+const DEMANDING_LABEL = 'Требовательный';
 
 const ROUTE_LABEL: Record<OrderItemFulfillmentMode, string> = {
   unassigned: 'Не выбран',
@@ -357,10 +357,10 @@ export default function ChapanOrderDetailPage() {
           <h1 className={styles.orderNum}>#{order.orderNumber}</h1>
           <span className={styles.statusChip} style={{ '--sc': STATUS_COLOR[order.status] } as React.CSSProperties}>{STATUS_LABEL[order.status]}</span>
           {(order.urgency ?? order.priority) === 'urgent' && (
-            <span className={styles.priorityChip} data-urgency="urgent">🔴 Срочно</span>
+            <span className={styles.priorityChip} data-urgency="urgent"><AlertTriangle size={10} /> Срочно</span>
           )}
           {(order.isDemandingClient ?? (order.priority === 'vip')) && (
-            <span className={styles.priorityChip} data-urgency="demanding">⭐ Требовательный</span>
+            <span className={styles.priorityChip} data-urgency="demanding"><Star size={10} /> Требовательный</span>
           )}
           {isOverdue && <span className={styles.overdueChip}>Просрочен</span>}
         </div>
@@ -381,28 +381,28 @@ export default function ChapanOrderDetailPage() {
               <div className={styles.clientMeta}>
                 {order.city && (
                   <div className={styles.clientMetaRow}>
-                    <span className={styles.clientMetaIcon}>🏙</span>
+                    <span className={styles.clientMetaIcon}><Building2 size={13} /></span>
                     <span className={styles.clientMetaLabel}>Город</span>
                     <span className={styles.clientMetaValue}>{order.city}</span>
                   </div>
                 )}
                 {order.deliveryType && (
                   <div className={styles.clientMetaRow}>
-                    <span className={styles.clientMetaIcon}>📦</span>
+                    <span className={styles.clientMetaIcon}><Package size={13} /></span>
                     <span className={styles.clientMetaLabel}>Доставка</span>
                     <span className={styles.clientMetaValue}>{order.deliveryType}</span>
                   </div>
                 )}
                 {order.source && (
                   <div className={styles.clientMetaRow}>
-                    <span className={styles.clientMetaIcon}>📣</span>
+                    <span className={styles.clientMetaIcon}><Megaphone size={13} /></span>
                     <span className={styles.clientMetaLabel}>Источник</span>
                     <span className={styles.clientMetaValue}>{order.source}</span>
                   </div>
                 )}
                 {order.dueDate && (
                   <div className={styles.clientMetaRow}>
-                    <span className={styles.clientMetaIcon}>📅</span>
+                    <span className={styles.clientMetaIcon}><CalendarDays size={13} /></span>
                     <span className={styles.clientMetaLabel}>Дедлайн</span>
                     <span className={`${styles.clientMetaValue} ${isOverdue ? styles.clientMetaOverdue : ''}`}>
                       {new Date(order.dueDate).toLocaleDateString('ru-KZ', { day: '2-digit', month: 'long', year: 'numeric' })}
@@ -410,7 +410,7 @@ export default function ChapanOrderDetailPage() {
                   </div>
                 )}
                 <div className={styles.clientMetaRow}>
-                  <span className={styles.clientMetaIcon}>👤</span>
+                  <span className={styles.clientMetaIcon}><User size={13} /></span>
                   <span className={styles.clientMetaLabel}>Менеджер</span>
                   <span className={styles.clientMetaValue}>{order.managerName ?? 'Не указан'}</span>
                 </div>
@@ -613,7 +613,7 @@ export default function ChapanOrderDetailPage() {
                   className={`${styles.actionBtn} ${styles.actionSecondary}`}
                   onClick={() => { setSelectedNewManagerId(order.managerId ?? ''); setReassignOpen(true); }}
                 >
-                  <span style={{ fontSize: 13 }}>👤</span>
+                  <User size={13} />
                   Переназначить менеджера
                 </button>
               )}

@@ -49,7 +49,10 @@
   "pnpm": {
     "overrides": {
       "picomatch": "4.0.4",
-      "brace-expansion@5": ">=5.0.5"
+      "brace-expansion@5": ">=5.0.5",
+      "basic-ftp": "5.3.0",
+      "lodash": "4.18.1",
+      "lodash-es": "4.18.1"
     }
   },
   "devDependencies": {

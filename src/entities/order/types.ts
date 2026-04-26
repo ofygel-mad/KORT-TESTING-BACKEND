@@ -53,6 +53,7 @@ export interface ChapanOrder {
   // Manager credited for this order (for salary/bonus calculations)
   managerId: string | null;
   managerName: string | null;
+  customerType: 'retail' | 'wholesale';
   createdAt: string;
   updatedAt: string;
   // Relations (included by backend):
@@ -291,6 +292,7 @@ export interface CreateOrderDto {
   items?: CreateOrderItemDto[];
   sourceRequestId?: string;
   managerNote?: string;
+  customerType?: 'retail' | 'wholesale';
 }
 
 export interface CreateOrderItemDto {

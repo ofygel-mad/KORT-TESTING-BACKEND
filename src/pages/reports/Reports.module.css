@@ -23,6 +23,34 @@
 .row:hover td { background:var(--bg-hover); }
 .tdName { color:var(--text-primary)!important; font-weight:500; }
 .empty { display:flex; flex-direction:column; align-items:center; gap:10px; padding:40px 20px; text-align:center; color:var(--text-tertiary); font-size:14px; background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:12px; }
+.adsToolbar { display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap; background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:12px; padding:12px; }
+.adsField, .adsFieldWide { display:flex; flex-direction:column; gap:5px; min-width:150px; }
+.adsField span, .adsFieldWide span { font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--text-tertiary); }
+.adsFieldWide { min-width:240px; flex:1; }
+.adsInput { width:100%; min-height:34px; border:1px solid var(--border-subtle); border-radius:7px; background:var(--bg-surface-inset); color:var(--text-primary); padding:7px 10px; font:inherit; font-size:13px; outline:none; }
+.adsInput:focus { border-color:var(--fill-accent); box-shadow:0 0 0 2px var(--fill-accent-soft,rgba(160,104,56,.14)); }
+.adsPrimaryButton, .adsGhostButton { min-height:34px; display:inline-flex; align-items:center; justify-content:center; gap:6px; border-radius:7px; padding:7px 12px; font:inherit; font-size:12px; font-weight:600; cursor:pointer; transition:all 120ms; white-space:nowrap; }
+.adsPrimaryButton { border:1px solid var(--fill-accent); background:var(--fill-accent); color:white; }
+.adsPrimaryButton:hover { filter:brightness(1.04); }
+.adsPrimaryButton:disabled { opacity:.55; cursor:not-allowed; }
+.adsGhostButton { border:1px solid var(--border-subtle); background:var(--bg-surface-inset); color:var(--text-secondary); }
+.adsGhostButton:hover { color:var(--text-primary); border-color:var(--border-default); }
+.adsRateBar { display:flex; align-items:center; gap:8px; min-height:42px; padding:10px 12px; border:1px solid var(--border-subtle); border-radius:10px; background:var(--bg-surface-inset); color:var(--text-secondary); font-size:13px; }
+.adsTotalsStrip { display:grid; grid-template-columns:repeat(5,minmax(130px,1fr)); gap:1px; overflow:hidden; border:1px solid var(--border-subtle); border-radius:10px; background:var(--border-subtle); }
+.adsTotalsStrip > div { display:flex; flex-direction:column; gap:4px; padding:10px 12px; background:var(--bg-surface); min-width:0; }
+.adsTotalsStrip span { font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--text-tertiary); }
+.adsTotalsStrip strong { font-size:14px; color:var(--text-primary); font-weight:650; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.adsForm { display:flex; flex-direction:column; gap:10px; padding:14px 18px; }
+.adsFormInputs { display:grid; grid-template-columns:minmax(220px,1.4fr) minmax(160px,.8fr) minmax(180px,1fr); gap:10px; }
+.adsFormActions { display:flex; justify-content:flex-end; }
+.adsMetricForm { display:grid; grid-template-columns:repeat(4,minmax(140px,1fr)); gap:12px; padding:14px 18px; align-items:end; }
+.adsSelectedRow td { background:var(--fill-accent-soft,rgba(160,104,56,.12)); }
+.adsIconButton { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border:none; border-radius:6px; background:none; color:var(--text-tertiary); cursor:pointer; transition:all 120ms; }
+.adsIconButton:hover { background:var(--bg-hover); color:var(--text-primary); }
+.adsIconButtonActive { background:var(--fill-accent-soft,rgba(160,104,56,.12)); color:var(--fill-accent); }
+.adsDangerButton { display:inline-flex; align-items:center; gap:4px; padding:4px 8px; border:1px solid var(--color-red,#e05252); border-radius:6px; background:none; color:var(--color-red,#e05252); font:inherit; font-size:11px; font-weight:600; cursor:pointer; transition:all 120ms; white-space:nowrap; }
+.adsDangerButton:hover { background:rgba(224,82,82,.08); }
+.adsRowActions { display:flex; align-items:center; gap:2px; }
 
 @media (max-width: 767px) {
   .root { padding: 12px; gap: 12px; }
@@ -42,4 +70,11 @@
   }
   .tableCard { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .table { min-width: 520px; }
+  .adsToolbar { align-items:stretch; }
+  .adsField, .adsFieldWide, .adsPrimaryButton, .adsGhostButton { width:100%; }
+  .adsFormInputs, .adsMetricForm { grid-template-columns:1fr; }
+  .adsForm { padding:12px; }
+  .adsMetricForm { padding:12px; }
+  .adsRateBar { align-items:flex-start; }
+  .adsTotalsStrip { grid-template-columns:1fr 1fr; }
 }

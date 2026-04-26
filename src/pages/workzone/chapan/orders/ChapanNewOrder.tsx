@@ -1,10 +1,10 @@
 import type { InputHTMLAttributes } from 'react';
 import { useEffect, useRef, useState, useDeferredValue } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Trash2, Calculator, AlertCircle, Paperclip, X, ImagePlus, Pencil } from 'lucide-react';
+import { AlertCircle, AlertTriangle, ImagePlus, Pencil, Plus, Star, Trash2, Calculator, Paperclip, X } from 'lucide-react';
 import { useId } from 'react';
 import { useCreateOrder, useChapanCatalogs, useChapanProfile, useUpdateBankCommission } from '../../../../entities/order/queries';
 import { useAuthStore } from '../../../../shared/stores/auth';
@@ -288,6 +288,8 @@ function SearchableSelect({ options, placeholder, className, value, onChange, on
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function ChapanNewOrderPage() {
   const navigate    = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isWholesale = searchParams.get('type') === 'wholesale';
   const createOrder = useCreateOrder();
   const { data: catalogs } = useChapanCatalogs();
   const { data: profile } = useChapanProfile();
@@ -472,6 +474,7 @@ export default function ChapanNewOrderPage() {
         : undefined,
       items: payloadItems,
       managerNote: data.managerNote?.trim() || undefined,
+      customerType: isWholesale ? 'wholesale' : 'retail',
     });
 
     if (receipts.length > 0 && created?.id) {
@@ -538,7 +541,7 @@ export default function ChapanNewOrderPage() {
   return (
     <div className={styles.root}>
       <div className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>Новый заказ</h1>
+        <h1 className={styles.pageTitle}>{isWholesale ? 'Новый оптовый заказ' : 'Новый заказ'}</h1>
       </div>
 
       {draftRestored && (
@@ -668,6 +671,129 @@ export default function ChapanNewOrderPage() {
             <span className={styles.sectionTitle}>Позиции заказа</span>
           </div>
           <div className={styles.sectionBody}>
+          {isWholesale ? (
+            <>
+              <div className={styles.wtable}>
+                <div className={styles.wtableHead}>
+                  <span>Наименование</span>
+                  <span>Пол</span>
+                  <span>Длина</span>
+                  <span>Цвет</span>
+                  <span>Размер</span>
+                  <span>Кол-во</span>
+                  <span>Цена, ₸</span>
+                  <span>Скидка</span>
+                  <span>Сумма</span>
+                  <span>Наличие</span>
+                  <span></span>
+                </div>
+                {fields.map((field, idx) => {
+                  const _item = items[idx];
+                  const linePrice = (Number(_item?.quantity) || 0) * (Number(_item?.unitPrice) || 0);
+                  const lineDisc = Number(_item?.itemDiscount) || 0;
+                  const lineTotal = Math.max(0, linePrice - lineDisc);
+                  const _variantKey = (() => {
+                    if (!_item?.productName?.trim()) return null;
+                    const attrs: Record<string, string> = {};
+                    if (_item.color?.trim()) attrs.color = _item.color.trim();
+                    if (_item.gender?.trim()) attrs.gender = _item.gender.trim();
+                    if (_item.size?.trim()) attrs.size = _item.size.trim();
+                    const attrParts = Object.entries(attrs).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => `${k}=${v.toLowerCase()}`).join(':');
+                    return attrParts ? `${_item.productName.toLowerCase()}:${attrParts}` : _item.productName.toLowerCase();
+                  })();
+                  const variantStock = _variantKey && variantMap ? variantMap[_variantKey] : undefined;
+                  const itemStock = variantStock
+                    ? { available: variantStock.available > 0, qty: variantStock.available, status: variantStock.status }
+                    : _item?.productName && stockMap
+                      ? { available: stockMap[_item.productName]?.available ?? false, qty: stockMap[_item.productName]?.qty ?? 0, status: undefined as undefined }
+                      : undefined;
+                  const catalogLengths = getCatalogOptions(_item?.productName ?? '', 'length');
+                  const lengthOpts = catalogLengths.length > 0 ? catalogLengths : globalWarehouseLengths;
+                  return (
+                    <div key={field.id} className={styles.wtableRow}>
+                      <div className={styles.wtableCell}>
+                        <Controller control={control} name={`items.${idx}.productName`} render={({ field: f }) => (
+                          <SearchableSelect options={allProductNames} value={f.value} onChange={f.onChange} onBlur={f.onBlur} placeholder="Модель…" className={`${styles.wtableInput} ${errors.items?.[idx]?.productName ? styles.inputError : ''}`} />
+                        )} />
+                      </div>
+                      <div className={styles.wtableCell}>
+                        <Controller control={control} name={`items.${idx}.gender`} render={({ field: f }) => (
+                          <div className={styles.wtableGender}>
+                            {(['муж', 'жен'] as const).map(g => (
+                              <button type="button" key={g} className={`${styles.wtableGenderBtn} ${f.value === g ? styles.wtableGenderBtnActive : ''}`} onClick={() => f.onChange(f.value === g ? '' : g)}>{g}</button>
+                            ))}
+                          </div>
+                        )} />
+                      </div>
+                      <div className={styles.wtableCell}>
+                        <Controller control={control} name={`items.${idx}.length`} render={({ field: f }) => (
+                          <select className={styles.wtableSel} value={f.value ?? ''} onChange={e => f.onChange(e.target.value)}>
+                            <option value="">—</option>
+                            {lengthOpts.map(o => <option key={o} value={o}>{o}</option>)}
+                          </select>
+                        )} />
+                      </div>
+                      <div className={styles.wtableCell}>
+                        <Controller control={control} name={`items.${idx}.color`} render={({ field: f }) => (
+                          <input className={styles.wtableInput} {...f} value={f.value ?? ''} placeholder="—" />
+                        )} />
+                      </div>
+                      <div className={styles.wtableCell}>
+                        <Controller control={control} name={`items.${idx}.size`} render={({ field: f }) => (
+                          <input className={styles.wtableInput} {...f} value={f.value ?? ''} placeholder="—" />
+                        )} />
+                      </div>
+                      <div className={styles.wtableCell}>
+                        <Controller control={control} name={`items.${idx}.quantity`} render={({ field: f }) => (
+                          <input type="number" min="1" className={styles.wtableNum} value={f.value ?? 1} onChange={e => f.onChange(Number(e.target.value))} onBlur={f.onBlur} />
+                        )} />
+                      </div>
+                      <div className={styles.wtableCell}>
+                        <Controller control={control} name={`items.${idx}.unitPrice`} render={({ field: f }) => (
+                          <input type="number" min="0" className={styles.wtableNum} value={f.value ?? 0} onChange={e => f.onChange(Number(e.target.value))} onBlur={f.onBlur} />
+                        )} />
+                      </div>
+                      <div className={styles.wtableCell}>
+                        <Controller control={control} name={`items.${idx}.itemDiscount`} render={({ field: f }) => (
+                          <input type="number" min="0" className={styles.wtableNum} value={f.value ?? 0} onChange={e => f.onChange(Number(e.target.value))} onBlur={f.onBlur} />
+                        )} />
+                      </div>
+                      <div className={`${styles.wtableCell} ${styles.wtableTotalCell}`}>{fmt(lineTotal)}</div>
+                      <div className={styles.wtableCell}>
+                        {itemStock !== undefined && (
+                          <span className={itemStock.status === 'low' ? styles.stockBadgeLow : itemStock.available ? styles.stockBadgeIn : styles.stockBadgeOut}>
+                            {itemStock.available ? `${itemStock.qty} шт.` : 'Нет'}
+                          </span>
+                        )}
+                      </div>
+                      <div className={styles.wtableCell}>
+                        {fields.length > 1 && (
+                          <button type="button" className={styles.itemRemoveBtn} aria-label={`Удалить позицию ${idx + 1}`} onClick={() => remove(idx)}><Trash2 size={12} /></button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {errors.items && typeof errors.items.message === 'string' && (
+                <div className={styles.formError}><AlertCircle size={13} />{errors.items.message}</div>
+              )}
+              <div className={styles.itemsFooter}>
+                <button type="button" className={styles.addItemBtn} onClick={() => append({ productName: '', gender: '' as const, length: '', color: '', size: '', quantity: 1, unitPrice: 0, itemDiscount: 0, workshopNotes: '' })}>
+                  <Plus size={13} /> Добавить строку
+                </button>
+                {itemsTotal > 0 && (
+                  <div className={styles.itemsTotal}>
+                    <Calculator size={13} />
+                    <span>Итого по позициям:</span>
+                    <strong>{fmt(itemsTotal)}</strong>
+                    <span className={styles.itemsTotalMeta}>{items.length} {items.length === 1 ? 'позиция' : items.length < 5 ? 'позиции' : 'позиций'} · {items.reduce((s, i) => s + (Number(i.quantity) || 0), 0)} шт.</span>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
             {fields.map((field, idx) => {
               const linePrice   = (Number(items[idx]?.quantity) || 0) * (Number(items[idx]?.unitPrice) || 0);
               const lineDisc    = Number(items[idx]?.itemDiscount) || 0;
@@ -945,6 +1071,8 @@ export default function ChapanNewOrderPage() {
                 </div>
               )}
             </div>
+            </>
+          )}
           </div>
         </section>
 
@@ -979,7 +1107,7 @@ export default function ChapanNewOrderPage() {
                     className={`${styles.priorityBtn} ${styles.priorityBtnUrgent} ${urgency === 'urgent' ? styles.priorityBtnActive : ''}`}
                     onClick={() => setValue('urgency', 'urgent')}
                   >
-                    🔴 Срочно
+                    <AlertTriangle size={11} /> Срочно
                   </button>
                 </div>
                 <label className={styles.demandingToggle}>
@@ -989,7 +1117,7 @@ export default function ChapanNewOrderPage() {
                     onChange={e => setValue('isDemandingClient', e.target.checked)}
                     className={styles.demandingCheckbox}
                   />
-                  <span>⭐ Требовательный клиент</span>
+                  <span><Star size={11} /> Требовательный клиент</span>
                 </label>
               </div>
             </div>

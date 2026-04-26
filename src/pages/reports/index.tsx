@@ -1,13 +1,21 @@
 import { useState } from 'react';
-import { Download, TrendingUp, Users, Factory } from 'lucide-react';
+import { Download, TrendingUp, Users, Factory, Megaphone } from 'lucide-react';
 import { useLeads } from '../../entities/lead/queries';
 import { useDeals } from '../../entities/deal/queries';
 import { useOrders } from '../../entities/order/queries';
 import { Skeleton } from '../../shared/ui/Skeleton';
 import { exportToCSV } from '../../shared/lib/export';
 import styles from './Reports.module.css';
+import AdsReport from './AdsReport';
 
-type Tab = 'sales' | 'funnel' | 'production';
+type Tab = 'sales' | 'funnel' | 'production' | 'ads';
+
+const REPORTS_TAB_KEY = 'reports:tab';
+const VALID_TABS: Tab[] = ['sales', 'funnel', 'production', 'ads'];
+function readStoredTab(): Tab {
+  const v = localStorage.getItem(REPORTS_TAB_KEY);
+  return VALID_TABS.includes(v as Tab) ? (v as Tab) : 'sales';
+}
 
 function fmtMoney(n: number) {
   return new Intl.NumberFormat('ru-KZ', { maximumFractionDigits: 0 }).format(n) + ' ₸';
@@ -293,24 +301,34 @@ function ProductionReport() {
   );
 }
 
+// ── Ads tab ────────────────────────────────────────────────────────────────────
+
 // ── Main page ──────────────────────────────────────────────────────────────────
 
 export default function ReportsPage() {
-  const [tab, setTab] = useState<Tab>('sales');
+  const [tab, setTab] = useState<Tab>(readStoredTab);
+
+  function handleSetTab(next: Tab) {
+    setTab(next);
+    localStorage.setItem(REPORTS_TAB_KEY, next);
+  }
 
   return (
     <div className={styles.root}>
       <div className={styles.header}>
         <h1 className={styles.title}>Отчёты</h1>
         <div className={styles.tabs}>
-          <button className={`${styles.tab} ${tab==='sales' ? styles.tabActive : ''}`} onClick={() => setTab('sales')}>
+          <button className={`${styles.tab} ${tab==='sales' ? styles.tabActive : ''}`} onClick={() => handleSetTab('sales')}>
             <TrendingUp size={13} /> Продажи
           </button>
-          <button className={`${styles.tab} ${tab==='funnel' ? styles.tabActive : ''}`} onClick={() => setTab('funnel')}>
+          <button className={`${styles.tab} ${tab==='funnel' ? styles.tabActive : ''}`} onClick={() => handleSetTab('funnel')}>
             <Users size={13} /> Воронка CRM
           </button>
-          <button className={`${styles.tab} ${tab==='production' ? styles.tabActive : ''}`} onClick={() => setTab('production')}>
+          <button className={`${styles.tab} ${tab==='production' ? styles.tabActive : ''}`} onClick={() => handleSetTab('production')}>
             <Factory size={13} /> Производство
+          </button>
+          <button className={`${styles.tab} ${tab==='ads' ? styles.tabActive : ''}`} onClick={() => handleSetTab('ads')}>
+            <Megaphone size={13} /> Рекламный кабинет
           </button>
         </div>
       </div>
@@ -319,6 +337,7 @@ export default function ReportsPage() {
         {tab === 'sales' && <SalesReport />}
         {tab === 'funnel' && <FunnelReport />}
         {tab === 'production' && <ProductionReport />}
+        {tab === 'ads' && <AdsReport />}
       </div>
     </div>
   );

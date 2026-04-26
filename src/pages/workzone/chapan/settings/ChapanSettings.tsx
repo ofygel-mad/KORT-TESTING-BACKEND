@@ -238,7 +238,7 @@ function CatalogSection({
           className={`${styles.catalogInput} ${dupError ? styles.catalogInputError : ''}`}
           value={input}
           onChange={e => { setInput(e.target.value); setDupError(false); }}
-          placeholder={dupError ? '⚠ Уже есть в списке' : placeholder}
+          placeholder={dupError ? 'Уже есть в списке' : placeholder}
           onKeyDown={e => e.key === 'Enter' && handleAdd()}
         />
         <button className={styles.catalogAddBtn} onClick={handleAdd} disabled={!input.trim()}>
@@ -532,7 +532,7 @@ function AccountTab({ isOwner }: { isOwner: boolean }) {
                 Текущий email: <strong>{user?.email ?? '—'}</strong>
               </p>
               <div className={styles.accountWarningBox}>
-                <strong>⚠ Важно:</strong> после смены email вы будете автоматически выведены
+                <strong>Важно:</strong> после смены email вы будете автоматически выведены
                 из аккаунта и должны войти заново с новым адресом.
               </div>
               <button

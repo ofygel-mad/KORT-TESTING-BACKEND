@@ -3,7 +3,7 @@ import * as XLSX from 'xlsx';
 import { Link } from 'react-router-dom';
 import {
   AlertCircle, AlertTriangle, Archive, CheckCircle2, ChevronRight, Download,
-  FileText, Package, PackageCheck, Phone, Plus, RefreshCcw, Search, TrendingDown, User, Upload, X, XCircle, CheckSquare, BookOpen, Truck,
+  FileText, Package, PackageCheck, Phone, Plus, RefreshCcw, Search, Star, TrendingDown, User, Upload, X, XCircle, CheckSquare, BookOpen, Truck,
 } from 'lucide-react';
 import { WarehouseCatalog } from '../../../warehouse/WarehouseCatalog';
 import ChapanInvoicePreviewModal from '../invoices/ChapanInvoicePreviewModal';
@@ -46,9 +46,9 @@ const PAY_LABEL: Record<string, string> = {
 const PAY_COLOR: Record<string, string> = {
   not_paid: 'var(--fill-negative)', partial: 'var(--fill-warning)', paid: 'var(--fill-positive)',
 };
-const URGENCY_LABEL: Record<string, string> = { normal: '', urgent: '🔴 Срочно' };
+const URGENCY_LABEL: Record<string, string> = { normal: '', urgent: 'Срочно' };
 const URGENCY_COLOR: Record<string, string> = { normal: 'var(--text-tertiary)', urgent: '#D94F4F' };
-const DEMANDING_LABEL = '⭐ Требовательный';
+const DEMANDING_LABEL = 'Требовательный';
 const DEMANDING_COLOR = '#C9A84C';
 const DATE_FORMATTER = new Intl.DateTimeFormat('ru-KZ', { day: '2-digit', month: 'short', year: 'numeric' });
 const NUMBER_FORMATTER = new Intl.NumberFormat('ru-KZ');
@@ -153,12 +153,12 @@ function InvoiceDetailDrawer({ invoice, onClose }: { invoice: ChapanInvoice; onC
                   <span className={styles.invOrderNum}>#{order.orderNumber}</span>
                   {(order.urgency ?? order.priority) === 'urgent' && (
                     <span style={{ fontSize: 11, color: URGENCY_COLOR['urgent'], fontWeight: 600, padding: '2px 7px', borderRadius: 5, background: `${URGENCY_COLOR['urgent']}1a` }}>
-                      {URGENCY_LABEL['urgent']}
+                      <AlertTriangle size={10} /> {URGENCY_LABEL['urgent']}
                     </span>
                   )}
                   {(order.isDemandingClient ?? (order.priority === 'vip')) && (
                     <span style={{ fontSize: 11, color: DEMANDING_COLOR, fontWeight: 600, padding: '2px 7px', borderRadius: 5, background: `${DEMANDING_COLOR}1a` }}>
-                      {DEMANDING_LABEL}
+                      <Star size={10} /> {DEMANDING_LABEL}
                     </span>
                   )}
                   <div className={styles.invOrderClient}>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  X, Package, User, Phone, Clock, AlertTriangle, Send, RotateCcw, CheckSquare, FileText,
+  X, Package, User, Phone, Clock, AlertTriangle, Send, RotateCcw, CheckSquare, FileText, Star,
 } from 'lucide-react';
 import {
   useOrder, useShipOrder, useCloseOrder, useReturnToReady,
@@ -8,8 +8,8 @@ import {
 import type { ChapanOrder } from '../../../../entities/order/types';
 import modalStyles from '../invoices/ChapanInvoicePreviewModal.module.css';
 
-const URGENCY_LABEL: Record<string, string> = { normal: '', urgent: '🔴 Срочно' };
-const DEMANDING_LABEL = '⭐ Требовательный';
+const URGENCY_LABEL: Record<string, string> = { normal: '', urgent: 'Срочно' };
+const DEMANDING_LABEL = 'Требовательный';
 const PAY_LABEL: Record<string, string> = {
   not_paid: 'Не оплачен', partial: 'Частично оплачен', paid: 'Оплачен',
 };
@@ -105,7 +105,7 @@ export default function ChapanOrderDetailModal({ orderId, open, onClose }: Props
                       padding: '8px 12px', borderRadius: 12, background: 'rgba(239,68,68,0.1)',
                       border: '1px solid rgba(239,68,68,0.2)', color: '#D94F4F', fontSize: 12, fontWeight: 600,
                     }}>
-                      {URGENCY_LABEL['urgent']}
+                      <AlertTriangle size={11} /> {URGENCY_LABEL['urgent']}
                     </div>
                   )}
                   {isDemanding && (
@@ -113,7 +113,7 @@ export default function ChapanOrderDetailModal({ orderId, open, onClose }: Props
                       padding: '8px 12px', borderRadius: 12, background: 'rgba(201,168,76,0.1)',
                       border: '1px solid rgba(201,168,76,0.2)', color: '#C9A84C', fontSize: 12, fontWeight: 600,
                     }}>
-                      {DEMANDING_LABEL}
+                      <Star size={11} /> {DEMANDING_LABEL}
                     </div>
                   )}
                 </div>

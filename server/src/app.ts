@@ -35,6 +35,7 @@ import { chapanPurchaseRoutes } from './modules/chapan/purchase.routes.js';
 import { frontendCompatRoutes } from './modules/frontend-compat/frontend-compat.routes.js';
 import { employeesRoutes } from './modules/employees/employees.routes.js';
 import { accountingRoutes } from './modules/accounting/accounting.routes.js';
+import { adsRoutes } from './modules/ads/ads.routes.js';
 import { serviceRoutes } from './modules/service/service.routes.js';
 import { warehouseRoutes } from './modules/warehouse/warehouse.routes.js';
 import { warehouseCatalogRoutes } from './modules/warehouse/warehouse-catalog.routes.js';
@@ -92,6 +93,13 @@ export async function buildApp() {
   await app.register(rateLimit, {
     max: 300,          // SPA easily fires 5-10 parallel requests per page load
     timeWindow: '1 minute',
+    allowList: (request) => request.url.startsWith('/api/v1/sse/'),
+    errorResponseBuilder: (_request, context) => ({
+      code: 'RATE_LIMIT',
+      error: 'RATE_LIMIT',
+      message: `Too many requests, retry in ${context.after}`,
+      detail: `Too many requests, retry in ${context.after}`,
+    }),
   });
   await app.register(sensible);
   await app.register(multipart, { attachFieldsToBody: false });
@@ -126,6 +134,22 @@ export async function buildApp() {
         error: 'VALIDATION',
         message: error instanceof Error ? error.message : 'Validation failed',
         detail: error instanceof Error ? error.message : 'Validation failed',
+      });
+    }
+
+    if (
+      typeof error === 'object'
+      && error !== null
+      && 'statusCode' in error
+      && typeof (error as { statusCode?: unknown }).statusCode === 'number'
+    ) {
+      const statusCode = (error as { statusCode: number }).statusCode;
+      const message = error instanceof Error ? error.message : 'Request failed';
+      return reply.status(statusCode).send({
+        code: statusCode === 429 ? 'RATE_LIMIT' : 'REQUEST_ERROR',
+        error: statusCode === 429 ? 'RATE_LIMIT' : 'REQUEST_ERROR',
+        message,
+        detail: message,
       });
     }
 
@@ -170,6 +194,7 @@ export async function buildApp() {
   await app.register(warehouseRuntimeRoutes, { prefix: '/api/v1/warehouse' });
   await app.register(warehouseLiveRoutes, { prefix: '/api/v1/warehouse-live' });
   await app.register(accountingRoutes, { prefix: '/api/v1/accounting' });
+  await app.register(adsRoutes, { prefix: '/api/v1/ads' });
   // Chat routes disabled - pending schema migration
   // await app.register(chatRoutes, { prefix: '/api/v1/chat' });
 

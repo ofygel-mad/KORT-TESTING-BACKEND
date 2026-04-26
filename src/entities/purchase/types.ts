@@ -3,6 +3,8 @@ export type PurchaseType = 'workshop' | 'market';
 export interface ManualInvoiceItem {
   id: string;
   productName: string;
+  gender?: string | null;
+  length?: string | null;
   color?: string | null;
   size?: string | null;
   quantity: number;
@@ -28,6 +30,8 @@ export interface CreateManualInvoiceDto {
   notes?: string;
   items: Array<{
     productName: string;
+    gender?: string;
+    length?: string;
     color?: string;
     size?: string;
     quantity: number;

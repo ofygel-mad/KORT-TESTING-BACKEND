@@ -23,6 +23,7 @@ export const ordersApi = {
     createdFrom?: string;
     createdTo?: string;
     managerId?: string;
+    customerType?: string;
   }) =>
     api.get<ListResponse<ChapanOrder>>('/chapan/orders', params),
 

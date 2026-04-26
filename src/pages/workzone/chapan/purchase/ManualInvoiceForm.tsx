@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import { useCreateManualInvoice } from '../../../../entities/purchase/queries';
+import { useCatalogDefinitions } from '../../../../entities/warehouse/queries';
 import type { PurchaseType } from '../../../../entities/purchase/types';
 import styles from './ManualInvoiceForm.module.css';
 
 interface ItemRow {
   productName: string;
+  gender: string;
+  length: string;
   color: string;
   size: string;
   quantity: string;
@@ -13,7 +16,7 @@ interface ItemRow {
 }
 
 function emptyRow(): ItemRow {
-  return { productName: '', color: '', size: '', quantity: '1', unitPrice: '' };
+  return { productName: '', gender: '', length: '', color: '', size: '', quantity: '1', unitPrice: '' };
 }
 
 function fmt(n: number) {
@@ -35,6 +38,9 @@ export default function ManualInvoiceForm({ type, onClose }: Props) {
   const [notes, setNotes] = useState('');
   const [rows, setRows] = useState<ItemRow[]>([emptyRow()]);
   const createInvoice = useCreateManualInvoice();
+  const { data: fieldDefinitions } = useCatalogDefinitions();
+  const genderOptions: string[] = fieldDefinitions?.find(d => d.code === 'gender')?.options.map(o => o.label) ?? ['муж', 'жен'];
+  const lengthOptions: string[] = fieldDefinitions?.find(d => d.code === 'length')?.options.map(o => o.label) ?? [];
 
   const total = rows.reduce((s, r) => {
     const q = parseFloat(r.quantity) || 0;
@@ -60,6 +66,8 @@ export default function ManualInvoiceForm({ type, onClose }: Props) {
       notes: notes.trim() || undefined,
       items: validRows.map((r) => ({
         productName: r.productName.trim(),
+        gender: r.gender.trim() || undefined,
+        length: r.length.trim() || undefined,
         color: r.color.trim() || undefined,
         size: r.size.trim() || undefined,
         quantity: parseFloat(r.quantity) || 1,
@@ -116,13 +124,15 @@ export default function ManualInvoiceForm({ type, onClose }: Props) {
             <table className={styles.itemsTable}>
               <thead>
                 <tr>
-                  <th style={{ width: '32%' }}>Наименование</th>
-                  <th style={{ width: '14%' }}>Цвет</th>
-                  <th style={{ width: '12%' }}>Размер</th>
-                  <th style={{ width: '10%' }}>Кол-во</th>
-                  <th style={{ width: '18%' }}>Цена, ₸</th>
+                  <th style={{ width: '26%' }}>Наименование</th>
+                  <th style={{ width: '8%' }}>Пол</th>
+                  <th style={{ width: '10%' }}>Длина</th>
+                  <th style={{ width: '10%' }}>Цвет</th>
+                  <th style={{ width: '8%' }}>Размер</th>
+                  <th style={{ width: '8%' }}>Кол-во</th>
+                  <th style={{ width: '12%' }}>Цена, ₸</th>
                   <th style={{ width: '10%' }}>Сумма</th>
-                  <th style={{ width: '4%' }} />
+                  <th style={{ width: '4%' }} aria-label="Действия" />
                 </tr>
               </thead>
               <tbody>
@@ -137,6 +147,28 @@ export default function ManualInvoiceForm({ type, onClose }: Props) {
                           value={row.productName}
                           onChange={(e) => updateRow(i, 'productName', e.target.value)}
                         />
+                      </td>
+                      <td>
+                        <select
+                          className={styles.cellInput}
+                          title="Пол"
+                          value={row.gender}
+                          onChange={(e) => updateRow(i, 'gender', e.target.value)}
+                        >
+                          <option value="">—</option>
+                          {genderOptions.map((g) => <option key={g} value={g}>{g}</option>)}
+                        </select>
+                      </td>
+                      <td>
+                        <select
+                          className={styles.cellInput}
+                          title="Длина изделия"
+                          value={row.length}
+                          onChange={(e) => updateRow(i, 'length', e.target.value)}
+                        >
+                          <option value="">—</option>
+                          {lengthOptions.map((l) => <option key={l} value={l}>{l}</option>)}
+                        </select>
                       </td>
                       <td>
                         <input
@@ -178,7 +210,7 @@ export default function ManualInvoiceForm({ type, onClose }: Props) {
                         {rowTotal > 0 ? fmt(rowTotal) : '—'}
                       </td>
                       <td>
-                        <button type="button" className={styles.removeRow} onClick={() => removeRow(i)}>
+                        <button type="button" className={styles.removeRow} title="Удалить строку" onClick={() => removeRow(i)}>
                           <X size={12} />
                         </button>
                       </td>

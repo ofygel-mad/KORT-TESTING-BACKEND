@@ -1,5 +1,5 @@
-import { useDeferredValue, useEffect, useMemo, useState, type CSSProperties } from 'react';
-import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, Factory, LayoutList, Layers, MessageSquare, Search, User, X } from 'lucide-react';
+import { useDeferredValue, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { AlertTriangle, CalendarDays, Check, CheckCircle2, ChevronDown, ChevronUp, Factory, Filter, LayoutList, Layers, MessageSquare, Search, Star, User, X, XCircle } from 'lucide-react';
 import {
   useAssignWorker,
   useChapanCatalogs,
@@ -131,6 +131,152 @@ function filterWorkshopTasks(tasks: ProductionTask[], currentWorkerName: string 
   });
 }
 
+type DateFilter = {
+  from: string | null;
+  to: string | null;
+  preset: string | null;
+} | null;
+
+const DATE_PRESETS = [
+  { key: 'today',    label: 'Сегодня' },
+  { key: 'tomorrow', label: 'Завтра' },
+  { key: '7days',    label: '7 дней' },
+  { key: 'week',     label: 'Эта неделя' },
+  { key: 'apr',      label: 'Апрель' },
+  { key: 'may',      label: 'Май' },
+] as const;
+
+function presetToRange(key: string): { from: string; to: string } {
+  const today = new Date();
+  const fmt = (d: Date) => d.toISOString().slice(0, 10);
+  const y = today.getFullYear();
+
+  if (key === 'today') { const s = fmt(today); return { from: s, to: s }; }
+  if (key === 'tomorrow') { const d = new Date(today); d.setDate(d.getDate() + 1); const s = fmt(d); return { from: s, to: s }; }
+  if (key === '7days') { const end = new Date(today); end.setDate(end.getDate() + 7); return { from: fmt(today), to: fmt(end) }; }
+  if (key === 'week') {
+    const day = today.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    const mon = new Date(today); mon.setDate(today.getDate() + diff);
+    const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+    return { from: fmt(mon), to: fmt(sun) };
+  }
+  if (key === 'apr') return { from: `${y}-04-01`, to: `${y}-04-30` };
+  if (key === 'may') return { from: `${y}-05-01`, to: `${y}-05-31` };
+  return { from: fmt(today), to: fmt(today) };
+}
+
+function formatDateRange(from: string | null | undefined, to: string | null | undefined): string {
+  const fmt = (s: string) => new Date(s).toLocaleDateString('ru-KZ', { day: 'numeric', month: 'short' });
+  if (from && to) { const f = fmt(from); const t = fmt(to); return f === t ? f : `${f} — ${t}`; }
+  if (from) return `от ${fmt(from)}`;
+  if (to) return `до ${fmt(to)}`;
+  return 'По дате';
+}
+
+interface DateFilterButtonProps {
+  value: DateFilter;
+  onChange: (filter: DateFilter) => void;
+}
+
+function DateFilterButton({ value, onChange }: DateFilterButtonProps) {
+  const [open, setOpen] = useState(false);
+  const [localFrom, setLocalFrom] = useState(value?.from ?? '');
+  const [localTo, setLocalTo] = useState(value?.to ?? '');
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handler(e: MouseEvent) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  const isActive = value !== null;
+  const buttonLabel = isActive
+    ? (value?.preset ? DATE_PRESETS.find(p => p.key === value.preset)?.label ?? 'По дате' : formatDateRange(value?.from, value?.to))
+    : 'По дате';
+
+  function handlePreset(key: string) {
+    const range = presetToRange(key);
+    onChange({ ...range, preset: key });
+    setLocalFrom(range.from);
+    setLocalTo(range.to);
+    setOpen(false);
+  }
+
+  function handleApply() {
+    if (!localFrom && !localTo) return;
+    onChange({ from: localFrom || null, to: localTo || null, preset: null });
+    setOpen(false);
+  }
+
+  function handleReset() {
+    onChange(null);
+    setLocalFrom('');
+    setLocalTo('');
+    setOpen(false);
+  }
+
+  return (
+    <div ref={wrapRef} className={styles.dateFilterWrap}>
+      <button
+        type="button"
+        className={`${styles.groupToggle} ${isActive ? styles.groupToggleActive : ''}`}
+        onClick={() => setOpen(v => !v)}
+        title="Фильтр по сроку сдачи"
+      >
+        <CalendarDays size={13} />
+        <span>{buttonLabel}</span>
+        {isActive && (
+          <span
+            role="button"
+            aria-label="Сбросить фильтр"
+            onClick={(e) => { e.stopPropagation(); onChange(null); setLocalFrom(''); setLocalTo(''); }}
+            className={styles.dateFilterClearBtn}
+          >×</span>
+        )}
+      </button>
+
+      {open && (
+        <div className={styles.dateFilterDropdown}>
+          <div className={styles.dateFilterDropdownHeader}>Срок сдачи</div>
+          <div className={styles.dateFilterPresets}>
+            {DATE_PRESETS.map(preset => (
+              <button
+                key={preset.key}
+                type="button"
+                className={`${styles.datePresetPill} ${value?.preset === preset.key ? styles.datePresetPillActive : ''}`}
+                onClick={() => handlePreset(preset.key)}
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
+          <div className={styles.dateFilterInputRow}>
+            <span className={styles.dateFilterInputLabel}>От</span>
+            <input type="date" aria-label="Дата от" className={styles.dateFilterInput} value={localFrom} onChange={e => setLocalFrom(e.target.value)} />
+          </div>
+          <div className={styles.dateFilterInputRow}>
+            <span className={styles.dateFilterInputLabel}>До</span>
+            <input type="date" aria-label="Дата до" className={styles.dateFilterInput} value={localTo} onChange={e => setLocalTo(e.target.value)} />
+          </div>
+          <div className={styles.dateFilterFooter}>
+            <button type="button" className={`${styles.modalCancel} ${styles.dateFilterFooterBtn}`} onClick={handleReset}>
+              Сбросить
+            </button>
+            <button type="button" className={`${styles.primaryAction} ${styles.dateFilterFooterBtn}`} onClick={handleApply}>
+              Применить
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ChapanProductionPage() {
   const userId = useAuthStore((state) => state.user?.id);
   const currentWorkerName = useAuthStore((state) => state.user?.full_name ?? null);
@@ -156,6 +302,7 @@ export default function ChapanProductionPage() {
   const [showOnlyRunning, setShowOnlyRunning] = useState(false);
   const [search, setSearch] = useState('');
   const deferredSearch = useDeferredValue(search);
+  const [dateFilter, setDateFilter] = useState<DateFilter>(null);
   const [rejectModal, setRejectModal] = useState<{ crId: string; orderNumber: string } | null>(null);
   const [rejectReason, setRejectReason] = useState('');
 
@@ -208,8 +355,19 @@ export default function ChapanProductionPage() {
   const isLoading = view === 'manager' ? managerLoading : workshopLoading;
   const workers = catalogs?.workers ?? [];
 
+  const tasksFiltered = useMemo(() => {
+    if (!dateFilter) return tasks;
+    return tasks.filter((t) => {
+      if (!t.order.dueDate) return true;
+      const d = t.order.dueDate.slice(0, 10);
+      if (dateFilter.from && d < dateFilter.from) return false;
+      if (dateFilter.to && d > dateFilter.to) return false;
+      return true;
+    });
+  }, [tasks, dateFilter]);
+
   const queuedTasks = useMemo(() => {
-    const filtered = tasks.filter((task) => task.status === 'queued');
+    const filtered = tasksFiltered.filter((task) => task.status === 'queued');
     // E1: срочные задачи всегда наверху колонки
     return [...filtered].sort((a, b) => {
       const ua = (a.order.urgency ?? a.order.priority) === 'urgent' ? 0 : 1;
@@ -218,7 +376,7 @@ export default function ChapanProductionPage() {
     });
   }, [tasks]);
   const runningTasks = useMemo(() => {
-    const filtered = tasks.filter((task) => task.status === 'in_progress');
+    const filtered = tasksFiltered.filter((task) => task.status === 'in_progress');
     // E1: срочные задачи всегда наверху колонки
     return [...filtered].sort((a, b) => {
       const ua = (a.order.urgency ?? a.order.priority) === 'urgent' ? 0 : 1;
@@ -253,7 +411,7 @@ export default function ChapanProductionPage() {
         <div className={styles.headerLeft}>
           <div className={styles.headerTitle}>
             <Factory size={18} />
-            <span>Производство</span>
+            <span>Цех</span>
           </div>
           <div className={styles.headerSub}>Пошив и контроль выполнения</div>
         </div>
@@ -268,6 +426,8 @@ export default function ChapanProductionPage() {
               placeholder="ЧП-номер или товар..."
             />
           </div>
+          <DateFilterButton value={dateFilter} onChange={setDateFilter} />
+
           <button
             className={`${styles.groupToggle} ${grouped ? styles.groupToggleActive : ''}`}
             onClick={toggleGrouped}
@@ -314,6 +474,16 @@ export default function ChapanProductionPage() {
           )}
         </div>
       </div>
+
+      {dateFilter && (
+        <div className={styles.dateFilterBanner}>
+          <Filter size={13} />
+          <span>Фильтр по дате активен — показаны заказы со сроком в выбранном диапазоне.</span>
+          <button type="button" className={styles.dateFilterBannerClear} title="Сбросить фильтр" onClick={() => setDateFilter(null)}>
+            <XCircle size={14} />
+          </button>
+        </div>
+      )}
 
       {/* ── Change Request Alerts ──────────────────────────────────────── */}
       {changeRequests && changeRequests.length > 0 && (
@@ -539,6 +709,7 @@ interface TaskListCardProps {
   onClaim: (taskId: string) => Promise<void>;
   onDone: (taskId: string) => Promise<void>;
   onReturnToQueue: (taskId: string) => Promise<void>;
+  showBanner?: boolean;
 }
 
 function TaskListCard({
@@ -549,11 +720,13 @@ function TaskListCard({
   onClaim,
   onDone,
   onReturnToQueue,
+  showBanner = true,
 }: TaskListCardProps) {
   const deadline = formatDeadline(task.order.dueDate);
   const isUrgent = (task.order.urgency ?? task.order.priority) === 'urgent';
   const isDemanding = task.order.isDemandingClient ?? (task.order.priority === 'vip');
   const canClaim = !task.assignedTo || task.assignedTo === currentWorkerName;
+  const hasBanner = showBanner && (isUrgent || (isDemanding && !isUrgent));
 
   const itemLine = buildItemLine({ productName: task.productName, color: task.color, gender: task.gender }) || task.productName;
 
@@ -561,19 +734,20 @@ function TaskListCard({
     <article
       className={`${styles.taskListCard} ${isUrgent ? styles.taskListCardUrgent : ''} ${isDemanding && !isUrgent ? styles.taskListCardDemanding : ''}`}
     >
-      {isUrgent && (
+      {showBanner && isUrgent && (
         <div className={styles.taskListCardUrgentBanner}>
           <AlertTriangle size={11} />
           <span>Срочно</span>
         </div>
       )}
-      {isDemanding && !isUrgent && (
+      {showBanner && isDemanding && !isUrgent && (
         <div className={styles.taskListCardDemandBanner}>
-          <span>⭐ Требовательный</span>
+          <Star size={10} />
+          <span>Требовательный</span>
         </div>
       )}
 
-      <div className={styles.taskListCardMain}>
+      <div className={`${styles.taskListCardMain} ${hasBanner ? styles.taskListCardMainWithBanner : ''}`}>
         <div className={styles.taskListCardRow}>
           <div className={styles.taskListCardValue}>{task.productName}</div>
           <div className={styles.taskListCardValue}>{task.color || '—'}</div>
@@ -618,11 +792,72 @@ function TaskListCard({
             className={`${styles.taskListCardActionBtn} ${styles.taskListCardActionSuccess}`}
             onClick={() => onDone(task.id)}
           >
-            ✓ Готово
+            <Check size={11} />
+            Готово
           </button>
         )}
       </div>
     </article>
+  );
+}
+
+type UrgencyGroupType = 'urgent' | 'demanding' | 'normal';
+
+function groupByUrgency(tasks: ProductionTask[]): Record<UrgencyGroupType, ProductionTask[]> {
+  return {
+    urgent: tasks.filter(t => (t.order.urgency ?? t.order.priority) === 'urgent'),
+    demanding: tasks.filter(t =>
+      (t.order.urgency ?? t.order.priority) !== 'urgent' &&
+      (t.order.isDemandingClient ?? t.order.priority === 'vip')
+    ),
+    normal: tasks.filter(t =>
+      (t.order.urgency ?? t.order.priority) !== 'urgent' &&
+      !(t.order.isDemandingClient ?? t.order.priority === 'vip')
+    ),
+  };
+}
+
+function numTasksLabel(n: number): string {
+  const mod10 = n % 10; const mod100 = n % 100;
+  if (mod100 >= 11 && mod100 <= 19) return 'задач';
+  if (mod10 === 1) return 'задача';
+  if (mod10 >= 2 && mod10 <= 4) return 'задачи';
+  return 'задач';
+}
+
+const URGENCY_GROUP_CONFIG: Record<UrgencyGroupType, { label: string; headClass: string }> = {
+  urgent:    { label: 'Срочно',         headClass: 'urgHeadUrgent' },
+  demanding: { label: 'Требовательный', headClass: 'urgHeadDemanding' },
+  normal:    { label: 'Стандартные',    headClass: 'urgHeadNormal' },
+};
+
+interface UrgencyGroupBlockProps {
+  type: UrgencyGroupType;
+  tasks: ProductionTask[];
+  column: ColumnKey;
+  mode: ProductionMode;
+  currentWorkerName: string | null;
+  onClaim: (taskId: string) => Promise<void>;
+  onDone: (taskId: string) => Promise<void>;
+  onReturnToQueue: (taskId: string) => Promise<void>;
+}
+
+function UrgencyGroupBlock({ type, tasks, ...cardProps }: UrgencyGroupBlockProps) {
+  if (!tasks.length) return null;
+  const config = URGENCY_GROUP_CONFIG[type];
+  return (
+    <>
+      <div className={`${styles.urgencyGroupHead} ${styles[config.headClass]}`}>
+        {type === 'urgent'    && <AlertTriangle size={10} />}
+        {type === 'demanding' && <Star size={10} />}
+        <span className={styles.urgencyGroupLabel}>{config.label}</span>
+        <span className={styles.urgencyGroupCount}>· {tasks.length} {numTasksLabel(tasks.length)}</span>
+        <div className={styles.urgencyGroupLine} />
+      </div>
+      {tasks.map(task => (
+        <TaskListCard key={task.id} task={task} showBanner={false} {...cardProps} />
+      ))}
+    </>
   );
 }
 
@@ -655,66 +890,42 @@ function ProductionListView({
   const queuedDisplayTasks = displayQueuedGroups.flatMap((group) => (group.kind === 'single' ? [group.task] : group.tasks));
   const runningDisplayTasks = displayRunningGroups.flatMap((group) => (group.kind === 'single' ? [group.task] : group.tasks));
 
+  const runningGroups = groupByUrgency(runningDisplayTasks);
+  const queuedGroups = groupByUrgency(queuedDisplayTasks);
+
+  const listCardProps = { mode, currentWorkerName, onClaim, onDone, onReturnToQueue };
+
+  const tableHeader = (
+    <div className={styles.taskListHeader}>
+      <div className={styles.taskListHeaderContent}>
+        <div className={styles.taskListHeaderLabel}>Товар</div>
+        <div className={styles.taskListHeaderLabel}>Цвет</div>
+        <div className={styles.taskListHeaderLabel}>Размер</div>
+        <div className={styles.taskListHeaderLabel}>Длина</div>
+        <div className={styles.taskListHeaderLabel}>Кол-во</div>
+        <div className={styles.taskListHeaderLabel}>Срок</div>
+        <div className={styles.taskListHeaderLabel}>Заказ</div>
+      </div>
+      <div className={styles.taskListHeaderSpacer} />
+    </div>
+  );
+
   return (
     <div className={styles.listView}>
       <CollapsibleSection title="Выполнение" count={displayRunningGroups.length} defaultOpen={true}>
-        {runningDisplayTasks.length > 0 && (
-          <div className={styles.taskListHeader}>
-            <div className={styles.taskListHeaderContent}>
-              <div className={styles.taskListHeaderLabel}>Товар</div>
-              <div className={styles.taskListHeaderLabel}>Цвет</div>
-              <div className={styles.taskListHeaderLabel}>Размер</div>
-              <div className={styles.taskListHeaderLabel}>Длина</div>
-              <div className={styles.taskListHeaderLabel}>Кол-во</div>
-              <div className={styles.taskListHeaderLabel}>Срок</div>
-              <div className={styles.taskListHeaderLabel}>Заказ</div>
-            </div>
-            <div className={styles.taskListHeaderSpacer} />
-          </div>
-        )}
-        {runningDisplayTasks.map((task) => (
-          <TaskListCard
-            key={task.id}
-            task={task}
-            column="in_progress"
-            mode={mode}
-            currentWorkerName={currentWorkerName}
-            onClaim={onClaim}
-            onDone={onDone}
-            onReturnToQueue={onReturnToQueue}
-          />
-        ))}
+        {runningDisplayTasks.length > 0 && tableHeader}
+        <UrgencyGroupBlock type="urgent"    tasks={runningGroups.urgent}    column="in_progress" {...listCardProps} />
+        <UrgencyGroupBlock type="demanding" tasks={runningGroups.demanding} column="in_progress" {...listCardProps} />
+        <UrgencyGroupBlock type="normal"    tasks={runningGroups.normal}    column="in_progress" {...listCardProps} />
       </CollapsibleSection>
 
       {!showOnlyRunning && (
         <CollapsibleSection title="Новые заказы" count={displayQueuedGroups.length} defaultOpen={true}>
-        {queuedDisplayTasks.length > 0 && (
-          <div className={styles.taskListHeader}>
-            <div className={styles.taskListHeaderContent}>
-              <div className={styles.taskListHeaderLabel}>Товар</div>
-              <div className={styles.taskListHeaderLabel}>Цвет</div>
-              <div className={styles.taskListHeaderLabel}>Размер</div>
-              <div className={styles.taskListHeaderLabel}>Длина</div>
-              <div className={styles.taskListHeaderLabel}>Кол-во</div>
-              <div className={styles.taskListHeaderLabel}>Срок</div>
-              <div className={styles.taskListHeaderLabel}>Заказ</div>
-            </div>
-            <div className={styles.taskListHeaderSpacer} />
-          </div>
-        )}
-        {queuedDisplayTasks.map((task) => (
-          <TaskListCard
-            key={task.id}
-            task={task}
-            column="queued"
-            mode={mode}
-            currentWorkerName={currentWorkerName}
-            onClaim={onClaim}
-            onDone={onDone}
-            onReturnToQueue={onReturnToQueue}
-          />
-        ))}
-      </CollapsibleSection>
+          {queuedDisplayTasks.length > 0 && tableHeader}
+          <UrgencyGroupBlock type="urgent"    tasks={queuedGroups.urgent}    column="queued" {...listCardProps} />
+          <UrgencyGroupBlock type="demanding" tasks={queuedGroups.demanding} column="queued" {...listCardProps} />
+          <UrgencyGroupBlock type="normal"    tasks={queuedGroups.normal}    column="queued" {...listCardProps} />
+        </CollapsibleSection>
       )}
     </div>
   );
@@ -850,12 +1061,12 @@ function TaskCard({
       )}
       {isDemanding && !isUrgent && (
         <div className={styles.demandBanner}>
-          <span>⭐ Требовательный клиент</span>
+          <Star size={10} /><span>Требовательный клиент</span>
         </div>
       )}
       {isUrgent && isDemanding && (
         <div className={styles.demandBanner} style={{ marginTop: 2 }}>
-          <span>⭐ Требовательный</span>
+          <Star size={10} /><span>Требовательный</span>
         </div>
       )}
 

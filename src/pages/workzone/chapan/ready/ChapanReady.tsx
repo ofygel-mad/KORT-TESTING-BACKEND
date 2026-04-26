@@ -1,5 +1,5 @@
 import { useDeferredValue, useEffect, useRef, useState, type CSSProperties, type ElementType } from 'react';
-import { AlertTriangle, Archive, Bell, Check, CheckCheck, CheckCircle2, CheckSquare, Clock, Download, Eye, FileText, LayoutGrid, Layers, List, Plus, RotateCcw, Search, Warehouse, X, XCircle } from 'lucide-react';
+import { AlertTriangle, Archive, Bell, Check, CheckCheck, CheckCircle2, CheckSquare, Clock, Download, Eye, FileText, LayoutGrid, Layers, List, Plus, RotateCcw, Search, Star, Warehouse, X, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useArchiveOrder, useChangeOrderStatus, useCreateInvoice, useOrders, usePreviewInvoiceDocument, useInvoices } from '../../../../entities/order/queries';
 import type { ChapanOrder, InvoiceDocumentPayload, OrderStatus, Priority, Urgency } from '../../../../entities/order/types';
@@ -29,8 +29,8 @@ const STATUS_COLOR: Record<ReadyStatus, string> = {
   ready: '#4FC999',
 };
 
-const URGENCY_LABEL = '🔴 Срочно';
-const DEMANDING_LABEL = '⭐ Требовательный';
+const URGENCY_LABEL = 'Срочно';
+const DEMANDING_LABEL = 'Требовательный';
 
 const PAY_LABEL: Record<string, string> = {
   not_paid: 'Не оплачен',
@@ -806,10 +806,10 @@ function ReadyCard({
           <span className={styles.workshopBadge}><Clock size={10} /> Ждём цех</span>
         )}
         {(order.urgency ?? order.priority) === 'urgent' && (
-          <span className={styles.priorityBadge}>{URGENCY_LABEL}</span>
+          <span className={styles.priorityBadge}><AlertTriangle size={9} /> {URGENCY_LABEL}</span>
         )}
         {(order.isDemandingClient ?? (order.priority === 'vip')) && (
-          <span className={styles.priorityBadge}>{DEMANDING_LABEL}</span>
+          <span className={styles.priorityBadge}><Star size={9} /> {DEMANDING_LABEL}</span>
         )}
       </div>
 

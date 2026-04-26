@@ -969,9 +969,7 @@
   padding-top: 8px;
 }
 
-.taskListCard.taskListCardUrgent .taskListCardMain,
-.taskListCard.taskListCardDemanding .taskListCardMain,
-.taskListCard.taskListCardBlocked .taskListCardMain {
+.taskListCardMainWithBanner {
   padding-top: 22px;
 }
 
@@ -1080,4 +1078,169 @@
 
 .taskListHeaderLabel {
   /* Ширину задаёт grid */
+}
+
+/* ── Urgency group headers ── */
+.urgencyGroupHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 14px;
+  border-top: 1px solid transparent;
+  border-bottom: 1px solid transparent;
+}
+.urgHeadUrgent    { background: rgba(239, 68, 68, 0.05);  border-color: rgba(239, 68, 68, 0.10); }
+.urgHeadDemanding { background: rgba(201, 168, 76, 0.05); border-color: rgba(201, 168, 76, 0.10); }
+.urgHeadNormal    { background: rgba(0, 0, 0, 0.02);      border-color: var(--ch-border); }
+
+.urgencyGroupLabel {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.urgHeadUrgent .urgencyGroupLabel    { color: var(--ch-red, #EF4444); }
+.urgHeadDemanding .urgencyGroupLabel { color: #C9A84C; }
+.urgHeadNormal .urgencyGroupLabel    { color: var(--ch-text-muted); }
+
+.urgencyGroupCount {
+  font-size: 10px;
+  color: var(--ch-text-muted);
+}
+
+.urgencyGroupLine {
+  flex: 1;
+  height: 1px;
+}
+.urgHeadUrgent .urgencyGroupLine    { background: rgba(239, 68, 68, 0.15); }
+.urgHeadDemanding .urgencyGroupLine { background: rgba(201, 168, 76, 0.15); }
+.urgHeadNormal .urgencyGroupLine    { background: var(--ch-border); }
+
+/* ── Date filter ── */
+.dateFilterBanner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--ch-accent-soft);
+  border-bottom: 1px solid var(--ch-accent-border);
+  font-size: 12px;
+  color: var(--ch-plat-bright);
+  flex-shrink: 0;
+  border-radius: 8px;
+}
+
+.dateFilterBannerClear {
+  margin-left: auto;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  color: var(--ch-text-muted);
+  padding: 2px;
+  transition: color 140ms;
+}
+.dateFilterBannerClear:hover { color: var(--ch-text); }
+
+.dateFilterDropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 280px;
+  border-radius: 12px;
+  background: var(--ch-card);
+  border: 1px solid var(--ch-border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  z-index: 200;
+  padding: 12px;
+}
+
+.dateFilterDropdownHeader {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ch-text-muted);
+  margin-bottom: 8px;
+}
+
+.dateFilterPresets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.datePresetPill {
+  border: 1px solid var(--ch-border);
+  color: var(--ch-text-muted);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-family: inherit;
+  background: none;
+  cursor: pointer;
+  transition: border-color 140ms, color 140ms, background 140ms;
+}
+.datePresetPill:hover { border-color: var(--ch-plat-border); color: var(--ch-text-dim); }
+.datePresetPillActive {
+  border-color: var(--ch-accent-border);
+  color: var(--ch-plat-bright);
+  background: var(--ch-accent-soft);
+}
+
+.dateFilterInputRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0;
+}
+
+.dateFilterInputLabel {
+  width: 20px;
+  font-size: 11px;
+  color: var(--ch-text-muted);
+  flex-shrink: 0;
+}
+
+.dateFilterInput {
+  flex: 1;
+  border: 1px solid var(--ch-border);
+  border-radius: 8px;
+  background: var(--ch-surface);
+  color: var(--ch-text);
+  padding: 4px 8px;
+  font-size: 12px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 140ms;
+}
+.dateFilterInput:focus { border-color: var(--ch-plat-border); }
+
+.dateFilterFooter {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.dateFilterWrap {
+  position: relative;
+}
+
+.dateFilterClearBtn {
+  margin-left: 2px;
+  opacity: 0.7;
+  cursor: pointer;
+  line-height: 1;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  color: inherit;
+}
+.dateFilterClearBtn:hover { opacity: 1; }
+
+.dateFilterFooterBtn {
+  flex: 1;
 }
