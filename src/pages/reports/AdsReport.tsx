@@ -35,10 +35,6 @@ function fmtMoneyKzt(n: number) {
   return new Intl.NumberFormat('ru-KZ', { maximumFractionDigits: 0 }).format(n) + ' тг';
 }
 
-function fmtUsd(n: number) {
-  return '$' + new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(n);
-}
-
 function fmtPct(n: number) {
   return new Intl.NumberFormat('ru-KZ', { maximumFractionDigits: 1 }).format(n * 100) + '%';
 }
@@ -69,11 +65,11 @@ function TotalsStrip({ summary }: { summary: AdSummary }) {
         <strong>{fmtNum(summary.impressions)}</strong>
       </div>
       <div>
-        <span>Клики / CTR</span>
+        <span>Клики / CTR (Коэффициент кликабельности)</span>
         <strong>{fmtNum(summary.clicks)} · {fmtPct(summary.ctr)}</strong>
       </div>
       <div>
-        <span>Лиды / CPL</span>
+        <span>Лиды / CPL (Стоимость за лида)</span>
         <strong>{fmtNum(summary.leads)} · {fmtMoneyKzt(summary.cplKzt)}</strong>
       </div>
       <div>
@@ -137,6 +133,18 @@ function MetricEditor({
   useEffect(() => {
     setDate(firstDay(period));
   }, [period, campaign?.id]);
+
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      const target = e.target as HTMLInputElement;
+      if (target.type === 'number') {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener('wheel', handleWheel, { passive: false });
+    return () => document.removeEventListener('wheel', handleWheel);
+  }, []);
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -220,20 +228,37 @@ function CampaignTable({
   selectedCampaignId,
   editingCampaignId,
   confirmDeleteId,
+  exportSelectedIds,
   onSelect,
   onEdit,
   onConfirmDelete,
   onDelete,
+  onToggleExportSelect,
 }: {
   campaigns: AdCampaignReport[];
   selectedCampaignId?: string;
   editingCampaignId?: string;
   confirmDeleteId?: string;
+  exportSelectedIds: Set<string>;
   onSelect: (id: string) => void;
   onEdit: (id: string) => void;
   onConfirmDelete: (id: string | undefined) => void;
   onDelete: (id: string) => void;
+  onToggleExportSelect: (id: string) => void;
 }) {
+  const isAllSelected = campaigns.length > 0 && campaigns.every((c) => exportSelectedIds.has(c.id));
+
+  function handleSelectAll() {
+    if (isAllSelected) {
+      exportSelectedIds.forEach((id) => onToggleExportSelect(id));
+    } else {
+      campaigns.forEach((c) => {
+        if (!exportSelectedIds.has(c.id)) {
+          onToggleExportSelect(c.id);
+        }
+      });
+    }
+  }
   return (
     <div className={styles.tableCard}>
       <div className={styles.tableCardHeader}>
@@ -242,12 +267,21 @@ function CampaignTable({
       <table className={styles.table}>
         <thead>
           <tr>
+            <th className={styles.adsCheckboxColumn}>
+              <input
+                type="checkbox"
+                checked={isAllSelected}
+                onChange={handleSelectAll}
+                title="Выбрать все кампании для экспорта"
+                className={styles.adsCheckbox}
+              />
+            </th>
             <th>Кампания</th>
             <th>Менеджер</th>
             <th style={{ textAlign: 'right' }}>Бюджет</th>
             <th style={{ textAlign: 'right' }}>Клики</th>
             <th style={{ textAlign: 'right' }}>Лиды</th>
-            <th style={{ textAlign: 'right' }}>CPL</th>
+            <th style={{ textAlign: 'right' }}>CPL (Стоимость за лида)</th>
             <th aria-label="Действия" />
           </tr>
         </thead>
@@ -258,6 +292,14 @@ function CampaignTable({
               className={`${styles.row} ${selectedCampaignId === campaign.id ? styles.adsSelectedRow : ''}`}
               onClick={() => onSelect(campaign.id)}
             >
+              <td className={styles.adsCheckboxColumn} onClick={(e) => e.stopPropagation()}>
+                <input
+                  type="checkbox"
+                  checked={exportSelectedIds.has(campaign.id)}
+                  onChange={() => onToggleExportSelect(campaign.id)}
+                  className={styles.adsCheckbox}
+                />
+              </td>
               <td className={styles.tdName}>{campaign.name}</td>
               <td>{campaign.managerName || '—'}</td>
               <td style={{ textAlign: 'right' }}>{fmtMoneyKzt(campaign.summary.spendKzt)}</td>
@@ -366,50 +408,14 @@ function CampaignEditForm({
   );
 }
 
-function DailyTable({ campaign }: { campaign: AdCampaignReport | undefined }) {
-  if (!campaign || campaign.metrics.length === 0) return null;
-
-  return (
-    <div className={styles.tableCard}>
-      <div className={styles.tableCardHeader}>
-        <span className={styles.tableCardTitle}>Заполненные дни</span>
-      </div>
-      <table className={styles.table}>
-        <thead>
-          <tr>
-            <th>Дата</th>
-            <th style={{ textAlign: 'right' }}>Бюджет $</th>
-            <th style={{ textAlign: 'right' }}>Курс</th>
-            <th style={{ textAlign: 'right' }}>Бюджет тг</th>
-            <th style={{ textAlign: 'right' }}>Клики</th>
-            <th style={{ textAlign: 'right' }}>Лиды</th>
-            <th style={{ textAlign: 'right' }}>Продажи</th>
-          </tr>
-        </thead>
-        <tbody>
-          {campaign.metrics.map((metric) => (
-            <tr key={metric.id} className={styles.row}>
-              <td className={styles.tdName}>{metric.date.slice(0, 10)}</td>
-              <td style={{ textAlign: 'right' }}>{fmtUsd(metric.spendUsd)}</td>
-              <td style={{ textAlign: 'right' }}>{metric.exchangeRate.toFixed(2)}</td>
-              <td style={{ textAlign: 'right' }}>{fmtMoneyKzt(metric.spendKzt)}</td>
-              <td style={{ textAlign: 'right' }}>{fmtNum(metric.clicks)}</td>
-              <td style={{ textAlign: 'right' }}>{fmtNum(metric.leads)}</td>
-              <td style={{ textAlign: 'right' }}>{fmtNum(metric.sales)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
 export default function AdsReport() {
   const [period, setPeriod] = useState(currentPeriod());
   const [channel, setChannel] = useState<AdChannel>('target');
   const [selectedCampaignId, setSelectedCampaignId] = useState<string>();
   const [editingCampaignId, setEditingCampaignId] = useState<string>();
   const [confirmDeleteId, setConfirmDeleteId] = useState<string>();
+  const [exportSelectedIds, setExportSelectedIds] = useState<Set<string>>(new Set());
+  const [isExporting, setIsExporting] = useState(false);
   const dashboard = useAdsDashboard({ period, channel });
   const refreshRate = useRefreshUsdKztRate();
   const deleteCampaign = useDeleteAdCampaign();
@@ -445,30 +451,112 @@ export default function AdsReport() {
   }, [campaigns, selectedCampaignId]);
 
   async function handleExport() {
+    setIsExporting(true);
     try {
       const XLSX = await import('xlsx');
       const payload = await adsApi.exportRows({ period, channel });
       const summary = dashboard.data?.summary;
       const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet([
+
+      // Summary sheet with Russian headers - recalculate for selected campaigns if needed
+      let summaryToExport = summary;
+      if (exportSelectedIds.size > 0) {
+        const selectedCampaigns = campaigns.filter((c) => exportSelectedIds.has(c.id));
+        const selectedSummary = selectedCampaigns.reduce(
+          (acc, c) => ({
+            spendUsd: acc.spendUsd + c.summary.spendUsd,
+            spendKzt: acc.spendKzt + c.summary.spendKzt,
+            impressions: acc.impressions + c.summary.impressions,
+            clicks: acc.clicks + c.summary.clicks,
+            leads: acc.leads + c.summary.leads,
+            sales: acc.sales + c.summary.sales,
+            ctr: acc.impressions > 0 ? acc.clicks / acc.impressions : 0,
+            cplKzt: acc.leads > 0 ? acc.spendKzt / acc.leads : 0,
+            customerCostKzt: acc.sales > 0 ? acc.spendKzt / acc.sales : 0,
+          }),
+          { spendUsd: 0, spendKzt: 0, impressions: 0, clicks: 0, leads: 0, sales: 0, ctr: 0, cplKzt: 0, customerCostKzt: 0 },
+        );
+        summaryToExport = selectedSummary as any;
+      }
+
+      const summaryData = [
         {
-          period,
-          channel,
-          spendUsd: summary?.spendUsd ?? 0,
-          spendKzt: summary?.spendKzt ?? 0,
-          impressions: summary?.impressions ?? 0,
-          clicks: summary?.clicks ?? 0,
-          leads: summary?.leads ?? 0,
-          sales: summary?.sales ?? 0,
-          ctr: summary ? fmtPct(summary.ctr) : '0%',
-          cplKzt: summary?.cplKzt ?? 0,
-          customerCostKzt: summary?.customerCostKzt ?? 0,
+          'Период': `${period}-01`,
+          'Канал': channel,
+          'Расход USD': summaryToExport?.spendUsd ?? 0,
+          'Расход KZT': fmtMoneyKzt(summaryToExport?.spendKzt ?? 0),
+          'Показы': fmtNum(summaryToExport?.impressions ?? 0),
+          'Клики': fmtNum(summaryToExport?.clicks ?? 0),
+          'Лиды': fmtNum(summaryToExport?.leads ?? 0),
+          'Продажи': fmtNum(summaryToExport?.sales ?? 0),
+          'CTR (Коэффициент кликабельности)': summaryToExport ? fmtPct(summaryToExport.ctr) : '0%',
+          'CPL/Стоимость за лида (KZT)': fmtMoneyKzt(summaryToExport?.cplKzt ?? 0),
+          'Стоимость клиента': fmtMoneyKzt(summaryToExport?.customerCostKzt ?? 0),
         },
-      ]), 'Итог');
-      XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(payload.rows), 'Дневные данные');
+      ];
+
+      // Daily metrics sheet with Russian headers - filter by selected campaigns if any are selected
+      const filteredRows = exportSelectedIds.size > 0
+        ? payload.rows.filter((row: any) => exportSelectedIds.has(row.campaignId))
+        : payload.rows;
+
+      const dailyData = filteredRows.map((row: any) => ({
+        'Дата': row.date,
+        'Кампания': row.campaignName,
+        'Менеджер': row.managerName || '—',
+        'Расход USD': row.spendUsd,
+        'Курс': row.exchangeRate.toFixed(2),
+        'Расход KZT': fmtMoneyKzt(row.spendKzt),
+        'Показы': fmtNum(row.impressions),
+        'Охват': fmtNum(row.reach),
+        'Клики': fmtNum(row.clicks),
+        'Лиды': fmtNum(row.leads),
+        'Продажи': fmtNum(row.sales),
+        'Комментарий': row.notes || '',
+      }));
+
+      const summarySheet = XLSX.utils.json_to_sheet(summaryData);
+      const dailySheet = XLSX.utils.json_to_sheet(dailyData);
+
+      // Format header row and column widths for summary sheet
+      summarySheet['!cols'] = [
+        { wch: 14 },
+        { wch: 12 },
+        { wch: 14 },
+        { wch: 14 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 12 },
+        { wch: 28 },
+        { wch: 28 },
+        { wch: 18 },
+      ];
+
+      // Format header row and column widths for daily sheet
+      dailySheet['!cols'] = [
+        { wch: 12 },
+        { wch: 18 },
+        { wch: 14 },
+        { wch: 12 },
+        { wch: 10 },
+        { wch: 14 },
+        { wch: 10 },
+        { wch: 10 },
+        { wch: 10 },
+        { wch: 10 },
+        { wch: 10 },
+        { wch: 20 },
+      ];
+
+      XLSX.utils.book_append_sheet(workbook, summarySheet, 'Итог');
+      XLSX.utils.book_append_sheet(workbook, dailySheet, 'Дневные данные');
       XLSX.writeFile(workbook, `rnp_ads_${period}_${channel}.xlsx`);
+      toast.success('Excel файл скачан успешно');
     } catch (err) {
       toast.error(readApiErrorMessage(err, 'Не удалось экспортировать данные'));
+    } finally {
+      setIsExporting(false);
     }
   }
 
@@ -496,8 +584,8 @@ export default function AdsReport() {
         <button className={styles.adsGhostButton} type="button" onClick={handleImportStub}>
           <Upload size={14} /> Импорт Excel
         </button>
-        <button className={styles.adsPrimaryButton} type="button" onClick={handleExport}>
-          <FileSpreadsheet size={14} /> Скачать Excel
+        <button className={styles.adsPrimaryButton} type="button" onClick={handleExport} disabled={isExporting}>
+          <FileSpreadsheet size={14} /> {isExporting ? 'Формирую Excel...' : 'Скачать Excel'}
         </button>
       </div>
 
@@ -528,10 +616,17 @@ export default function AdsReport() {
             selectedCampaignId={selectedCampaign?.id}
             editingCampaignId={editingCampaignId}
             confirmDeleteId={confirmDeleteId}
+            exportSelectedIds={exportSelectedIds}
             onSelect={setSelectedCampaignId}
             onEdit={handleEditCampaign}
             onConfirmDelete={setConfirmDeleteId}
             onDelete={handleDeleteCampaign}
+            onToggleExportSelect={(id) => {
+              const newSet = new Set(exportSelectedIds);
+              if (newSet.has(id)) newSet.delete(id);
+              else newSet.add(id);
+              setExportSelectedIds(newSet);
+            }}
           />
 
           {editingCampaign && (
@@ -546,7 +641,6 @@ export default function AdsReport() {
             period={period}
             defaultRate={dashboard.data.exchangeRate.rate}
           />
-          <DailyTable campaign={selectedCampaign} />
         </>
       ) : (
         <div className={styles.empty}>
