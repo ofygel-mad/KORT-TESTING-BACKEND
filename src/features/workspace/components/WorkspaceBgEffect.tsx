@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { ChevronLeft, Clock, CloudMoon, Image, Plane, Sparkles } from 'lucide-react';
 import { readStorage } from '../../../shared/lib/browser';
@@ -209,44 +209,36 @@ export const WorkspaceBgEffect = memo(function WorkspaceBgEffect({ onFlightTileP
   // Resume instantly when visible again (no cold-start cost — WebGL context stays alive).
   const tabHiddenRef = useRef(false);
 
-  useEffect(() => {
+  // Unified pause/resume logic: photo mode or visibility change
+  const updateRuntimeState = useCallback(() => {
     const runtime = runtimeRef.current;
     if (!runtime) return;
-
-    const shouldPause = tabHiddenRef.current || offscreenRef.current;
+    // sceneBgMode === 'photo' is master control — always pause
+    // Otherwise, respect visibility (tab hidden / offscreen)
+    const shouldPause = sceneBgMode === 'photo' || tabHiddenRef.current || offscreenRef.current;
     if (shouldPause) {
       runtime.pause();
     } else {
       runtime.resume();
     }
-  }, []);
+  }, [sceneBgMode]);
+
+  useEffect(() => {
+    updateRuntimeState();
+  }, [updateRuntimeState]);
 
   useEffect(() => {
     const handleVisibility = () => {
       tabHiddenRef.current = document.hidden;
-      const runtime = runtimeRef.current;
-      if (!runtime) return;
-
-      const shouldPause = document.hidden || offscreenRef.current;
-      if (shouldPause) {
-        runtime.pause();
-      } else {
-        runtime.resume();
-      }
+      updateRuntimeState();
     };
 
     document.addEventListener('visibilitychange', handleVisibility);
     return () => document.removeEventListener('visibilitychange', handleVisibility);
-  }, []);
+  }, [updateRuntimeState]);
 
   useEffect(() => {
-    const runtime = runtimeRef.current;
-    if (!runtime) return;
-    if (sceneBgMode === 'photo') {
-      runtime.pause();
-    } else if (!tabHiddenRef.current && !offscreenRef.current) {
-      runtime.resume();
-    }
+    updateRuntimeState();
   }, [sceneBgMode]);
 
   useEffect(() => {
@@ -258,21 +250,14 @@ export const WorkspaceBgEffect = memo(function WorkspaceBgEffect({ onFlightTileP
     const observer = new IntersectionObserver(
       ([entry]) => {
         offscreenRef.current = !entry?.isIntersecting;
-        const runtime = runtimeRef.current;
-        if (!runtime) return;
-
-        if (tabHiddenRef.current || offscreenRef.current) {
-          runtime.pause();
-        } else {
-          runtime.resume();
-        }
+        updateRuntimeState();
       },
       { threshold: 0.01 },
     );
 
     observer.observe(node);
     return () => observer.disconnect();
-  }, []);
+  }, [updateRuntimeState]);
 
   // Push hoveredTileId focus to scene without causing React re-renders.
   // Uses Zustand subscribe to bypass React reconciliation entirely.

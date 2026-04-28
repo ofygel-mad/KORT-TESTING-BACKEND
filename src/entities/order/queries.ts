@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { ordersApi, usersApi, productionApi, chapanSettingsApi, invoicesApi, changeRequestsApi, attachmentsApi, returnsApi } from './api';
+import { ordersApi, usersApi, productionApi, chapanSettingsApi, invoicesApi, changeRequestsApi, attachmentsApi, returnsApi, chapanClientsApi } from './api';
 import type {
   CreateOrderDto,
   UpdateOrderDto,
@@ -737,5 +737,35 @@ export const useDeleteReturnDraft = () => {
       toast.success('Черновик возврата удалён');
     },
     onError: (error) => toast.error(readApiErrorMessage(error, 'Не удалось удалить возврат')),
+  });
+};
+
+// ── Chapan Clients (new CRM section) ────────────────────────────────────────
+
+export const useChapanClientsList = (params?: Parameters<typeof chapanClientsApi.list>[0]) =>
+  useQuery({
+    queryKey: ['chapan_clients_v2', params],
+    queryFn: () => chapanClientsApi.list(params),
+    staleTime: 60_000,
+  });
+
+export const useChapanClientDetail = (id: string | undefined) =>
+  useQuery({
+    queryKey: ['chapan_clients_v2', id],
+    queryFn: () => chapanClientsApi.get(id!),
+    enabled: Boolean(id),
+    staleTime: 30_000,
+  });
+
+export const useUpdateChapanClient = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...data }: { id: string } & Parameters<typeof chapanClientsApi.update>[1]) =>
+      chapanClientsApi.update(id, data),
+    onSuccess: (_data, { id }) => {
+      qc.invalidateQueries({ queryKey: ['chapan_clients_v2'] });
+      toast.success('Клиент обновлён');
+    },
+    onError: (error) => toast.error(readApiErrorMessage(error, 'Не удалось сохранить изменения')),
   });
 };

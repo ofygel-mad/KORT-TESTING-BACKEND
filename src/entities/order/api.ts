@@ -3,7 +3,7 @@ import type {
   ChapanOrder, ChapanInvoice, CreateOrderDto, UpdateOrderDto, AddPaymentDto, ListResponse,
   ProductionTask, ChapanCatalogs, ChapanProfile, ChapanClient, ChapanChangeRequest, CreateOrderItemDto, InvoiceDocumentPayload,
   OrderAttachment, OrderWarehouseState, OrgManager,
-  ChapanReturn, CreateReturnDto,
+  ChapanReturn, CreateReturnDto, ChapanClientAggregated, ChapanClientDetail, ChapanClientsListParams,
 } from './types';
 
 // ── Orders ────────────────────────────────────────────────────────────────────
@@ -264,6 +264,20 @@ export const returnsApi = {
 
   deleteDraft: (id: string) =>
     api.delete<{ ok: boolean }>(`/chapan/returns/${id}`),
+};
+
+// ── Chapan Clients API ────────────────────────────────────────────────────────
+export const chapanClientsApi = {
+  list: (params?: ChapanClientsListParams) =>
+    api.get<{ count: number; results: ChapanClientAggregated[] }>('/chapan/clients', { params }),
+
+  get: (id: string) =>
+    api.get<ChapanClientDetail>(`/chapan/clients/${id}`),
+
+  update: (
+    id: string,
+    data: Partial<Pick<ChapanClientAggregated, 'fullName' | 'phone' | 'email' | 'company' | 'notes'>>,
+  ) => api.patch<ChapanClientAggregated>(`/chapan/clients/${id}`, data),
 };
 
 // ── Users / account API ───────────────────────────────────────────────────────

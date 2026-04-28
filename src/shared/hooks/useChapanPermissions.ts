@@ -41,6 +41,7 @@ export function useChapanPermissions() {
   const canAccessShipping = isWarehouseOperator;
   const canAccessAnalytics = isAdmin || isChapanAdmin;
   const canAccessPurchase = isAdmin || isChapanAdmin;
+  const canAccessClients = isAdmin || isChapanAdmin;
 
   const hasAnyAccess =
     canAccessOrders
@@ -70,6 +71,7 @@ export function useChapanPermissions() {
     canAccessShipping,
     canAccessAnalytics,
     canAccessPurchase,
+    canAccessClients,
     hasAnyAccess,
   };
 }

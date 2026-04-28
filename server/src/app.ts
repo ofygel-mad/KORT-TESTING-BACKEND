@@ -31,6 +31,7 @@ import { alertsRouter } from './modules/chapan/alerts.routes.js';
 import { chapanReturnsRoutes } from './modules/chapan/returns.routes.js';
 import { chapanAnalyticsRoutes } from './modules/chapan/analytics.routes.js';
 import { chapanPurchaseRoutes } from './modules/chapan/purchase.routes.js';
+import { chapanClientsRoutes } from './modules/chapan/clients.routes.js';
 // documents routes moved into orders module as /:id/invoice
 import { frontendCompatRoutes } from './modules/frontend-compat/frontend-compat.routes.js';
 import { employeesRoutes } from './modules/employees/employees.routes.js';
@@ -182,6 +183,7 @@ export async function buildApp() {
   await app.register(alertsRouter, { prefix: '/api/v1/chapan/alerts' });
   await app.register(chapanAnalyticsRoutes, { prefix: '/api/v1/chapan/analytics' });
   await app.register(chapanPurchaseRoutes, { prefix: '/api/v1/chapan/purchase' });
+  await app.register(chapanClientsRoutes, { prefix: '/api/v1/chapan/clients' });
   // invoice generation is now at GET /api/v1/chapan/orders/:id/invoice
   await app.register(frontendCompatRoutes, { prefix: '/api/v1' });
 

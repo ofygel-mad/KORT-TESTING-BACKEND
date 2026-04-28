@@ -322,6 +322,8 @@ export class WorkspaceSceneRuntime {
     cancelAnimationFrame(this.frameHandle);
     this.frameHandle = 0;
     this.clock.stop();
+    // Render one final frame to ensure clean state during pause
+    this.renderFrame();
   }
 
   resume() {
@@ -329,6 +331,8 @@ export class WorkspaceSceneRuntime {
     this.paused = false;
     this.clock.start();
     this.pendingDelta = 0;
+    // Immediate frame render before RAF to avoid visual lag
+    this.renderFrame();
     this.animate();
   }
 

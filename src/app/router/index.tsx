@@ -75,6 +75,8 @@ const ChapanArchivePage     = makePage(() => import('../../pages/workzone/chapan
 const ChapanShippingPage    = makePage(() => import('../../pages/workzone/chapan/shipping/ChapanShipping'));
 const ChapanAnalyticsPage   = makePage(() => import('../../pages/workzone/chapan/analytics/ChapanAnalytics'));
 const ChapanPurchasePage    = makePage(() => import('../../pages/workzone/chapan/purchase/ChapanPurchase'));
+const ChapanClientsPage     = makePage(() => import('../../pages/workzone/chapan/clients/ChapanClients'));
+const ChapanClientDetailPage = makePage(() => import('../../pages/workzone/chapan/clients/ChapanClientDetail'));
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const user = useAuthStore((s) => s.user);
@@ -217,7 +219,7 @@ function PermissionDenied() {
 type PermissionCheck =
   | 'sales' | 'warehouse' | 'production' | 'financial' | 'team' | 'chapan'
   | 'chapan_orders' | 'chapan_production' | 'chapan_ready' | 'chapan_archive' | 'chapan_shipping'
-  | 'chapan_analytics' | 'chapan_purchase';
+  | 'chapan_analytics' | 'chapan_purchase' | 'chapan_clients';
 
 /**
  * Ограничивает доступ к маршруту для сотрудников без нужного права.
@@ -249,6 +251,7 @@ function RequirePermission({ check, children }: { check: PermissionCheck; childr
     case 'chapan_shipping':   allowed = chapan.canAccessShipping; break;
     case 'chapan_analytics':  allowed = chapan.canAccessAnalytics; break;
     case 'chapan_purchase':   allowed = chapan.canAccessPurchase; break;
+    case 'chapan_clients':    allowed = chapan.canAccessClients; break;
   }
 
   if (!allowed) return <PermissionDenied />;
@@ -428,6 +431,14 @@ export const appRouter = createBrowserRouter([
       {
         path: 'purchase',
         element: <RequirePermission check="chapan_purchase"><ChapanPurchasePage /></RequirePermission>,
+      },
+      {
+        path: 'clients',
+        element: <RequirePermission check="chapan_clients"><ChapanClientsPage /></RequirePermission>,
+      },
+      {
+        path: 'clients/:id',
+        element: <RequirePermission check="chapan_clients"><ChapanClientDetailPage /></RequirePermission>,
       },
       {
         path: 'settings',
