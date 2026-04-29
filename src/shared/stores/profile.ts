@@ -1,12 +1,13 @@
+import { useEffect, useRef } from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export type OnlineStatus = 'online' | 'away' | 'offline';
 
 export const ONLINE_STATUSES: Array<{ key: OnlineStatus; label: string; color: string }> = [
-  { key: 'online',  label: 'Онлайн',  color: '#10B981' },
-  { key: 'away',    label: 'Отошёл',  color: '#F59E0B' },
-  { key: 'offline', label: 'Офлайн',  color: '#6B7280' },
+  { key: 'online',  label: '\u041e\u043d\u043b\u0430\u0439\u043d',  color: '#10B981' },
+  { key: 'away',    label: '\u041e\u0442\u043e\u0448\u0451\u043b',  color: '#F59E0B' },
+  { key: 'offline', label: '\u041e\u0444\u043b\u0430\u0439\u043d',  color: '#6B7280' },
 ];
 
 type ProfilePrefsState = {
@@ -16,8 +17,8 @@ type ProfilePrefsState = {
   updateLastActivity: () => void;
 };
 
-const AUTO_AWAY_AFTER_MS = 15 * 60 * 1000; // 15 минут неактивности → away
-const AUTO_OFFLINE_AFTER_MS = 60 * 60 * 1000; // 60 минут неактивности → offline
+const AUTO_AWAY_AFTER_MS = 15 * 60 * 1000;
+const AUTO_OFFLINE_AFTER_MS = 60 * 60 * 1000;
 
 export const useProfileStore = create<ProfilePrefsState>()(
   persist(
@@ -31,10 +32,8 @@ export const useProfileStore = create<ProfilePrefsState>()(
         const now = Date.now();
         const state = get();
 
-        // Обновляем время последней активности
         set({ lastActivityAt: now });
 
-        // Если был away/offline, но активен сейчас → online
         if (state.onlineStatus !== 'online') {
           set({ onlineStatus: 'online' });
         }
@@ -44,21 +43,29 @@ export const useProfileStore = create<ProfilePrefsState>()(
   ),
 );
 
-// Хук для отслеживания активности пользователя
 export function useActivityTracker() {
   const updateLastActivity = useProfileStore((s) => s.updateLastActivity);
+  const lastUpdateRef = useRef(0);
 
-  // Отслеживаем клики, движения мыши и нажатия клавиш
-  const handleActivity = () => {
-    updateLastActivity();
-  };
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
 
-  // На маунте добавляем listeners, на анмаунте удаляем
-  if (typeof window !== 'undefined') {
-    window.addEventListener('click', handleActivity);
-    window.addEventListener('mousemove', handleActivity);
+    const handleActivity = () => {
+      const now = Date.now();
+      if (now - lastUpdateRef.current < 30_000) {
+        return;
+      }
+
+      lastUpdateRef.current = now;
+      updateLastActivity();
+    };
+
+    window.addEventListener('click', handleActivity, { passive: true });
+    window.addEventListener('mousemove', handleActivity, { passive: true });
     window.addEventListener('keydown', handleActivity);
-    window.addEventListener('scroll', handleActivity);
+    window.addEventListener('scroll', handleActivity, { passive: true });
 
     return () => {
       window.removeEventListener('click', handleActivity);
@@ -66,12 +73,10 @@ export function useActivityTracker() {
       window.removeEventListener('keydown', handleActivity);
       window.removeEventListener('scroll', handleActivity);
     };
-  }
+  }, [updateLastActivity]);
 }
 
-// Вычисляем текущий статус на основе времени последней активности
 export function getComputedOnlineStatus(lastActivityAt: number, manualStatus: OnlineStatus): OnlineStatus {
-  // Если пользователь явно установил offline, уважаем его выбор
   if (manualStatus === 'offline') {
     return 'offline';
   }
@@ -81,9 +86,11 @@ export function getComputedOnlineStatus(lastActivityAt: number, manualStatus: On
 
   if (timeSinceActivity > AUTO_OFFLINE_AFTER_MS) {
     return 'offline';
-  } else if (timeSinceActivity > AUTO_AWAY_AFTER_MS) {
-    return 'away';
-  } else {
-    return 'online';
   }
+
+  if (timeSinceActivity > AUTO_AWAY_AFTER_MS) {
+    return 'away';
+  }
+
+  return 'online';
 }
