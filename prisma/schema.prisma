@@ -631,19 +631,23 @@ model ChapanCatalogPaymentMethod {
 }
 
 model ChapanClient {
-  id        String   @id @default(cuid())
-  orgId     String   @map("org_id")
-  fullName  String   @map("full_name")
-  phone     String
-  email     String?
-  company   String?
-  notes     String?
-  createdAt DateTime @default(now()) @map("created_at")
+  id            String   @id @default(cuid())
+  orgId         String   @map("org_id")
+  fullName      String   @map("full_name")
+  phone         String
+  email         String?
+  company       String?
+  notes         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  crmCustomerId String?  @map("crm_customer_id")
 
   org    Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
   orders ChapanOrder[]
 
   @@index([orgId])
+  @@index([orgId, phone])
+  @@index([crmCustomerId])
   @@map("chapan_clients")
 }
 
