@@ -2,10 +2,12 @@ import { useDeferredValue, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, ExternalLink, Package, Search, Truck } from 'lucide-react';
 import { useOrders } from '../../../../entities/order/queries';
+import { useTransitEntries } from '../../../../entities/warehouse/queries';
 import type { ChapanOrder, OrderStatus } from '../../../../entities/order/types';
+import type { WarehouseTransitEntry } from '../../../../entities/warehouse/types';
 import styles from './ChapanShipping.module.css';
 
-type ShippingTab = 'pending' | 'shipped';
+type ShippingTab = 'pending' | 'shipped' | 'transit';
 
 const STATUS_COLOR: Record<OrderStatus, string> = {
   new: '#7C3AED',
@@ -58,8 +60,13 @@ export default function ChapanShippingPage() {
     limit: 200,
   });
 
-  const activeQuery = tab === 'pending' ? pendingQuery : shippedQuery;
-  const orders: ChapanOrder[] = activeQuery.data?.results ?? [];
+  const transitQuery = useTransitEntries({
+    status: 'in_transit',
+  });
+
+  const activeQuery = tab === 'pending' ? pendingQuery : tab === 'shipped' ? shippedQuery : transitQuery;
+  const orders: ChapanOrder[] = tab === 'transit' ? [] : activeQuery.data?.results ?? [];
+  const transitEntries: WarehouseTransitEntry[] = tab === 'transit' ? (transitQuery.data?.results ?? []) : [];
 
   return (
     <div className={`${styles.root} kort-page-enter`}>
@@ -94,6 +101,17 @@ export default function ChapanShippingPage() {
             <span className={styles.tabBadge}>{shippedQuery.data.count}</span>
           )}
         </button>
+        <button
+          type="button"
+          className={`${styles.tab} ${tab === 'transit' ? styles.tabActive : ''}`}
+          onClick={() => setTab('transit')}
+        >
+          <Truck size={14} />
+          <span>Транзит</span>
+          {transitQuery.data && (
+            <span className={styles.tabBadge}>{transitQuery.data.results?.length ?? 0}</span>
+          )}
+        </button>
       </div>
 
       <div className={styles.toolbar}>
@@ -109,7 +127,11 @@ export default function ChapanShippingPage() {
       </div>
 
       {!activeQuery.isLoading && (
-        <div className={styles.count}>{activeQuery.data?.count ?? 0} заказов</div>
+        <div className={styles.count}>
+          {tab === 'transit'
+            ? `${transitEntries.length} записей в пути`
+            : `${activeQuery.data?.count ?? 0} заказов`}
+        </div>
       )}
 
       {activeQuery.isLoading && (
@@ -125,31 +147,40 @@ export default function ChapanShippingPage() {
         </div>
       )}
 
-      {!activeQuery.isLoading && !activeQuery.isError && orders.length === 0 && (
+      {!activeQuery.isLoading && !activeQuery.isError && orders.length === 0 && transitEntries.length === 0 && (
         <div className={styles.emptyState}>
           <Truck size={36} className={styles.emptyIcon} />
           <div className={styles.emptyTitle}>
-            {tab === 'pending' ? 'Нет заказов на складе' : 'Нет отправленных заказов'}
+            {tab === 'pending' ? 'Нет заказов на складе' : tab === 'shipped' ? 'Нет отправленных заказов' : 'Нет грузов в пути'}
           </div>
           <div className={styles.emptyText}>
             {search
               ? 'Ничего не найдено по заданному запросу'
               : tab === 'pending'
                 ? 'Заказы, принятые складом через накладную, появятся здесь'
-                : 'Отправленные клиентам заказы появятся здесь'}
+                : tab === 'shipped'
+                  ? 'Отправленные клиентам заказы появятся здесь'
+                  : 'Товары в процессе доставки появятся здесь'}
           </div>
         </div>
       )}
 
-      {!activeQuery.isLoading && !activeQuery.isError && orders.length > 0 && (
+      {!activeQuery.isLoading && !activeQuery.isError && (orders.length > 0 || transitEntries.length > 0) && (
         <div className={styles.list}>
-          {orders.map(order => (
-            <ShippingRow
-              key={order.id}
-              order={order}
-              onClick={() => navigate(`/workzone/chapan/shipping/${order.id}`)}
-            />
-          ))}
+          {tab === 'transit'
+            ? transitEntries.map(entry => (
+                <TransitRow
+                  key={entry.id}
+                  entry={entry}
+                />
+              ))
+            : orders.map(order => (
+                <ShippingRow
+                  key={order.id}
+                  order={order}
+                  onClick={() => navigate(`/workzone/chapan/shipping/${order.id}`)}
+                />
+              ))}
         </div>
       )}
     </div>
@@ -219,6 +250,50 @@ function ShippingRow({ order, onClick }: { order: ChapanOrder; onClick: () => vo
         >
           <ExternalLink size={12} />
         </button>
+      </div>
+    </div>
+  );
+}
+
+function TransitRow({ entry }: { entry: WarehouseTransitEntry }) {
+  const formatDate = (date: string | null) => {
+    if (!date) return '—';
+    return new Date(date).toLocaleDateString('ru-KZ', { day: '2-digit', month: 'short', year: '2-digit' });
+  };
+
+  return (
+    <div className={styles.row} style={{ '--status-color': '#8B5CF6' } as React.CSSProperties}>
+      <span className={styles.rowStripe} />
+
+      <div className={styles.rowNum}>
+        <span className={styles.cardNum}>#{entry.id?.substring(0, 8)}</span>
+        <span className={styles.statusBadge}>В пути</span>
+      </div>
+
+      <div className={styles.rowClient}>
+        <span className={styles.clientName}>{entry.destination || 'Неизвестно'}</span>
+        <span className={styles.clientPhone}>{entry.route || '—'}</span>
+      </div>
+
+      <div className={styles.rowProduct}>
+        <span className={styles.itemName}>Товары в доставке</span>
+        <span className={styles.itemMeta}>Статус: {entry.status === 'in_transit' ? 'В пути' : 'Доставлено'}</span>
+      </div>
+
+      <div className={styles.rowFin}>
+        <span className={styles.amount}>—</span>
+        <span className={styles.payStatus}>—</span>
+      </div>
+
+      <div className={styles.rowDates}>
+        <span className={styles.dateLabel}>Выслано: {formatDate(entry.dispatchedAt || null)}</span>
+        {entry.expectedAt && (
+          <span className={styles.dateLabel}>Ожидается: {formatDate(entry.expectedAt)}</span>
+        )}
+      </div>
+
+      <div className={styles.rowActions}>
+        {/* Transit rows are view-only for now */}
       </div>
     </div>
   );
