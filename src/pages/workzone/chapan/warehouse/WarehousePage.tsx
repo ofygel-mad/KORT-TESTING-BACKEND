@@ -50,7 +50,7 @@ export const WarehousePage: React.FC = () => {
     console.log('Add item triggered');
   };
 
-  const alertCount = alerts?.length ?? 0;
+  const alertCount = alerts?.count ?? 0;
 
   return (
     <div className={`${styles.root} ${whStyles.whRoot}`}>
@@ -101,3 +101,5 @@ export const WarehousePage: React.FC = () => {
     </div>
   );
 };
+
+export default WarehousePage;

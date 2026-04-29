@@ -110,12 +110,13 @@ export const WarehouseHeader: React.FC<WarehouseHeaderProps> = ({
         </div>
 
         {/* Search Input */}
-        <SearchInput
-          value={search}
-          onChange={onSearchChange}
-          placeholder="Поиск товара, SKU..."
-          className={styles.searchInput}
-        />
+        <div className={styles.searchInput}>
+          <SearchInput
+            value={search}
+            onChange={onSearchChange}
+            placeholder="Поиск товара, SKU..."
+          />
+        </div>
 
         {/* Filter Dropdown */}
         <div className={styles.dropdownWrapper} ref={filterRef}>

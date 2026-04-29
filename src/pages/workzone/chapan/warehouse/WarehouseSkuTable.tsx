@@ -19,6 +19,12 @@ interface WarehouseSkuTableProps {
 
 const ITEMS_PER_PAGE = 25;
 
+const mapStockStatusToChip = (status: 'ok' | 'low' | 'critical'): 'ok' | 'warn' | 'err' | 'info' => {
+  if (status === 'critical') return 'err';
+  if (status === 'low') return 'warn';
+  return 'ok';
+};
+
 export const WarehouseSkuTable: React.FC<WarehouseSkuTableProps> = ({
   search,
   statusFilter,
@@ -113,7 +119,7 @@ export const WarehouseSkuTable: React.FC<WarehouseSkuTableProps> = ({
                   <td className={`${styles.col} ${styles.numeric}`}>{available}</td>
                   <td className={`${styles.col} ${styles.numeric}`}>{item.qtyMin}</td>
                   <td className={styles.col}>
-                    <StatusChip status={status} size="sm" />
+                    <StatusChip status={mapStockStatusToChip(status)} size="sm" />
                   </td>
                 </tr>
               );
