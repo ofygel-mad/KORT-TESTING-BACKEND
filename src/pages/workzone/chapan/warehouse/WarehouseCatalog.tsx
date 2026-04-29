@@ -12,6 +12,12 @@ import styles from './WarehouseCatalog.module.css';
 type StatusFilter = 'all' | 'instock' | 'reserved' | 'empty';
 type ViewMode = 'default' | 'compact';
 
+const mapStockStatusToChip = (status: 'ok' | 'low' | 'critical'): 'ok' | 'warn' | 'err' | 'info' => {
+  if (status === 'critical') return 'err';
+  if (status === 'low') return 'warn';
+  return 'ok';
+};
+
 interface WarehouseCatalogProps {
   search: string;
   viewMode: ViewMode;
@@ -43,7 +49,8 @@ export const WarehouseCatalog: React.FC<WarehouseCatalogProps> = ({
 
   const filteredAndGrouped = useMemo(() => {
     if (!items) return [];
-    const filtered = filterItemsByStatus(items, statusFilter);
+    const itemsArray = items.results || [];
+    const filtered = filterItemsByStatus(itemsArray, statusFilter);
     return groupItemsByProduct(filtered);
   }, [items, statusFilter]);
 
@@ -66,17 +73,10 @@ export const WarehouseCatalog: React.FC<WarehouseCatalogProps> = ({
         <EmptyState
           title="Нет товаров"
           description="Попробуйте изменить фильтры или выполнить поиск"
-          icon={Package}
         />
       </div>
     );
   }
-
-  const mapStockStatusToChip = (status: string): 'ok' | 'warn' | 'err' | 'info' => {
-    if (status === 'critical') return 'err';
-    if (status === 'low') return 'warn';
-    return 'ok';
-  };
 
   const getWorstStatus = (itemsGroup: WarehouseItem[]): 'ok' | 'warn' | 'err' | 'info' => {
     // Determine worst stock status in group
@@ -235,6 +235,7 @@ const SkuTableSection: React.FC<SkuTableSectionProps> = ({ items, onSelectItem }
           {items.map(item => {
             const available = item.qty - item.qtyReserved;
             const status = getStockStatus(item);
+            const chipStatus = mapStockStatusToChip(status);
             return (
               <div
                 key={item.id}
@@ -254,7 +255,7 @@ const SkuTableSection: React.FC<SkuTableSectionProps> = ({ items, onSelectItem }
                 <div className={styles.skuCol}>{item.qtyReserved}</div>
                 <div className={styles.skuCol}>{available}</div>
                 <div className={styles.skuCol}>
-                  <StatusChip status={status} size="sm" />
+                  <StatusChip status={chipStatus} size="sm" />
                 </div>
               </div>
             );

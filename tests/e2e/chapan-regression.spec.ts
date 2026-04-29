@@ -248,8 +248,9 @@ test.describe('Chapan production regression', () => {
     await expect(page.getByText(invoiceTitle)).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText('Чапан deluxe')).not.toBeVisible();
 
+    const createdInvoiceCard = page.locator(`div:has-text("${invoiceTitle}")`).first();
     const downloadPromise = page.waitForEvent('download');
-    await page.getByRole('button', { name: 'Скачать XLSX' }).click();
+    await createdInvoiceCard.getByRole('button').first().click();
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toContain('zakup_');
     expect(popups).toEqual([]);

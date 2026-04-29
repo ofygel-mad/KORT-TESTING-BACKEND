@@ -17,5 +17,14 @@ test('chapan warehouse route opens without crashing', async ({ page }) => {
 
   await expect(page).toHaveURL(/\/workzone\/chapan\/warehouse$/);
   await expect(page.getByRole('heading', { name: 'Склад' })).toBeVisible();
-  await expect(page.getByRole('button', { name: /Заказы/i })).toBeVisible();
+
+  const metricsButton = page.getByRole('button', { name: /^Метрики$/ });
+  await expect(metricsButton).toBeVisible();
+  await metricsButton.click();
+  await expect(page.getByText('Всего позиций')).toBeVisible();
+
+  const addButton = page.getByRole('button', { name: /^Добавить$/ });
+  await expect(addButton).toBeVisible();
+  await addButton.click();
+  await expect(page.getByText('Добавить позицию')).toBeVisible();
 });

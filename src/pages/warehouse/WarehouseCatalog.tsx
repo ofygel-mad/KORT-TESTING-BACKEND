@@ -168,11 +168,6 @@ function FieldDefinitionRow({ def }: { def: WarehouseFieldDefinition }) {
           />
         </span>
         <span className={styles.defType}>{INPUT_TYPE_LABEL[def.inputType] ?? def.inputType}</span>
-        <span className={styles.defBadges}>
-          {def.affectsAvailability && <span className={`${styles.badge} ${styles.badgeGreen}`}>наличие</span>}
-          {def.showInOrderForm && <span className={`${styles.badge} ${styles.badgeBlue}`}>в заказе</span>}
-          {def.isSystem && <span className={`${styles.badge} ${styles.badgeGray}`}>системное</span>}
-        </span>
         <span className={styles.defOptionCount}>{def.options.length} зн.</span>
         {!def.isSystem && (
           <button

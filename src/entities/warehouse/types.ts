@@ -71,9 +71,11 @@ export interface WarehouseAlert {
 
 export interface WarehouseSummary {
   totalItems: number;
-  totalValue: number;
+  openAlerts?: number;
   lowStockCount: number;
-  categories: number;
+  totalMovementsToday?: number;
+  totalValue?: number;
+  categories?: number;
 }
 
 export interface WarehouseFoundationStatus {

@@ -1,12 +1,11 @@
 import { useDeferredValue, useState, useCallback } from 'react';
-import { Plus, Download } from 'lucide-react';
 import { useWarehouseItems, useWarehouseSummary, useWarehouseAlerts } from '../../../../entities/warehouse/queries';
-import { getStockStatus } from '../../../../entities/warehouse/types';
 import { WarehouseHeader } from './WarehouseHeader';
 import { WarehouseStats } from './WarehouseStats';
-import { WarehouseCatalog } from './WarehouseCatalog';
+import { WarehouseCatalog as WarehouseInventoryCatalog } from './WarehouseCatalog';
 import { WarehouseSkuTable } from './WarehouseSkuTable';
 import { ItemDetailDrawer } from './ItemDetailDrawer';
+import { AddItemDrawer } from './AddItemDrawer';
 import whStyles from './WarehouseTokens.module.css';
 import styles from './WarehousePage.module.css';
 
@@ -16,6 +15,7 @@ type ListMode = 'tree' | 'sku';
 
 export const WarehousePage: React.FC = () => {
   const [statsOpen, setStatsOpen] = useState(false);
+  const [addItemOpen, setAddItemOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('default');
@@ -29,6 +29,10 @@ export const WarehousePage: React.FC = () => {
   const { data: alerts } = useWarehouseAlerts();
 
   const deferredSearch = useDeferredValue(search);
+
+  const { data: itemsData } = useWarehouseItems({ search: deferredSearch || undefined });
+
+  const selectedItem = selectedItemId && itemsData?.results?.find(item => item.id === selectedItemId);
 
   const handleSelectItem = useCallback((itemId: string) => {
     setSelectedItemId(itemId);
@@ -46,11 +50,16 @@ export const WarehousePage: React.FC = () => {
   };
 
   const handleAddItem = () => {
-    // Add item modal — to be implemented in next phase
-    console.log('Add item triggered');
+    setAddItemOpen(true);
   };
 
   const alertCount = alerts?.count ?? 0;
+  const statsSummary = summary ?? {
+    totalItems: 0,
+    totalValue: 0,
+    lowStockCount: 0,
+    categories: 0,
+  };
 
   return (
     <div className={`${styles.root} ${whStyles.whRoot}`}>
@@ -74,11 +83,11 @@ export const WarehousePage: React.FC = () => {
         onExportClick={handleExport}
       />
 
-      {statsOpen && summary && <WarehouseStats summary={summary} />}
+      {statsOpen && <WarehouseStats summary={statsSummary} />}
 
       <div className={styles.content}>
         {listMode === 'tree' ? (
-          <WarehouseCatalog
+          <WarehouseInventoryCatalog
             search={deferredSearch}
             viewMode={viewMode}
             statusFilter={statusFilter}
@@ -93,11 +102,17 @@ export const WarehousePage: React.FC = () => {
         )}
       </div>
 
-      <ItemDetailDrawer
-        open={itemDrawerOpen}
-        itemId={selectedItemId}
-        onClose={handleCloseItemDrawer}
-      />
+      {itemDrawerOpen && selectedItem && (
+        <ItemDetailDrawer
+          item={selectedItem}
+          onClose={handleCloseItemDrawer}
+          onAddMovement={() => {
+            console.log('Add movement triggered');
+          }}
+        />
+      )}
+
+      {addItemOpen && <AddItemDrawer onClose={() => setAddItemOpen(false)} />}
     </div>
   );
 };

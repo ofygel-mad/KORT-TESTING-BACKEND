@@ -7,7 +7,9 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..', '..');
-const distDir = path.join(repoRoot, 'dist');
+const distDir = process.env.E2E_DIST_DIR
+  ? path.resolve(process.env.E2E_DIST_DIR)
+  : path.join(repoRoot, 'dist');
 const spaEntry = path.join(distDir, 'index.html');
 const host = process.env.E2E_FRONTEND_HOST || '127.0.0.1';
 const port = Number.parseInt(process.env.E2E_FRONTEND_PORT || '4174', 10);

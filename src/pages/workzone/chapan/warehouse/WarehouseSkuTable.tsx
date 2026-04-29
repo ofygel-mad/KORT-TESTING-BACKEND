@@ -38,7 +38,8 @@ export const WarehouseSkuTable: React.FC<WarehouseSkuTableProps> = ({
 
   const filtered = useMemo(() => {
     if (!items) return [];
-    return filterItemsByStatus(items, statusFilter);
+    const itemsArray = items.results || [];
+    return filterItemsByStatus(itemsArray, statusFilter);
   }, [items, statusFilter]);
 
   const paginatedItems = useMemo(() => {
@@ -68,7 +69,6 @@ export const WarehouseSkuTable: React.FC<WarehouseSkuTableProps> = ({
         <EmptyState
           title="Нет товаров"
           description="Попробуйте изменить фильтры или выполнить поиск"
-          icon={Package}
         />
       </div>
     );

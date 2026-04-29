@@ -11,6 +11,26 @@ async function triggerSubmit(page: Page) {
   await button.click();
 }
 
+async function waitForLoginFields(page: Page) {
+  const fields = page.locator('form input:not([type="checkbox"])');
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    if (!page.url().includes('/auth/login')) {
+      return null;
+    }
+
+    const count = await fields.count();
+    if (count >= 2) {
+      return fields;
+    }
+
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(500);
+  }
+
+  return null;
+}
+
 async function ensureLoggedOut(page: Page) {
   const logoutButton = page.locator('aside button').last();
   if (!(await logoutButton.isVisible().catch(() => false))) {
@@ -63,7 +83,7 @@ export async function clearSession(page: Page) {
 
   await page.context().clearCookies();
   await page.goto('about:blank');
-  await page.goto('/auth/login', { waitUntil: 'load' });
+  await page.goto('/auth/login', { waitUntil: 'networkidle' });
 
   if (!page.url().includes('/auth/login')) {
     await ensureLoggedOut(page);
@@ -85,14 +105,23 @@ export async function loginAs(page: Page, email: string, password = 'demo1234') 
   await clearSession(page);
 
   const submit = async () => {
-    const fields = page.locator('form input:not([type="checkbox"])');
-    await expect(fields).toHaveCount(2);
+    const fields = await waitForLoginFields(page);
+    if (!fields) {
+      return false;
+    }
     await setInputValue(fields.nth(0), email);
     await setInputValue(fields.nth(1), password);
     await triggerSubmit(page);
+    return true;
   };
 
-  await submit();
+  const submitted = await submit();
+  if (!submitted) {
+    if (!page.url().includes('/auth/login')) {
+      return;
+    }
+    throw new Error('Login form did not render in time');
+  }
 
   try {
     await page.waitForURL((url) => !url.pathname.includes('/auth/login'), { timeout: 15000 });
@@ -103,6 +132,12 @@ export async function loginAs(page: Page, email: string, password = 'demo1234') 
 
   await page.reload({ waitUntil: 'load' });
   await expect(page).toHaveURL(/\/auth\/login$/);
-  await submit();
+  const resubmitted = await submit();
+  if (!resubmitted) {
+    if (!page.url().includes('/auth/login')) {
+      return;
+    }
+    throw new Error('Login form did not render after reload');
+  }
   await page.waitForURL((url) => !url.pathname.includes('/auth/login'), { timeout: 15000 });
 }

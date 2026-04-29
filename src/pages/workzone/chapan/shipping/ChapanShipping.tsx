@@ -65,7 +65,7 @@ export default function ChapanShippingPage() {
   });
 
   const activeQuery = tab === 'pending' ? pendingQuery : tab === 'shipped' ? shippedQuery : transitQuery;
-  const orders: ChapanOrder[] = tab === 'transit' ? [] : activeQuery.data?.results ?? [];
+  const orders: ChapanOrder[] = (tab === 'pending' ? pendingQuery.data?.results : tab === 'shipped' ? shippedQuery.data?.results : []) ?? [];
   const transitEntries: WarehouseTransitEntry[] = tab === 'transit' ? (transitQuery.data?.results ?? []) : [];
 
   return (
@@ -266,18 +266,18 @@ function TransitRow({ entry }: { entry: WarehouseTransitEntry }) {
       <span className={styles.rowStripe} />
 
       <div className={styles.rowNum}>
-        <span className={styles.cardNum}>#{entry.id?.substring(0, 8)}</span>
-        <span className={styles.statusBadge}>В пути</span>
+        <span className={styles.cardNum}>#{entry.id.substring(0, 8)}</span>
+        <span className={styles.statusBadge}>{entry.status === 'in_transit' ? 'В пути' : 'Доставлено'}</span>
       </div>
 
       <div className={styles.rowClient}>
-        <span className={styles.clientName}>{entry.destination || 'Неизвестно'}</span>
-        <span className={styles.clientPhone}>{entry.route || '—'}</span>
+        <span className={styles.clientName}>Товар ID: {entry.itemId.substring(0, 8)}</span>
+        <span className={styles.clientPhone}>Источник: {entry.sourceType}</span>
       </div>
 
       <div className={styles.rowProduct}>
-        <span className={styles.itemName}>Товары в доставке</span>
-        <span className={styles.itemMeta}>Статус: {entry.status === 'in_transit' ? 'В пути' : 'Доставлено'}</span>
+        <span className={styles.itemName}>Кол-во: {entry.qty} шт</span>
+        <span className={styles.itemMeta}>Зона: {entry.zoneId}</span>
       </div>
 
       <div className={styles.rowFin}>
@@ -286,9 +286,9 @@ function TransitRow({ entry }: { entry: WarehouseTransitEntry }) {
       </div>
 
       <div className={styles.rowDates}>
-        <span className={styles.dateLabel}>Выслано: {formatDate(entry.dispatchedAt || null)}</span>
-        {entry.expectedAt && (
-          <span className={styles.dateLabel}>Ожидается: {formatDate(entry.expectedAt)}</span>
+        <span className={styles.dateLabel}>Создано: {formatDate(entry.createdAt)}</span>
+        {entry.updatedAt && (
+          <span className={styles.dateLabel}>Обновлено: {formatDate(entry.updatedAt)}</span>
         )}
       </div>
 

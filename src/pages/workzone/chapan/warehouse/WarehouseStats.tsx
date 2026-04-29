@@ -9,10 +9,10 @@ interface WarehouseStatsProps {
 
 export const WarehouseStats: React.FC<WarehouseStatsProps> = ({ summary }) => {
   const stats = [
-    { label: 'Всего позиций', value: summary.totalItems, isLoading: false },
-    { label: 'Общая стоимость', value: Math.round(summary.totalValue), isLoading: false },
-    { label: 'Мало остатков', value: summary.lowStockCount, isLoading: false },
-    { label: 'Категорий', value: summary.categories, isLoading: false },
+    { label: 'Всего позиций', value: summary.totalItems ?? 0, isLoading: false },
+    { label: 'Открытые алерты', value: summary.openAlerts ?? 0, isLoading: false },
+    { label: 'Мало остатков', value: summary.lowStockCount ?? 0, isLoading: false },
+    { label: 'Движений сегодня', value: summary.totalMovementsToday ?? 0, isLoading: false },
   ];
 
   return (

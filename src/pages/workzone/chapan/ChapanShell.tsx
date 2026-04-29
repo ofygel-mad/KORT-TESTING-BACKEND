@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { CircleCheck, CheckCheck, ChevronLeft, Factory, FileText, Package, ShoppingCart, TrendingUp, Truck, Users, Warehouse, Undo2 } from 'lucide-react';
+import { CircleCheck, CheckCheck, ChevronLeft, Factory, FileText, Package, ShoppingCart, TrendingUp, Truck, Users, Warehouse, Undo2, Boxes } from 'lucide-react';
 import { useAuthStore } from '../../../shared/stores/auth';
 import { useChapanPermissions } from '../../../shared/hooks/useChapanPermissions';
 import { ThemeSwitcher } from '../../../shared/ui/ThemeSwitcher';
@@ -126,6 +126,7 @@ export default function ChapanShell() {
     ...ALL_SECTION_NAV.filter((item) => sectionAccess[item.perm]),
     ...(canAccessInvoices                  ? [{ to: '/workzone/chapan/invoices'  as const, label: 'Накладные', icon: FileText      }] : []),
     ...((isAdmin || canAccessWarehouseNav) ? [{ to: '/workzone/chapan/warehouse' as const, label: 'Склад',     icon: Warehouse     }] : []),
+    ...(isAdmin                            ? [{ to: '/workzone/chapan/catalog'   as const, label: 'Каталог',   icon: Boxes         }] : []),
     ...(isAdmin                            ? [{ to: '/workzone/chapan/returns'   as const, label: 'Возвраты',  icon: Undo2         }] : []),
     ...(canAccessPurchase                  ? [{ to: '/workzone/chapan/purchase'  as const, label: 'Закуп',     icon: ShoppingCart  }] : []),
     ...(canAccessAnalytics                 ? [{ to: '/workzone/chapan/analytics' as const, label: 'Аналитика', icon: TrendingUp    }] : []),

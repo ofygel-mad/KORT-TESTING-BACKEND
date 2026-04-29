@@ -147,12 +147,7 @@
 .defLabel { font-size: 13px; font-weight: 600; color: var(--text-primary); }
 .defCode { font-size: 11px; font-family: 'JetBrains Mono', monospace; color: var(--text-tertiary); }
 .defType { font-size: 11px; color: var(--text-secondary); margin-left: 4px; }
-.defBadges { display: flex; gap: 4px; flex-wrap: wrap; margin-left: 4px; }
 .defOptionCount { margin-left: auto; font-size: 11px; color: var(--text-tertiary); white-space: nowrap; }
-.badge { font-size: 10px; padding: 1px 6px; border-radius: 4px; font-weight: 600; background: rgba(180,192,210,0.12); color: var(--text-tertiary); border: 1px solid var(--border-subtle); }
-.badgeGreen { background: rgba(16,185,129,0.12); color: #10b981; border-color: rgba(16,185,129,0.25); }
-.badgeBlue { background: rgba(99,102,241,0.12); color: #6366f1; border-color: rgba(99,102,241,0.25); }
-.badgeGray { background: rgba(120,120,120,0.1); color: var(--text-tertiary); }
 .deleteBtn {
   background: none; border: none; cursor: pointer; color: var(--text-tertiary);
   padding: 3px; border-radius: 4px; display: flex; align-items: center;

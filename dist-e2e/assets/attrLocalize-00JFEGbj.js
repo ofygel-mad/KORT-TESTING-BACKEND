@@ -1,0 +1,1 @@
+const l={color:"Цвет",gender:"Пол",size:"Размер",length:"Длина"},o={female:"Женский",male:"Мужской"},c=new Set;function s(i){return i?i.split(", ").flatMap(e=>{const n=e.indexOf(": ");if(n===-1)return[e];const t=e.slice(0,n).trim();if(c.has(t))return[];const r=e.slice(n+2).trim();return[`${l[t]??t}: ${o[r]??r}`]}).join(", "):""}export{s as l};
