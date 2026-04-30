@@ -12,6 +12,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { apiClient } from '../../../../shared/api/client';
+import { useAuthStore } from '../../../../shared/stores/auth';
 import { useChapanUiStore } from '../../../../features/workzone/chapan/store';
 import { buildItemLine } from '../../../../shared/utils/itemLine';
 import styles from './ChapanOrderDetail.module.css';
@@ -112,8 +113,9 @@ function resolveItemFulfillmentMode(order: { status: OrderStatus; productionTask
 }
 
 async function downloadInvoice(orderId: string, orderNumber: string) {
+  const currency = useAuthStore.getState().org?.currency ?? 'KZT';
   const response = await apiClient.get(`/chapan/orders/${orderId}/invoice`, {
-    params: { style: 'branded' },
+    params: { style: 'branded', currency },
     responseType: 'blob',
   });
   const blob = new Blob([response.data], {

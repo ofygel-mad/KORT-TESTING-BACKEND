@@ -1,4 +1,5 @@
 import { useDeferredValue, useState, useCallback } from 'react';
+import { exportWarehouseToExcel } from './exportWarehouse';
 import { useWarehouseItems, useWarehouseSummary, useWarehouseAlerts } from '../../../../entities/warehouse/queries';
 import { WarehouseHeader } from './WarehouseHeader';
 import { WarehouseStats } from './WarehouseStats';
@@ -16,6 +17,7 @@ type ListMode = 'tree' | 'sku';
 export const WarehousePage: React.FC = () => {
   const [statsOpen, setStatsOpen] = useState(false);
   const [addItemOpen, setAddItemOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('default');
@@ -44,10 +46,15 @@ export const WarehousePage: React.FC = () => {
     setSelectedItemId(null);
   }, []);
 
-  const handleExport = () => {
-    // Export functionality — to be implemented in next phase
-    console.log('Export triggered');
-  };
+  const handleExport = useCallback(async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      await exportWarehouseToExcel();
+    } finally {
+      setExporting(false);
+    }
+  }, [exporting]);
 
   const handleAddItem = () => {
     setAddItemOpen(true);
@@ -81,6 +88,7 @@ export const WarehousePage: React.FC = () => {
         onViewOpen={setViewOpen}
         onAddClick={handleAddItem}
         onExportClick={handleExport}
+        exporting={exporting}
       />
 
       {statsOpen && <WarehouseStats summary={statsSummary} />}

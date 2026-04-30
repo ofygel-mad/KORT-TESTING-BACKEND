@@ -4,6 +4,8 @@ import { useCreateManualInvoice } from '../../../../entities/purchase/queries';
 import { useCatalogDefinitions, useOrderFormCatalog } from '../../../../entities/warehouse/queries';
 import type { PurchaseType } from '../../../../entities/purchase/types';
 import { SearchableSelect } from '../../../../shared/ui/SearchableSelect';
+import { useCurrency } from '../../../../shared/hooks/useCurrency';
+import { formatMoney } from '../../../../shared/utils/format';
 import {
   buildPurchaseProductFieldMap,
   getGlobalWarehouseOptions,
@@ -43,11 +45,8 @@ function emptyRow(): ItemRow {
   };
 }
 
-function fmt(n: number) {
-  return new Intl.NumberFormat('ru-KZ', { maximumFractionDigits: 0 }).format(n) + ' ₸';
-}
-
 export default function ManualInvoiceForm({ type, onClose }: Props) {
+  const currency = useCurrency();
   const [title, setTitle] = useState('');
   const [notes, setNotes] = useState('');
   const [rows, setRows] = useState<ItemRow[]>([emptyRow()]);
@@ -263,7 +262,7 @@ export default function ManualInvoiceForm({ type, onClose }: Props) {
                         />
                       </td>
                       <td style={{ paddingLeft: 8, color: 'var(--ch-text-muted)', whiteSpace: 'nowrap', fontSize: 11 }}>
-                        {rowTotal > 0 ? fmt(rowTotal) : '-'}
+                        {rowTotal > 0 ? formatMoney(rowTotal, currency) : '-'}
                       </td>
                       <td>
                         <button
@@ -284,7 +283,7 @@ export default function ManualInvoiceForm({ type, onClose }: Props) {
 
             <div className={styles.totalRow}>
               <span className={styles.totalLabel}>Итого:</span>
-              <span>{fmt(total)}</span>
+              <span>{formatMoney(total, currency)}</span>
             </div>
           </div>
         </div>

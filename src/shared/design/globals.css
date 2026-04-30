@@ -339,7 +339,7 @@
    ═══════════════════════════════════════════════════════════════════════ */
 :root {
   /* Button */
-  --btn-primary-bg:       var(--fill-accent-gradient);
+  --btn-primary-bg:       var(--fill-accent);
   --btn-primary-text:     var(--text-on-accent);
   --btn-primary-shadow:   var(--shadow-accent);
   --btn-secondary-bg:     var(--bg-surface-elevated);

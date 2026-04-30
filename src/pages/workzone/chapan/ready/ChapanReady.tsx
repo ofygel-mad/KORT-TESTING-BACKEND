@@ -371,6 +371,7 @@ export default function ChapanReadyPage() {
       const response = await apiClient.post('/chapan/orders/batch-invoice', {
         orderIds: [...selectedIds],
         style: 'branded',
+        currency: useAuthStore.getState().org?.currency ?? 'KZT',
         documentPayload: getDraftDocumentForOrders(selectedOrders),
       }, { responseType: 'blob' });
       const blob = new Blob([response.data], {

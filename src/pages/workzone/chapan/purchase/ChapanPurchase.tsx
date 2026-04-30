@@ -4,6 +4,8 @@ import { AlertCircle } from 'lucide-react';
 import { useManualInvoices, useDeleteManualInvoice } from '../../../../entities/purchase/queries';
 import { purchaseApi } from '../../../../entities/purchase/api';
 import { getFilenameFromContentDisposition, triggerBrowserDownload } from '../../../../shared/lib/browserDownload';
+import { useCurrency } from '../../../../shared/hooks/useCurrency';
+import { formatMoney } from '../../../../shared/utils/format';
 import ManualInvoiceForm from './ManualInvoiceForm';
 import styles from './ChapanPurchase.module.css';
 
@@ -14,14 +16,11 @@ const TAB_LABELS: Record<Tab, string> = {
   market: 'Базар',
 };
 
-function fmt(n: number) {
-  return new Intl.NumberFormat('ru-KZ', { maximumFractionDigits: 0 }).format(n) + ' ₸';
-}
-
 export default function ChapanPurchasePage() {
   const [tab, setTab] = useState<Tab>('workshop');
   const [formOpen, setFormOpen] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const currency = useCurrency();
 
   const { data: workshopData, isLoading: wLoading, isError: wError } = useManualInvoices('workshop');
   const { data: marketData, isLoading: mLoading, isError: mError } = useManualInvoices('market');
@@ -38,7 +37,7 @@ export default function ChapanPurchasePage() {
 
     try {
       setDownloadingId(id);
-      const response = await purchaseApi.download(id);
+      const response = await purchaseApi.download(id, currency);
       const blob = new Blob([response.data], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       });
@@ -113,7 +112,7 @@ export default function ChapanPurchasePage() {
                   </div>
                 </div>
                 <div className={styles.cardActions}>
-                  <div className={styles.cardTotal}>{fmt(total)}</div>
+                  <div className={styles.cardTotal}>{formatMoney(total, currency)}</div>
                   <button
                     type="button"
                     className={styles.iconBtn}

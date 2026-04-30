@@ -153,6 +153,18 @@
   }
 }
 
+@media (max-width: 768px) {
+  /* Allow horizontal scroll; override overflow: hidden from base */
+  .tableWrapper {
+    overflow-x: auto;
+  }
+
+  /* Keep table at natural width so it scrolls rather than squishes */
+  .table {
+    min-width: 560px;
+  }
+}
+
 @media (max-width: 640px) {
   .tableWrapper {
     border-radius: var(--wh-r-sm);
@@ -160,16 +172,17 @@
 
   .table {
     font-size: 11px;
+    min-width: 480px;
   }
 
   .thCol,
   .col {
-    padding: var(--space-1);
-    font-size: 10px;
+    padding: var(--space-1) var(--space-2);
+    font-size: 11px;
   }
 
   .nameCell {
-    max-width: 80px;
+    max-width: 120px;
   }
 
   .mono {
@@ -177,13 +190,14 @@
   }
 
   .pagination {
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
     gap: var(--space-1);
     padding: var(--space-2);
   }
 
   .pageBtn {
-    width: 100%;
+    flex: 1;
     justify-content: center;
   }
 }

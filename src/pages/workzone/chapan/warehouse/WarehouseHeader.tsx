@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Warehouse, Search, Filter, ChevronDown, Eye, Settings, Plus, Download, AlertCircle } from 'lucide-react';
+import { Warehouse, Search, Filter, ChevronDown, Eye, Settings, Plus, Download, AlertCircle, HelpCircle } from 'lucide-react';
 import { Button } from '../../../../shared/ui/Button';
 import { Badge } from '../../../../shared/ui/Badge';
 import { SearchInput } from '../../../../shared/ui/SearchInput';
@@ -27,6 +27,7 @@ interface WarehouseHeaderProps {
   onViewOpen: (open: boolean) => void;
   onAddClick: () => void;
   onExportClick: () => void;
+  exporting?: boolean;
 }
 
 const STATUS_FILTER_OPTIONS: Array<{ value: StatusFilter; label: string }> = [
@@ -54,6 +55,7 @@ export const WarehouseHeader: React.FC<WarehouseHeaderProps> = ({
   onViewOpen,
   onAddClick,
   onExportClick,
+  exporting = false,
 }) => {
   const filterRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<HTMLDivElement>(null);
@@ -200,7 +202,7 @@ export const WarehouseHeader: React.FC<WarehouseHeaderProps> = ({
           className={styles.btn}
         >
           <Settings size={16} />
-          Метрики
+          <span className={styles.metricsText}>Метрики</span>
         </Button>
 
         <Button
@@ -217,11 +219,25 @@ export const WarehouseHeader: React.FC<WarehouseHeaderProps> = ({
           variant="secondary"
           size="sm"
           onClick={onExportClick}
+          disabled={exporting}
+          loading={exporting}
           className={styles.btn}
         >
-          <Download size={16} />
-          Экспорт
+          {!exporting && <Download size={16} />}
+          {exporting ? 'Экспорт...' : 'Экспорт'}
         </Button>
+
+        <div className={styles.infoWrap}>
+          <span className={styles.infoIcon}>
+            <HelpCircle size={16} />
+          </span>
+          <div className={styles.infoPopup}>
+            <div className={styles.infoPopupTitle}>Экспорт остатков</div>
+            <div className={styles.infoPopupText}>
+              Скачивает таблицу Excel со всеми позициями склада: название, артикул, цвет, размер, длина, количество, резерв, доступно, цена и категория.
+            </div>
+          </div>
+        </div>
       </div>
     </header>
   );

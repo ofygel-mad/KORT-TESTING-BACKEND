@@ -78,19 +78,10 @@ export const WarehouseCatalog: React.FC<WarehouseCatalogProps> = ({
     );
   }
 
-  const getWorstStatus = (itemsGroup: WarehouseItem[]): 'ok' | 'warn' | 'err' | 'info' => {
-    // Determine worst stock status in group
-    const statuses = itemsGroup.map(getStockStatus);
-    if (statuses.some(s => s === 'critical')) return 'err';
-    if (statuses.some(s => s === 'low')) return 'warn';
-    return 'ok';
-  };
-
   return (
     <div className={`${styles.catalog} ${styles[`view-${viewMode}`]}`}>
       {filteredAndGrouped.map(group => {
         const isExpanded = expandedProducts.has(group.name);
-        const worstStatus = getWorstStatus(group.items);
 
         return (
           <div key={group.name} className={styles.productCard}>
@@ -103,36 +94,23 @@ export const WarehouseCatalog: React.FC<WarehouseCatalogProps> = ({
                 size={18}
                 className={`${styles.chevron} ${isExpanded ? styles.expanded : ''}`}
               />
-              <div className={styles.cardTitleGroup}>
-                {viewMode === 'default' && (
-                  <Package size={20} className={styles.cardIcon} />
-                )}
-                <div>
-                  <div className={styles.cardTitle}>{group.name}</div>
-                  <div className={styles.cardSubtitle}>
-                    Всего: <strong>{group.totalQty}</strong> шт
-                    {group.totalReserved > 0 && (
-                      <> · Зарезерв: <strong>{group.totalReserved}</strong> шт</>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <StatusChip status={worstStatus} size="sm" />
+              {viewMode === 'default' && (
+                <Package size={20} className={styles.cardIcon} />
+              )}
+              <span className={styles.cardTitle}>{group.name}</span>
+              <span className={styles.cardQty}>{group.totalQty} пол.</span>
             </button>
 
             {isExpanded && (
               <div className={styles.cardBody}>
-                {/* Size breakdown */}
                 {group.sizeBreakdown.length > 0 && (
                   <SizeBreakdownSection items={group.sizeBreakdown} />
                 )}
 
-                {/* Color breakdown */}
                 {group.colorBreakdown.length > 0 && (
                   <ColorBreakdownSection items={group.colorBreakdown} />
                 )}
 
-                {/* All SKU table */}
                 <SkuTableSection
                   items={group.items}
                   onSelectItem={onSelectItem}
@@ -146,29 +124,32 @@ export const WarehouseCatalog: React.FC<WarehouseCatalogProps> = ({
   );
 };
 
+// ── Sub-sections ────────────────────────────────────────────────────────────
+
 interface SizeBreakdownSectionProps {
   items: Array<{ value: string; qty: number; reserved: number }>;
 }
 
 const SizeBreakdownSection: React.FC<SizeBreakdownSectionProps> = ({ items }) => {
   const [expanded, setExpanded] = useState(false);
+  const total = items.reduce((s, x) => s + x.qty, 0);
 
   return (
     <div className={styles.subgroup}>
       <button type="button" className={styles.subgroupHeader} onClick={() => setExpanded(!expanded)}>
         <ChevronDown size={16} className={`${styles.chevron} ${expanded ? styles.expanded : ''}`} />
-        <span className={styles.subgroupTitle}>По размерам</span>
-        <span className={styles.subgroupBadge}>{items.length}</span>
+        <span className={styles.subgroupTitle}>по размерам</span>
+        <span className={styles.subgroupTotalLabel}>итого</span>
+        <span className={styles.subgroupTotal}>{total}</span>
       </button>
       {expanded && (
         <div className={styles.subgroupBody}>
           {items.map(item => (
             <div key={item.value} className={styles.breakdownRow}>
-              <span className={styles.breakdownLabel}>Размер {item.value}</span>
-              <span className={styles.breakdownValue}>{item.qty} шт</span>
-              {item.reserved > 0 && (
-                <span className={styles.breakdownReserved}>зарез. {item.reserved}</span>
-              )}
+              <span className={styles.breakdownArrow}>›</span>
+              <span className={styles.breakdownAttr}>{item.value}</span>
+              <span className={styles.breakdownEq}>= {item.qty}</span>
+              <button type="button" className={styles.breakdownAll}>все</button>
             </div>
           ))}
         </div>
@@ -183,23 +164,24 @@ interface ColorBreakdownSectionProps {
 
 const ColorBreakdownSection: React.FC<ColorBreakdownSectionProps> = ({ items }) => {
   const [expanded, setExpanded] = useState(false);
+  const total = items.reduce((s, x) => s + x.qty, 0);
 
   return (
     <div className={styles.subgroup}>
       <button type="button" className={styles.subgroupHeader} onClick={() => setExpanded(!expanded)}>
         <ChevronDown size={16} className={`${styles.chevron} ${expanded ? styles.expanded : ''}`} />
-        <span className={styles.subgroupTitle}>По цветам</span>
-        <span className={styles.subgroupBadge}>{items.length}</span>
+        <span className={styles.subgroupTitle}>по цветам</span>
+        <span className={styles.subgroupTotalLabel}>итого</span>
+        <span className={styles.subgroupTotal}>{total}</span>
       </button>
       {expanded && (
         <div className={styles.subgroupBody}>
           {items.map(item => (
             <div key={item.value} className={styles.breakdownRow}>
-              <span className={styles.breakdownLabel}>Цвет {item.value}</span>
-              <span className={styles.breakdownValue}>{item.qty} шт</span>
-              {item.reserved > 0 && (
-                <span className={styles.breakdownReserved}>зарез. {item.reserved}</span>
-              )}
+              <span className={styles.breakdownArrow}>›</span>
+              <span className={styles.breakdownAttr}>{item.value}</span>
+              <span className={styles.breakdownEq}>= {item.qty}</span>
+              <button type="button" className={styles.breakdownAll}>все</button>
             </div>
           ))}
         </div>
@@ -220,46 +202,57 @@ const SkuTableSection: React.FC<SkuTableSectionProps> = ({ items, onSelectItem }
     <div className={styles.subgroup}>
       <button type="button" className={styles.subgroupHeader} onClick={() => setExpanded(!expanded)}>
         <ChevronDown size={16} className={`${styles.chevron} ${expanded ? styles.expanded : ''}`} />
-        <span className={styles.subgroupTitle}>Все SKU</span>
-        <span className={styles.subgroupBadge}>{items.length}</span>
+        <span className={styles.subgroupTitle}>по SKU</span>
+        <span className={styles.subgroupBadge}>позиций {items.length}</span>
       </button>
       {expanded && (
-        <div className={styles.skuTable}>
-          <div className={styles.skuTableHead}>
-            <div className={styles.skuCol}>SKU</div>
-            <div className={styles.skuCol}>В наличии</div>
-            <div className={styles.skuCol}>Зарез</div>
-            <div className={styles.skuCol}>Доступно</div>
-            <div className={styles.skuCol}>Статус</div>
-          </div>
-          {items.map(item => {
-            const available = item.qty - item.qtyReserved;
-            const status = getStockStatus(item);
-            const chipStatus = mapStockStatusToChip(status);
-            return (
-              <div
-                key={item.id}
-                className={styles.skuTableRow}
-                onClick={() => onSelectItem(item.id)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    onSelectItem(item.id);
-                  }
-                }}
-              >
-                <div className={styles.skuCol}>{item.sku || '—'}</div>
-                <div className={styles.skuCol}>{item.qty}</div>
-                <div className={styles.skuCol}>{item.qtyReserved}</div>
-                <div className={styles.skuCol}>{available}</div>
-                <div className={styles.skuCol}>
-                  <StatusChip status={chipStatus} size="sm" />
-                </div>
-              </div>
-            );
-          })}
+        <div className={styles.skuInline}>
+          <table className={styles.skuTbl}>
+            <thead>
+              <tr>
+                <th className={styles.thLeft}>Цвет</th>
+                <th className={styles.thLeft}>Размер</th>
+                <th className={styles.thDim}>Длина</th>
+                <th className={styles.thRight}>В наличии</th>
+                <th className={styles.thRight}>Резерв</th>
+                <th className={styles.thRight}>Доступно</th>
+                <th className={styles.thLeft}>Статус</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map(item => {
+                const color = item.attributesJson?.['color'] || '—';
+                const size = item.attributesJson?.['size'] || '—';
+                const length = item.attributesJson?.['length'] || null;
+                const available = item.qty - item.qtyReserved;
+                const chipStatus = mapStockStatusToChip(getStockStatus(item));
+                return (
+                  <tr
+                    key={item.id}
+                    className={styles.skuRow}
+                    onClick={() => onSelectItem(item.id)}
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onSelectItem(item.id);
+                      }
+                    }}
+                  >
+                    <td className={styles.tdBold}>{color}</td>
+                    <td className={styles.tdMono}>{size}</td>
+                    <td className={styles.tdDim}>{length ?? '—'}</td>
+                    <td className={styles.tdNum}>{item.qty}</td>
+                    <td className={styles.tdNum}>{item.qtyReserved}</td>
+                    <td className={styles.tdNum}>{available}</td>
+                    <td className={styles.tdStatus}>
+                      <StatusChip status={chipStatus} size="sm" />
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

@@ -3,6 +3,7 @@ import { ClipboardList, X, FileText, Check, Clock, Download } from 'lucide-react
 import { useInvoices, useConfirmSeamstress, useConfirmWarehouse, useArchiveInvoice } from '../../../../entities/order/queries';
 import type { ChapanInvoice, InvoiceStatus } from '../../../../entities/order/types';
 import { useChapanPermissions } from '../../../../shared/hooks/useChapanPermissions';
+import { useAuthStore } from '../../../../shared/stores/auth';
 import ChapanInvoicePreviewModal from './ChapanInvoicePreviewModal';
 import styles from './ChapanInvoicesDrawer.module.css';
 
@@ -37,9 +38,10 @@ function fmtDate(d: string | null) {
 
 async function downloadInvoice(invoiceId: string, invoiceNumber: string, onSuccess?: () => void) {
   const { apiClient } = await import('../../../../shared/api/client');
+  const currency = useAuthStore.getState().org?.currency ?? 'KZT';
   try {
     const response = await apiClient.get(`/chapan/invoices/${invoiceId}/download`, {
-      params: { style: 'branded' },
+      params: { style: 'branded', currency },
       responseType: 'blob',
     });
     const blob = new Blob([response.data], {

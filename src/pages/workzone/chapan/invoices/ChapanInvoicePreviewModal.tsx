@@ -7,6 +7,7 @@ import type {
   InvoiceDocumentRow,
   InvoiceDocumentSourceOrder,
 } from '../../../../entities/order/types';
+import { useAuthStore } from '../../../../shared/stores/auth';
 import styles from './ChapanInvoicePreviewModal.module.css';
 
 const TABLE_KEYS = [
@@ -177,8 +178,9 @@ export default function ChapanInvoicePreviewModal({
     if (!invoiceMode || !invoiceId || downloading) return;
     setDownloading(true);
     try {
+      const currency = useAuthStore.getState().org?.currency ?? 'KZT';
       const response = await apiClient.get(`/chapan/invoices/${invoiceId}/download`, {
-        params: { style: 'branded' },
+        params: { style: 'branded', currency },
         responseType: 'blob',
       });
       const blob = new Blob([response.data], {

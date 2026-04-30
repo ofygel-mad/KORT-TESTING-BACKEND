@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ClipboardList, FileText, Check, Clock, X, Download, AlertTriangle } from 'lucide-react';
+import { useAuthStore } from '../../../../shared/stores/auth';
 import {
   useInvoices,
   useConfirmWarehouse,
@@ -71,8 +72,9 @@ export default function ChapanInvoicesPage() {
   async function handleDownload(invoiceId: string, invoiceNumber: string) {
     const { apiClient } = await import('../../../../shared/api/client');
     try {
+      const currency = useAuthStore.getState().org?.currency ?? 'KZT';
       const response = await apiClient.get(`/chapan/invoices/${invoiceId}/download`, {
-        params: { style: 'branded' },
+        params: { style: 'branded', currency },
         responseType: 'blob',
       });
       const blob = new Blob([response.data], {

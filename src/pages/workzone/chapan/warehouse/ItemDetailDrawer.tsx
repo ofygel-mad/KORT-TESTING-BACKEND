@@ -1,5 +1,6 @@
-import { AlertTriangle, Plus, RotateCcw, X } from 'lucide-react';
-import { useWarehouseMovements, useItemFormula } from '../../../../entities/warehouse/queries';
+import { useState } from 'react';
+import { AlertTriangle, Plus, RotateCcw, Trash2, X } from 'lucide-react';
+import { useWarehouseMovements, useItemFormula, useDeleteItem } from '../../../../entities/warehouse/queries';
 import type { WarehouseItem, WarehouseMovement } from '../../../../entities/warehouse/types';
 import { localizeAttrSummary } from '../../../../shared/lib/attrLocalize';
 import styles from '../../../warehouse/Warehouse.module.css';
@@ -117,6 +118,9 @@ export function ItemDetailDrawer({ item, onClose, onAddMovement, onVerify }: Pro
   const needsVerify = formula?.verificationRequired ?? item.verificationRequired ?? (item.qty - item.qtyReserved < 0);
   const hasReserve  = qtyReserved > 0;
 
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const deleteItem = useDeleteItem();
+
   return (
     <div className={styles.drawerOverlay} onClick={onClose}>
       <div className={styles.drawer} onClick={e => e.stopPropagation()}>
@@ -216,6 +220,36 @@ export function ItemDetailDrawer({ item, onClose, onAddMovement, onVerify }: Pro
           <button className={styles.drawerSecondaryBtn} onClick={onVerify ?? onAddMovement}>
             <RotateCcw size={13} /> Провести сверку
           </button>
+
+          {!confirmDelete ? (
+            <button type="button" className={styles.drawerDeleteTrigger} onClick={() => setConfirmDelete(true)}>
+              <Trash2 size={13} /> Удалить товар
+            </button>
+          ) : (
+            <div className={styles.drawerDeleteConfirm}>
+              <span className={styles.drawerDeleteConfirmText}>
+                Удалить «{item.name}»? Это действие нельзя отменить.
+              </span>
+              <div className={styles.drawerDeleteConfirmBtns}>
+                <button
+                  type="button"
+                  className={styles.drawerDeleteCancelBtn}
+                  onClick={() => setConfirmDelete(false)}
+                  disabled={deleteItem.isPending}
+                >
+                  Отмена
+                </button>
+                <button
+                  type="button"
+                  className={styles.drawerDeleteOkBtn}
+                  disabled={deleteItem.isPending}
+                  onClick={() => deleteItem.mutate(item.id, { onSuccess: onClose })}
+                >
+                  {deleteItem.isPending ? 'Удаление...' : 'Да, удалить'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

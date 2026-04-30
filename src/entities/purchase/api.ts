@@ -17,8 +17,9 @@ export const purchaseApi = {
   remove: (id: string) =>
     api.delete<{ deleted: boolean }>(`/chapan/purchase/${id}`),
 
-  download: (id: string) =>
+  download: (id: string, currency = 'KZT') =>
     apiClient.get(`/chapan/purchase/${id}/download`, {
+      params: { currency },
       responseType: 'blob',
     }),
 };

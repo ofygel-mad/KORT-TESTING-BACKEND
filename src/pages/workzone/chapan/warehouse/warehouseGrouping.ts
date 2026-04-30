@@ -31,19 +31,25 @@ export function groupItemsByProduct(items: WarehouseItem[]): ProductGroup[] {
     const colorMap = new Map<string, { qty: number; reserved: number }>();
 
     for (const item of itemsInGroup) {
-      // Try to extract size from item attributes
-      if (item.tags && item.tags.length > 0) {
-        // Look for numeric-like tags that could be sizes
-        const sizeTag = item.tags.find(t => /^\d+$/.test(t));
-        if (sizeTag) {
-          const entry = sizeMap.get(sizeTag) || { qty: 0, reserved: 0 };
-          entry.qty += item.qty;
-          entry.reserved += item.qtyReserved;
-          sizeMap.set(sizeTag, entry);
-        }
+      // Size: primary from attributesJson (stored by CreateItemDto.size), fallback to numeric tag
+      const sizeVal =
+        item.attributesJson?.['size'] ||
+        item.tags?.find(t => /^\d+$/.test(t));
+      if (sizeVal) {
+        const entry = sizeMap.get(sizeVal) ?? { qty: 0, reserved: 0 };
+        entry.qty += item.qty;
+        entry.reserved += item.qtyReserved;
+        sizeMap.set(sizeVal, entry);
       }
-      // Color breakdown could come from different source
-      // For now, we'll skip it as structure is not clear
+
+      // Color: from attributesJson (stored by CreateItemDto.color)
+      const colorVal = item.attributesJson?.['color'];
+      if (colorVal) {
+        const entry = colorMap.get(colorVal) ?? { qty: 0, reserved: 0 };
+        entry.qty += item.qty;
+        entry.reserved += item.qtyReserved;
+        colorMap.set(colorVal, entry);
+      }
     }
 
     const sizeBreakdown = Array.from(sizeMap.entries())
