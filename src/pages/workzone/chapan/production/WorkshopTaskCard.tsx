@@ -28,9 +28,10 @@ const getBorderColor = (task: ProductionTask): string => {
 };
 
 const formatDate = (dateStr: string | null | undefined): string => {
-  if (!dateStr) return '—';
+  if (!dateStr || typeof dateStr !== 'string') return '—';
   try {
     const date = new Date(dateStr + 'T00:00:00Z');
+    if (isNaN(date.getTime())) return dateStr.slice(0, 10);
     const day = date.getUTCDate();
     const monthShort = date.toLocaleString('ru-RU', { month: 'short', timeZone: 'UTC' });
     return `${day} ${monthShort}.`;
@@ -118,12 +119,10 @@ export default function WorkshopTaskCard({
         <span className={styles.length}>{task.length || '—'}</span>
       </div>
 
-      {/* Col 7: Color (omitted if notes present) */}
-      {!hasNotes(task) && (
-        <div className={styles.cell}>
-          <span className={styles.color}>{task.color || '—'}</span>
-        </div>
-      )}
+      {/* Col 7: Color */}
+      <div className={`${styles.cell} ${hasNotes(task) ? styles.cellHidden : ''}`}>
+        <span className={styles.color}>{task.color || '—'}</span>
+      </div>
 
       {/* Col 8: Quantity */}
       <div className={styles.cell}>
