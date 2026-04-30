@@ -322,24 +322,6 @@
   background: var(--wh-surface-muted);
 }
 
-/* View modes */
-
-.view-compact .cardHeader {
-  padding: var(--space-2);
-}
-
-.view-compact .cardBody {
-  padding: var(--space-2);
-}
-
-.view-compact .cardIcon {
-  display: none;
-}
-
-.view-compact .cardTitle {
-  font-size: 14px;
-}
-
 /* Mobile */
 
 @media (max-width: 768px) {

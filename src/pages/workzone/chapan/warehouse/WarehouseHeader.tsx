@@ -1,12 +1,11 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { Warehouse, Search, Filter, ChevronDown, Eye, Settings, Plus, Download, AlertCircle, HelpCircle } from 'lucide-react';
+import React, { useRef, useEffect } from 'react';
+import { Warehouse, Filter, ChevronDown, Eye, Settings, Plus, Download, AlertCircle, HelpCircle } from 'lucide-react';
 import { Button } from '../../../../shared/ui/Button';
 import { Badge } from '../../../../shared/ui/Badge';
 import { SearchInput } from '../../../../shared/ui/SearchInput';
 import styles from './WarehouseHeader.module.css';
 
 type StatusFilter = 'all' | 'instock' | 'reserved' | 'empty';
-type ViewMode = 'default' | 'compact';
 type ListMode = 'tree' | 'sku';
 
 interface WarehouseHeaderProps {
@@ -15,8 +14,6 @@ interface WarehouseHeaderProps {
   onSearchChange: (value: string) => void;
   statusFilter: StatusFilter;
   onStatusFilterChange: (value: StatusFilter) => void;
-  viewMode: ViewMode;
-  onViewModeChange: (value: ViewMode) => void;
   listMode: ListMode;
   onListModeChange: (value: ListMode) => void;
   statsOpen: boolean;
@@ -43,8 +40,6 @@ export const WarehouseHeader: React.FC<WarehouseHeaderProps> = ({
   onSearchChange,
   statusFilter,
   onStatusFilterChange,
-  viewMode,
-  onViewModeChange,
   listMode,
   onListModeChange,
   statsOpen,
@@ -60,7 +55,8 @@ export const WarehouseHeader: React.FC<WarehouseHeaderProps> = ({
   const filterRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<HTMLDivElement>(null);
 
-  const currentStatusLabel = STATUS_FILTER_OPTIONS.find(o => o.value === statusFilter)?.label || 'Фильтр';
+  const currentStatusLabel =
+    STATUS_FILTER_OPTIONS.find((option) => option.value === statusFilter)?.label || 'Фильтр';
 
   const handleFilterClick = (value: StatusFilter) => {
     onStatusFilterChange(value);
@@ -72,18 +68,13 @@ export const WarehouseHeader: React.FC<WarehouseHeaderProps> = ({
     onViewOpen(false);
   };
 
-  const handleViewModeChange = (mode: ViewMode) => {
-    onViewModeChange(mode);
-    onViewOpen(false);
-  };
-
-  // Close dropdowns when clicking outside
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
         onFilterOpen(false);
       }
-      if (viewRef.current && !viewRef.current.contains(e.target as Node)) {
+
+      if (viewRef.current && !viewRef.current.contains(event.target as Node)) {
         onViewOpen(false);
       }
     };
@@ -97,7 +88,6 @@ export const WarehouseHeader: React.FC<WarehouseHeaderProps> = ({
   return (
     <header className={styles.header}>
       <div className={styles.row}>
-        {/* Title + Alert Badge */}
         <div className={styles.titleGroup}>
           <h1 className={styles.title}>
             <Warehouse size={20} />
@@ -111,7 +101,6 @@ export const WarehouseHeader: React.FC<WarehouseHeaderProps> = ({
           )}
         </div>
 
-        {/* Search Input */}
         <div className={styles.searchInput}>
           <SearchInput
             value={search}
@@ -120,7 +109,6 @@ export const WarehouseHeader: React.FC<WarehouseHeaderProps> = ({
           />
         </div>
 
-        {/* Filter Dropdown */}
         <div className={styles.dropdownWrapper} ref={filterRef}>
           <button
             className={`${styles.dropdownTrigger} ${filterOpen ? styles.active : ''}`}
@@ -132,7 +120,7 @@ export const WarehouseHeader: React.FC<WarehouseHeaderProps> = ({
           </button>
           {filterOpen && (
             <div className={styles.dropdownMenu}>
-              {STATUS_FILTER_OPTIONS.map(option => (
+              {STATUS_FILTER_OPTIONS.map((option) => (
                 <button
                   key={option.value}
                   className={`${styles.dropdownItem} ${statusFilter === option.value ? styles.active : ''}`}
@@ -145,7 +133,6 @@ export const WarehouseHeader: React.FC<WarehouseHeaderProps> = ({
           )}
         </div>
 
-        {/* View Dropdown */}
         <div className={styles.dropdownWrapper} ref={viewRef}>
           <button
             className={`${styles.dropdownTrigger} ${viewOpen ? styles.active : ''}`}
@@ -172,29 +159,12 @@ export const WarehouseHeader: React.FC<WarehouseHeaderProps> = ({
                   Таблица SKU
                 </button>
               </div>
-              <div className={styles.dropdownDivider} />
-              <div className={styles.dropdownSection}>
-                <div className={styles.sectionLabel}>Плотность</div>
-                <button
-                  className={`${styles.dropdownItem} ${viewMode === 'default' ? styles.active : ''}`}
-                  onClick={() => handleViewModeChange('default')}
-                >
-                  Обычная
-                </button>
-                <button
-                  className={`${styles.dropdownItem} ${viewMode === 'compact' ? styles.active : ''}`}
-                  onClick={() => handleViewModeChange('compact')}
-                >
-                  Компактная
-                </button>
-              </div>
             </div>
           )}
         </div>
 
         <div className={styles.divider} />
 
-        {/* Action Buttons */}
         <Button
           variant="ghost"
           size="sm"
@@ -234,7 +204,8 @@ export const WarehouseHeader: React.FC<WarehouseHeaderProps> = ({
           <div className={styles.infoPopup}>
             <div className={styles.infoPopupTitle}>Экспорт остатков</div>
             <div className={styles.infoPopupText}>
-              Скачивает таблицу Excel со всеми позициями склада: название, артикул, цвет, размер, длина, количество, резерв, доступно, цена и категория.
+              Скачивает Excel-файл со всеми позициями склада: название, артикул, цвет, размер,
+              длина, количество, резерв, доступно, цена и категория.
             </div>
           </div>
         </div>

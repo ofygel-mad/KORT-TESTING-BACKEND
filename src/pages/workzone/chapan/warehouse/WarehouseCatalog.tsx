@@ -10,7 +10,6 @@ import { groupItemsByProduct, filterItemsByStatus } from './warehouseGrouping';
 import styles from './WarehouseCatalog.module.css';
 
 type StatusFilter = 'all' | 'instock' | 'reserved' | 'empty';
-type ViewMode = 'default' | 'compact';
 
 const mapStockStatusToChip = (status: 'ok' | 'low' | 'critical'): 'ok' | 'warn' | 'err' | 'info' => {
   if (status === 'critical') return 'err';
@@ -20,14 +19,12 @@ const mapStockStatusToChip = (status: 'ok' | 'low' | 'critical'): 'ok' | 'warn' 
 
 interface WarehouseCatalogProps {
   search: string;
-  viewMode: ViewMode;
   statusFilter: StatusFilter;
   onSelectItem: (itemId: string) => void;
 }
 
 export const WarehouseCatalog: React.FC<WarehouseCatalogProps> = ({
   search,
-  viewMode,
   statusFilter,
   onSelectItem,
 }) => {
@@ -79,7 +76,7 @@ export const WarehouseCatalog: React.FC<WarehouseCatalogProps> = ({
   }
 
   return (
-    <div className={`${styles.catalog} ${styles[`view-${viewMode}`]}`}>
+    <div className={styles.catalog}>
       {filteredAndGrouped.map(group => {
         const isExpanded = expandedProducts.has(group.name);
 
@@ -94,9 +91,7 @@ export const WarehouseCatalog: React.FC<WarehouseCatalogProps> = ({
                 size={18}
                 className={`${styles.chevron} ${isExpanded ? styles.expanded : ''}`}
               />
-              {viewMode === 'default' && (
-                <Package size={20} className={styles.cardIcon} />
-              )}
+              <Package size={20} className={styles.cardIcon} />
               <span className={styles.cardTitle}>{group.name}</span>
               <span className={styles.cardQty}>{group.totalQty} пол.</span>
             </button>

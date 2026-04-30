@@ -11,7 +11,6 @@ import whStyles from './WarehouseTokens.module.css';
 import styles from './WarehousePage.module.css';
 
 type StatusFilter = 'all' | 'instock' | 'reserved' | 'empty';
-type ViewMode = 'default' | 'compact';
 type ListMode = 'tree' | 'sku';
 
 export const WarehousePage: React.FC = () => {
@@ -20,7 +19,6 @@ export const WarehousePage: React.FC = () => {
   const [exporting, setExporting] = useState(false);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [viewMode, setViewMode] = useState<ViewMode>('default');
   const [listMode, setListMode] = useState<ListMode>('tree');
   const [filterOpen, setFilterOpen] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
@@ -76,8 +74,6 @@ export const WarehousePage: React.FC = () => {
         onSearchChange={setSearch}
         statusFilter={statusFilter}
         onStatusFilterChange={setStatusFilter}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
         listMode={listMode}
         onListModeChange={setListMode}
         statsOpen={statsOpen}
@@ -97,7 +93,6 @@ export const WarehousePage: React.FC = () => {
         {listMode === 'tree' ? (
           <WarehouseInventoryCatalog
             search={deferredSearch}
-            viewMode={viewMode}
             statusFilter={statusFilter}
             onSelectItem={handleSelectItem}
           />

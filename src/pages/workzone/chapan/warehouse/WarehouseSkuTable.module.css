@@ -14,77 +14,70 @@
 
 .table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 13px;
 }
 
 .thead {
   background: var(--wh-surface-inset);
-  border-bottom: 1px solid var(--wh-border);
 }
 
 .thCol {
-  padding: var(--space-2) var(--space-3);
+  padding: 14px 24px;
   text-align: left;
   font-weight: 600;
   color: var(--wh-text-3);
   font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  border-right: 1px solid var(--wh-border-soft);
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid var(--wh-border);
+  white-space: nowrap;
 }
 
-.thCol:last-child {
-  border-right: none;
+.thNumeric {
+  text-align: right;
 }
 
 .row {
-  border-bottom: 1px solid var(--wh-border-soft);
   cursor: pointer;
   transition: background 0.15s;
 }
 
-.row:hover {
-  background: var(--wh-surface-muted);
+.col {
+  padding: 18px 24px;
+  color: var(--wh-text);
+  border-bottom: 1px solid var(--wh-border-soft);
+  vertical-align: middle;
 }
 
-.row:last-child {
+.row:last-child .col {
   border-bottom: none;
 }
 
-.col {
-  padding: var(--space-2) var(--space-3);
-  color: var(--wh-text);
-  border-right: 1px solid var(--wh-border-soft);
+.row:hover .col {
+  background: var(--wh-surface-muted);
 }
 
-.col:last-child {
-  border-right: none;
-}
-
-.nameCell {
+.nameCol {
   font-weight: 500;
-  max-width: 200px;
+  min-width: 220px;
+  max-width: 320px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.mono {
-  font-family: var(--font-mono);
-  font-size: 12px;
+.dimCol {
   color: var(--wh-text-2);
-  background: var(--wh-surface-inset);
-  padding: 2px 4px;
-  border-radius: 3px;
 }
 
 .numeric {
   text-align: right;
-  font-family: var(--font-mono);
+  font-family: var(--mono, 'JetBrains Mono', monospace);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
-
-/* Pagination */
 
 .pagination {
   display: flex;
@@ -129,14 +122,10 @@
   padding: var(--space-1) var(--space-2);
 }
 
-/* Row skeleton */
-
 .rowSkeleton {
   padding: var(--space-3);
   border-bottom: 1px solid var(--wh-border-soft);
 }
-
-/* Mobile */
 
 @media (max-width: 1024px) {
   .table {
@@ -145,23 +134,22 @@
 
   .thCol,
   .col {
-    padding: var(--space-1) var(--space-2);
+    padding: 14px 16px;
   }
 
-  .nameCell {
-    max-width: 120px;
+  .nameCol {
+    min-width: 180px;
+    max-width: 240px;
   }
 }
 
 @media (max-width: 768px) {
-  /* Allow horizontal scroll; override overflow: hidden from base */
   .tableWrapper {
     overflow-x: auto;
   }
 
-  /* Keep table at natural width so it scrolls rather than squishes */
   .table {
-    min-width: 560px;
+    min-width: 760px;
   }
 }
 
@@ -172,21 +160,18 @@
 
   .table {
     font-size: 11px;
-    min-width: 480px;
+    min-width: 700px;
   }
 
   .thCol,
   .col {
-    padding: var(--space-1) var(--space-2);
+    padding: 12px 14px;
     font-size: 11px;
   }
 
-  .nameCell {
-    max-width: 120px;
-  }
-
-  .mono {
-    font-size: 10px;
+  .nameCol {
+    min-width: 160px;
+    max-width: 200px;
   }
 
   .pagination {
