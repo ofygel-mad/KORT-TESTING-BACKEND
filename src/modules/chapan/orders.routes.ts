@@ -57,18 +57,34 @@ async function resolveOrderAccessScope(orgId: string, userId: string) {
   };
 }
 
-async function assertOrderReadAccess(orgId: string, userId: string, orderId: string) {
-  const accessScope = await resolveOrderAccessScope(orgId, userId);
-  if (accessScope.canAccessAllOrders) {
-    return;
-  }
-
+async function assertOrderReadAccess(
+  orgId: string,
+  userId: string,
+  orderId: string,
+  options?: { mineOnly?: boolean },
+) {
   const order = await prisma.chapanOrder.findFirst({
     where: { id: orderId, orgId },
     select: { managerId: true },
   });
 
-  if (order && order.managerId !== userId) {
+  if (!order) {
+    return;
+  }
+
+  if (options?.mineOnly) {
+    if (order.managerId !== userId) {
+      throw new ForbiddenError('Access denied for this order.');
+    }
+    return;
+  }
+
+  const accessScope = await resolveOrderAccessScope(orgId, userId);
+  if (accessScope.canAccessAllOrders) {
+    return;
+  }
+
+  if (order.managerId !== userId) {
     throw new ForbiddenError('Access denied for this order.');
   }
 }
@@ -94,6 +110,7 @@ export async function chapanOrdersRoutes(app: FastifyInstance) {
   app.get('/', async (request) => {
     const query = request.query as Record<string, string>;
     const accessScope = await resolveOrderAccessScope(request.orgId, request.userId);
+    const mineOnly = query.mineOnly === 'true';
     const archived = query.archived === 'true' ? true : query.archived === 'false' ? false : undefined;
     const statuses = query.statuses
       ? query.statuses.split(',').map((value) => value.trim()).filter(Boolean)
@@ -111,7 +128,9 @@ export async function chapanOrdersRoutes(app: FastifyInstance) {
       hasWarehouseItems: query.hasWarehouseItems === 'true',
       createdFrom,
       createdTo,
-      managerId: accessScope.managerId ?? query.managerId ?? undefined,
+      managerId: mineOnly
+        ? request.userId
+        : accessScope.managerId ?? query.managerId ?? undefined,
       customerType: query.customerType || undefined,
     });
     return { count: orders.length, results: orders };
@@ -134,7 +153,10 @@ export async function chapanOrdersRoutes(app: FastifyInstance) {
   // GET /api/v1/chapan/orders/:id
   app.get('/:id', async (request) => {
     const { id } = request.params as { id: string };
-    await assertOrderReadAccess(request.orgId, request.userId, id);
+    const query = request.query as Record<string, string>;
+    await assertOrderReadAccess(request.orgId, request.userId, id, {
+      mineOnly: query.mineOnly === 'true',
+    });
     return svc.getById(request.orgId, id);
   });
 
