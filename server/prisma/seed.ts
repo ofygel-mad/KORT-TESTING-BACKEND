@@ -179,14 +179,6 @@ async function main() {
     },
   });
 
-  await prisma.chapanCatalogProduct.createMany({
-    data: ['Product A', 'Product B', 'Product C', 'Product D', 'Product E'].map((name) => ({
-      orgId: org.id,
-      name,
-    })),
-    skipDuplicates: true,
-  });
-
   await prisma.chapanCatalogSize.createMany({
     data: ['XS', 'S', 'M', 'L', 'XL', 'XXL', '44', '46', '48', '50', '52', '54'].map((name) => ({
       orgId: org.id,

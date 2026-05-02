@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { AlertTriangle, CheckCircle2, GitCompareArrows, History, ShieldAlert, X } from 'lucide-react';
 import type {
   WarehouseLayoutAnalysis,
@@ -58,7 +59,7 @@ export function WarehouseTwinPublishReviewModal({
   const canForce = analysis.publishPolicy.canForcePublish;
   const canPublish = analysis.publishReady || (forcePublish && canForce && forceReason.trim().length >= 6);
 
-  return (
+  return createPortal(
     <div className={styles.drawerOverlay} onClick={onClose}>
       <div className={styles.drawer} onClick={(event) => event.stopPropagation()}>
         <div className={styles.drawerHeader}>
@@ -88,7 +89,7 @@ export function WarehouseTwinPublishReviewModal({
           <div className={styles.drawerCard}>
             <div className={styles.drawerCardLabel}>Governance Summary</div>
             <div className={styles.drawerCardRowSecondary}>
-              {analysis.summary.hardBlockers} blockers • {analysis.summary.warnings} warnings • {analysis.summary.impactedTasks} impacted tasks
+              {analysis.summary.hardBlockers} blockers | {analysis.summary.warnings} warnings | {analysis.summary.impactedTasks} impacted tasks
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 }}>
               <div className={styles.statItem}>
@@ -117,7 +118,7 @@ export function WarehouseTwinPublishReviewModal({
               <div className={styles.tdSecondary}>Blocked by: {analysis.publishPolicy.blockedBy.join(', ')}</div>
             ) : null}
             {analysis.publishPolicy.forceActions.length ? (
-              <div className={styles.tdSecondary}>Force actions: {analysis.publishPolicy.forceActions.join(' • ')}</div>
+              <div className={styles.tdSecondary}>Force actions: {analysis.publishPolicy.forceActions.join(' | ')}</div>
             ) : null}
           </div>
 
@@ -139,13 +140,13 @@ export function WarehouseTwinPublishReviewModal({
                 <div className={styles.drawerCard}>
                   <div className={styles.drawerCardRow}>
                     <GitCompareArrows size={14} />
-                    v{compareResult.leftVersion.versionNo} → v{compareResult.rightVersion.versionNo}
+                    v{compareResult.leftVersion.versionNo} {'->'} v{compareResult.rightVersion.versionNo}
                   </div>
                   <div className={styles.drawerCardRowSecondary}>
-                    {compareResult.summary.createdNodes} created • {compareResult.summary.removedNodes} removed • {compareResult.summary.movedNodes} moved
+                    {compareResult.summary.createdNodes} created | {compareResult.summary.removedNodes} removed | {compareResult.summary.movedNodes} moved
                   </div>
                   <div className={styles.tdSecondary}>
-                    {compareResult.summary.resizedNodes} resized • {compareResult.summary.hiddenChangedNodes} visibility changes
+                    {compareResult.summary.resizedNodes} resized | {compareResult.summary.hiddenChangedNodes} visibility changes
                   </div>
                 </div>
               ) : null}
@@ -179,7 +180,7 @@ export function WarehouseTwinPublishReviewModal({
               <div className={styles.drawerCardLabel}>Task Impact Matrix</div>
               {analysis.taskImpactMatrix.map((impact) => (
                 <div key={impact.taskId} className={styles.drawerCardRowSecondary}>
-                  {impact.title} • {impact.status} • {impact.impactLevel === 'hard_blocker' ? 'blocker' : 'review'}
+                  {impact.title} | {impact.status} | {impact.impactLevel === 'hard_blocker' ? 'blocker' : 'review'}
                 </div>
               ))}
             </div>
@@ -223,6 +224,7 @@ export function WarehouseTwinPublishReviewModal({
                     : 'var(--fill-positive)';
                 const actionLabel =
                   entry.action === 'force_publish' ? 'Force' : entry.action === 'rollback' ? 'Rollback' : 'Publish';
+
                 return (
                   <div key={entry.id} className={styles.drawerCardRowSecondary} style={{ display: 'flex', flexDirection: 'column', gap: 2, borderBottom: '1px solid var(--border-subtle)', paddingBottom: 6 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -267,6 +269,7 @@ export function WarehouseTwinPublishReviewModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

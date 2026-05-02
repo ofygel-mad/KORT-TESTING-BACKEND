@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { X, Clock3, User2 } from 'lucide-react';
 import styles from './Warehouse.module.css';
 
@@ -23,7 +24,8 @@ function summarizePayload(payload?: Record<string, unknown> | null) {
     .filter(([, value]) => value !== null && value !== undefined && value !== '')
     .slice(0, 4)
     .map(([key, value]) => `${key}: ${String(value)}`);
-  return parts.length ? parts.join(' • ') : null;
+
+  return parts.length ? parts.join(' | ') : null;
 }
 
 export function WarehouseTwinTimelineModal({
@@ -45,7 +47,7 @@ export function WarehouseTwinTimelineModal({
     return null;
   }
 
-  return (
+  return createPortal(
     <div className={styles.drawerOverlay} onClick={onClose}>
       <div className={styles.drawer} onClick={(event) => event.stopPropagation()}>
         <div className={styles.drawerHeader}>
@@ -89,6 +91,7 @@ export function WarehouseTwinTimelineModal({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
