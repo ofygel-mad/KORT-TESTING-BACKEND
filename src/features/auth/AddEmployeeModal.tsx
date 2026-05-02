@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useState } from 'react';
 import { X, UserRoundPlus } from 'lucide-react';
 import { formatKazakhPhoneInput, isKazakhPhoneComplete, normalizeKazakhPhone } from '../../shared/utils/kz';
@@ -168,7 +169,7 @@ export function AddEmployeeModal({ loading, onSubmit, onClose }: Props) {
     });
   }
 
-  return (
+  return createPortal(
     <div className={styles.overlay} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className={styles.modal} role="dialog" aria-modal="true" aria-label="Добавить сотрудника">
         {/* Header */}
@@ -306,6 +307,7 @@ export function AddEmployeeModal({ loading, onSubmit, onClose }: Props) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

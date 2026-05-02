@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -25,7 +26,7 @@ export function CreateLeadModal({ onClose, pipeline }: { onClose: () => void; pi
     onClose();
   }
 
-  return (
+  return createPortal(
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={e => e.stopPropagation()}>
         <div className={styles.header}>
@@ -59,6 +60,7 @@ export function CreateLeadModal({ onClose, pipeline }: { onClose: () => void; pi
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Keyboard } from 'lucide-react';
 import { overlayVariants } from '../motion/presets';
@@ -14,7 +15,7 @@ const SHORTCUTS = [
 ];
 
 export function ShortcutsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  return (
+  return createPortal(
     <AnimatePresence>
       {open && (
         <>
@@ -58,6 +59,7 @@ export function ShortcutsModal({ open, onClose }: { open: boolean; onClose: () =
           </motion.div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }

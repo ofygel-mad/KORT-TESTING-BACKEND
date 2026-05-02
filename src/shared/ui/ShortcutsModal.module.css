@@ -6,7 +6,7 @@
   position: fixed;
   inset: 0;
   background: var(--bg-overlay);
-  z-index: 500;
+  z-index: var(--z-toast);
 }
 
 .panel {
@@ -19,7 +19,7 @@
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-lg);
-  z-index: 501;
+  z-index: calc(var(--z-toast) + 1);
   overflow: hidden;
 }
 

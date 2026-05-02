@@ -1,6 +1,8 @@
 // ── Chapan Order types — synced with backend schema ──────────────────────────
 // Backend model: ChapanOrder, ChapanOrderItem, ChapanProductionTask, ChapanPayment, ChapanActivity
 
+import type { InvoiceStatus } from './invoice.types';
+
 export type OrderStatus =
   | 'new' | 'confirmed' | 'in_production' | 'ready'
   | 'transferred' | 'on_warehouse' | 'shipped' | 'completed' | 'cancelled';
@@ -172,6 +174,8 @@ export interface OrderTransfer {
   clientConfirmed: boolean;
   createdAt: string;
 }
+
+// ── Warehouse types (used in order API/live state) ──────────────────────────────
 
 export interface OrderWarehouseDocument {
   id: string;
@@ -365,17 +369,6 @@ export interface ChapanProfile {
   bankCommissionPercent: number;
 }
 
-export interface ChapanClient {
-  id: string;
-  orgId: string;
-  fullName: string;
-  phone: string;
-  email: string | null;
-  company: string | null;
-  notes: string | null;
-  createdAt: string;
-}
-
 // ── Change Requests ───────────────────────────────────────────────────────────
 
 export type ChangeRequestStatus = 'pending' | 'approved' | 'rejected';
@@ -408,219 +401,38 @@ export interface ListResponse<T> {
   results: T[];
 }
 
-// ── Invoice (Накладная) types ────────────────────────────────────────────────
+// ── Re-exports from specialized type files ─────────────────────────────────────
+// (These are used in other parts of the order domain, so we re-export them)
 
-export type InvoiceStatus = 'pending_confirmation' | 'confirmed' | 'rejected' | 'archived';
+export type {
+  InvoiceStatus,
+  InvoiceDocumentColumns,
+  InvoiceDocumentRow,
+  InvoiceDocumentSourceOrder,
+  InvoiceDocumentPayload,
+  ChapanInvoice,
+} from './invoice.types';
 
-export interface InvoiceDocumentColumns {
-  itemNumber: string;
-  productName: string;
-  gender: string;
-  length: string;
-  size: string;
-  color: string;
-  quantity: string;
-  orders: string;
-  unitPrice: string;
-  lineTotal: string;
-}
+export type {
+  ReturnReason,
+  ReturnStatus,
+  ReturnItemCondition,
+  ReturnRefundMethod,
+  ChapanReturnItem,
+  ChapanReturn,
+  CreateReturnItemDto,
+  CreateReturnDto,
+} from './returns.types';
 
-export interface InvoiceDocumentRow {
-  id: string;
-  itemNumber: string;
-  productName: string;
-  gender: string;
-  length: string;
-  size: string;
-  color: string;
-  quantity: number;
-  orders: string;
-  unitPrice: number;
-  /** Internal (warehouse) cost price — split-price P2 */
-  warehouseUnitPrice?: number | null;
-  sourceOrders?: InvoiceDocumentSourceOrder[];
-}
+export {
+  RETURN_REASON_LABELS,
+  RETURN_CONDITION_LABELS,
+  RETURN_REFUND_METHOD_LABELS,
+} from './returns.types';
 
-export interface InvoiceDocumentSourceOrder {
-  orderId: string;
-  orderNumber: string;
-}
-
-export interface InvoiceDocumentPayload {
-  invoiceNumber?: string;
-  invoiceDate: string;
-  route: string;
-  signatureLabel: string;
-  columns: InvoiceDocumentColumns;
-  rows: InvoiceDocumentRow[];
-}
-
-export interface ChapanInvoice {
-  id: string;
-  orgId: string;
-  invoiceNumber: string;
-  status: InvoiceStatus;
-  createdById: string;
-  createdByName: string;
-  seamstressConfirmed: boolean;
-  seamstressConfirmedAt: string | null;
-  seamstressConfirmedBy: string | null;
-  warehouseConfirmed: boolean;
-  warehouseConfirmedAt: string | null;
-  warehouseConfirmedBy: string | null;
-  rejectedBy: string | null;
-  rejectedAt: string | null;
-  rejectionReason: string | null;
-  documentPayload?: InvoiceDocumentPayload | null;
-  notes: string | null;
-  createdAt: string;
-  updatedAt: string;
-  items: Array<{
-    id: string;
-    invoiceId: string;
-    orderId: string;
-    order: ChapanOrder;
-  }>;
-}
-
-// ── Returns (Акты возврата) ───────────────────────────────────────────────────
-
-export type ReturnReason = 'defect' | 'wrong_size' | 'wrong_item' | 'customer_refusal' | 'other';
-export type ReturnStatus = 'draft' | 'confirmed';
-export type ReturnItemCondition = 'good' | 'defective' | 'damaged';
-export type ReturnRefundMethod = 'cash' | 'bank';
-
-export const RETURN_REASON_LABELS: Record<ReturnReason, string> = {
-  defect: 'Дефект товара',
-  wrong_size: 'Не тот размер',
-  wrong_item: 'Не тот товар',
-  customer_refusal: 'Отказ клиента',
-  other: 'Другое',
-};
-
-export const RETURN_CONDITION_LABELS: Record<ReturnItemCondition, string> = {
-  good: 'Хорошее',
-  defective: 'Дефект',
-  damaged: 'Повреждение',
-};
-
-export const RETURN_REFUND_METHOD_LABELS: Record<ReturnRefundMethod, string> = {
-  cash: 'Наличные',
-  bank: 'На счёт',
-};
-
-export interface ChapanReturnItem {
-  id: string;
-  returnId: string;
-  orderItemId: string | null;
-  productName: string;
-  size: string;
-  color: string | null;
-  gender: string | null;
-  qty: number;
-  unitPrice: number;
-  refundAmount: number;
-  condition: ReturnItemCondition;
-  warehouseItemId: string | null;
-  createdAt: string;
-}
-
-export interface ChapanReturn {
-  id: string;
-  orgId: string;
-  returnNumber: string;
-  orderId: string;
-  status: ReturnStatus;
-  reason: ReturnReason;
-  reasonNotes: string | null;
-  createdById: string;
-  createdByName: string;
-  confirmedAt: string | null;
-  confirmedBy: string | null;
-  totalRefundAmount: number;
-  refundMethod: ReturnRefundMethod;
-  createdAt: string;
-  updatedAt: string;
-  order: {
-    id: string;
-    orderNumber: string;
-    clientName: string;
-    clientPhone: string;
-    status: OrderStatus;
-  };
-  items: ChapanReturnItem[];
-}
-
-export interface CreateReturnItemDto {
-  orderItemId?: string;
-  productName: string;
-  size: string;
-  color?: string;
-  gender?: string;
-  qty: number;
-  unitPrice: number;
-  refundAmount: number;
-  condition: ReturnItemCondition;
-}
-
-export interface CreateReturnDto {
-  orderId: string;
-  reason: ReturnReason;
-  reasonNotes?: string;
-  refundMethod: ReturnRefundMethod;
-  items: CreateReturnItemDto[];
-}
-
-// ── Chapan Clients CRM view ────────────────────────────────────────────────
-// Returned by GET /api/v1/chapan/clients — enriched with order aggregates
-
-export interface ChapanClientAggregated {
-  id: string;
-  orgId: string;
-  fullName: string;
-  phone: string;
-  email: string | null;
-  company: string | null;
-  notes: string | null;
-  createdAt: string;
-  updatedAt: string;
-  crmCustomerId: string | null;
-  orderCount: number;
-  totalSpent: number;
-  totalPaid: number;
-  lastOrderAt: string | null;
-  retailOrderCount: number;
-  wholesaleOrderCount: number;
-}
-
-export interface ChapanClientDetail extends ChapanClientAggregated {
-  stats: {
-    orderCount: number;
-    totalSpent: number;
-    totalPaid: number;
-    retailOrders: number;
-    wholesaleOrders: number;
-  };
-  orders: Array<{
-    id: string;
-    orderNumber: string;
-    status: OrderStatus;
-    totalAmount: number;
-    paidAmount: number;
-    customerType: 'retail' | 'wholesale';
-    createdAt: string;
-    items: Array<{
-      productName: string;
-      quantity: number;
-      unitPrice: number;
-    }>;
-  }>;
-}
-
-export interface ChapanClientsListParams {
-  search?: string;
-  customerType?: 'retail' | 'wholesale' | 'all';
-  sortBy?: 'name' | 'orders' | 'spent' | 'lastOrder';
-  limit?: number;
-  offset?: number;
-}
+export type {
+  ChapanClient,
+  ChapanClientAggregated,
+  ChapanClientDetail,
+  ChapanClientsListParams,
+} from './client.types';

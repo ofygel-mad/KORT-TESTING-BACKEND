@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useState } from 'react';
 import { X, FileText, Sparkles, ArrowLeft, Download, Loader2, User, Phone, Calendar, Package } from 'lucide-react';
 import { useOrders } from '../../entities/order/queries';
@@ -55,7 +56,7 @@ export function InvoiceModal({ onClose }: Props) {
     setStep('order-list');
   }
 
-  return (
+  return createPortal(
     <div className={styles.overlay} onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className={styles.modal}>
         {/* Header */}
@@ -86,7 +87,8 @@ export function InvoiceModal({ onClose }: Props) {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

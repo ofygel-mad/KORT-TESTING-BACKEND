@@ -489,15 +489,16 @@
   --input-height:            40px;
   --input-height-sm:         32px;
 
-  --z-base:     0;
-  --z-raised:   10;
-  --z-dropdown: 50;
-  --z-sidebar:  100;
-  --z-topbar:   90;
-  --z-drawer:   200;
-  --z-modal:    300;
-  --z-palette:  400;
-  --z-toast:    500;
+  --z-base:           0;
+  --z-raised:         10;
+  --z-dropdown:       50;
+  --z-sidebar:        100;
+  --z-topbar:         90;
+  --z-drawer:         200;
+  --z-modal:          300;
+  --z-modal-overlay:  1000;
+  --z-palette:        400;
+  --z-toast:          500;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════

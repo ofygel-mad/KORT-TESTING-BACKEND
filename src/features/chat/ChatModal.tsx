@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { MessageCircleMore, MessageSquareDashed, Plus, X } from 'lucide-react';
@@ -375,7 +376,7 @@ export function ChatModal({ onClose }: { onClose: () => void }) {
     });
   }
 
-  return (
+  return createPortal(
     <motion.div
       className={styles.backdrop}
       ref={backdropRef}
@@ -490,6 +491,7 @@ export function ChatModal({ onClose }: { onClose: () => void }) {
           )}
         </div>
       </motion.div>
-    </motion.div>
+    </motion.div>,
+    document.body,
   );
 }

@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -596,7 +597,7 @@ export function AuthModal({ open, onClose, onAuthSuccess, initialStep }: AuthMod
     // к состоянию до первого входа без повторной авторизации
   };
 
-  return (
+  return createPortal(
     <AnimatePresence>
       <motion.div
         className={styles.overlay}
@@ -981,6 +982,7 @@ export function AuthModal({ open, onClose, onAuthSuccess, initialStep }: AuthMod
           </div>
         </div>
       </motion.div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }

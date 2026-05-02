@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { useState } from 'react';
 import {
   X,
@@ -171,7 +172,7 @@ export function EmployeeDetailModal({
     }
   }
 
-  return (
+  return createPortal(
     <div
       className={styles.overlay}
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
@@ -393,6 +394,7 @@ export function EmployeeDetailModal({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
