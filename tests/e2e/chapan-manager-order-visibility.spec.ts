@@ -1,6 +1,7 @@
 import { expect, test, type APIRequestContext } from '@playwright/test';
 import { clearSession, preparePage } from './helpers';
 
+const E2E_BASE_URL = process.env.E2E_BASE_URL || `http://${process.env.E2E_HOST || '127.0.0.1'}:${process.env.E2E_FRONTEND_PORT || '4174'}`;
 const E2E_API_BASE_URL = process.env.E2E_API_BASE_URL || `http://${process.env.E2E_HOST || '127.0.0.1'}:${process.env.E2E_BACKEND_PORT || '8002'}/api/v1`;
 
 type AuthSession = {
@@ -72,6 +73,7 @@ async function createEmployee(
   ownerSession: AuthSession,
   phone: string,
   fullName: string,
+  permissions: string[] = ['chapan_access_orders'],
 ) {
   return expectOkJson<{ id: string; full_name: string; phone: string }>(
     request.post(`${E2E_API_BASE_URL}/company/employees`, {
@@ -83,7 +85,7 @@ async function createEmployee(
         phone,
         full_name: fullName,
         department: 'Sales',
-        permissions: ['chapan_access_orders'],
+        permissions,
       },
     }),
   );
@@ -170,7 +172,7 @@ async function createOrder(
   );
 }
 
-test('employee manager sees only their own chapan orders', async ({ page, request }) => {
+test('employee manager sees only their own chapan orders', async ({ browser, request }) => {
   const unique = Date.now();
   const ownerSession = await registerOwner(request, unique);
   await upgradeOrgToIndustrial(request, ownerSession);
@@ -178,8 +180,9 @@ test('employee manager sees only their own chapan orders', async ({ page, reques
   const employeeOnePhone = `+7701${String(unique).slice(-7)}`;
   const employeeTwoPhone = `+7702${String(unique).slice(-7)}`;
 
-  await createEmployee(request, ownerSession, employeeOnePhone, `Manager One ${unique}`);
-  await createEmployee(request, ownerSession, employeeTwoPhone, `Manager Two ${unique}`);
+  const managerPermissions = ['chapan_access_orders', 'chapan_access_ready'];
+  await createEmployee(request, ownerSession, employeeOnePhone, `Manager One ${unique}`, managerPermissions);
+  await createEmployee(request, ownerSession, employeeTwoPhone, `Manager Two ${unique}`, managerPermissions);
 
   const employeeOneSession = await activateEmployee(request, employeeOnePhone, 'managerpass1');
   const employeeTwoSession = await activateEmployee(request, employeeTwoPhone, 'managerpass2');
@@ -191,7 +194,7 @@ test('employee manager sees only their own chapan orders', async ({ page, reques
   const employeeTwoOrder = await createOrder(request, employeeTwoSession, employeeTwoClient, `+7762${String(unique).slice(-7)}`);
 
   const employeeOneOrders = await expectOkJson<{ count: number; results: Array<{ id: string }> }>(
-    request.get(`${E2E_API_BASE_URL}/chapan/orders`, {
+    request.get(`${E2E_API_BASE_URL}/chapan/orders?mineOnly=true`, {
       headers: {
         Authorization: `Bearer ${employeeOneSession.access}`,
         'X-Org-Id': employeeOneSession.org!.id,
@@ -201,7 +204,7 @@ test('employee manager sees only their own chapan orders', async ({ page, reques
   expect(employeeOneOrders.count).toBe(1);
   expect(employeeOneOrders.results.map((order) => order.id)).toEqual([employeeOneOrder.id]);
 
-  const forbiddenOrderResponse = await request.get(`${E2E_API_BASE_URL}/chapan/orders/${employeeTwoOrder.id}`, {
+  const forbiddenOrderResponse = await request.get(`${E2E_API_BASE_URL}/chapan/orders/${employeeTwoOrder.id}?mineOnly=true`, {
     headers: {
       Authorization: `Bearer ${employeeOneSession.access}`,
       'X-Org-Id': employeeOneSession.org!.id,
@@ -210,19 +213,23 @@ test('employee manager sees only their own chapan orders', async ({ page, reques
   });
   expect(forbiddenOrderResponse.status()).toBe(403);
 
-  await preparePage(page);
-  await clearSession(page);
-  await page.goto('/auth/login', { waitUntil: 'networkidle' });
-  await page.locator('input[type="checkbox"]').check();
-  const loginFields = page.locator('form input:not([type="checkbox"])');
+  const uiContext = await browser.newContext({ baseURL: E2E_BASE_URL });
+  const uiPage = await uiContext.newPage();
+
+  await preparePage(uiPage);
+  await clearSession(uiPage);
+  await uiPage.locator('input[type="checkbox"]').check();
+  const loginFields = uiPage.locator('form input:not([type="checkbox"])');
   await loginFields.nth(0).fill(employeeOnePhone);
-  await page.locator('form button[type="submit"]').click();
+  await uiPage.locator('form button[type="submit"]').click();
   await expect(loginFields).toHaveCount(2);
   await loginFields.nth(1).fill('managerpass1');
-  await page.locator('form button[type="submit"]').click();
-  await page.waitForURL((url) => !url.pathname.includes('/auth/login'), { timeout: 15000 });
-  await page.goto('/workzone/chapan/orders', { waitUntil: 'networkidle' });
+  await uiPage.locator('form button[type="submit"]').click();
+  await uiPage.waitForURL((url) => !url.pathname.includes('/auth/login'), { timeout: 15000 });
+  await uiPage.goto('/workzone/chapan/orders', { waitUntil: 'networkidle' });
 
-  await expect(page.getByText(employeeOneClient)).toBeVisible();
-  await expect(page.getByText(employeeTwoClient)).toHaveCount(0);
+  await expect(uiPage.getByText(employeeOneClient)).toBeVisible();
+  await expect(uiPage.getByText(employeeTwoClient)).toHaveCount(0);
+
+  await uiContext.close();
 });

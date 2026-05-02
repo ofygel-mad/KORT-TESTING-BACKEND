@@ -1,11 +1,13 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { InputHTMLAttributes } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { AlertTriangle, Calculator, Pencil, Plus, Star, Trash2, X } from 'lucide-react';
 import { useOrder, useUpdateOrder, useChapanCatalogs, useChapanProfile, useRequestItemChange, useUpdateBankCommission } from '../../../../entities/order/queries';
+import { useEmployeePermissions } from '../../../../shared/hooks/useEmployeePermissions';
+import { useRole } from '../../../../shared/hooks/useRole';
 import type { Urgency } from '../../../../entities/order/types';
 import { formatPersonNameInput } from '../../../../shared/utils/person';
 import { formatKazakhPhoneInput, isKazakhPhoneComplete } from '../../../../shared/utils/kz';
@@ -15,6 +17,7 @@ import {
   buildPaymentMethodOptions,
   buildSizeCatalog,
 } from '../../../../shared/lib/chapanCatalogDefaults';
+import { useAuthStore } from '../../../../shared/stores/auth';
 import styles from './ChapanNewOrder.module.css';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -178,8 +181,20 @@ type FormData = z.infer<typeof schema>;
 export default function ChapanEditOrderPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const employeePermissions = useAuthStore((state) => state.user?.employee_permissions ?? []);
+  const { isOwner, isAdmin } = useRole();
+  const { isAbsolute } = useEmployeePermissions();
+  const canViewAllOrderCards = isOwner
+    || isAdmin
+    || isAbsolute
+    || employeePermissions.includes('chapan_full_access');
+  const mineOnlyOrderContext = location.pathname.startsWith('/workzone/chapan/orders/') && !canViewAllOrderCards;
 
-  const { data: order, isLoading, isError } = useOrder(id!);
+  const { data: order, isLoading, isError } = useOrder(
+    id!,
+    mineOnlyOrderContext ? { mineOnly: true } : undefined,
+  );
   const updateOrder = useUpdateOrder();
   const requestItemChange = useRequestItemChange();
   const updateBankCommission = useUpdateBankCommission();

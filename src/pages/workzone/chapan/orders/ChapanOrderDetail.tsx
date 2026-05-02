@@ -4,6 +4,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Building2, CalendarDays, CheckCircle2, Clock, CreditCard, Megaphone, MessageSquare, AlertTriangle, Pencil, ArchiveIcon, RotateCcw, Download, Package, Star, User, XCircle, FileText, Paperclip, Trash2, Upload, Undo2 } from 'lucide-react';
 import { useOrder, useChangeOrderStatus, useAddPayment, useAddOrderActivity, useRestoreOrder, useCloseOrder, useCreateInvoice, useSetRequiresInvoice, useRouteSingleItem, useUploadAttachment, useDeleteAttachment, useReassignManager, useOrgManagers, useReturns, useCreateReturn, useConfirmReturn, orderKeys } from '../../../../entities/order/queries';
 import { useChapanPermissions } from '../../../../shared/hooks/useChapanPermissions';
+import { useEmployeePermissions } from '../../../../shared/hooks/useEmployeePermissions';
+import { useRole } from '../../../../shared/hooks/useRole';
 import { useProductsAvailability } from '../../../../entities/warehouse/queries';
 import type { OrderItem, OrderItemFulfillmentMode, OrderStatus, Priority, Urgency, OrderAttachment, ReturnReason, ReturnRefundMethod, ReturnItemCondition, RETURN_REASON_LABELS, RETURN_REFUND_METHOD_LABELS } from '../../../../entities/order/types';
 import { RETURN_REASON_LABELS as REASON_LABELS, RETURN_REFUND_METHOD_LABELS as REFUND_LABELS, RETURN_CONDITION_LABELS } from '../../../../entities/order/types';
@@ -145,6 +147,9 @@ export default function ChapanOrderDetailPage() {
   const location = useLocation();
   const setSelectedOrderId = useChapanUiStore((state) => state.setSelectedOrderId);
   const queryClient = useQueryClient();
+  const employeePermissions = useAuthStore((state) => state.user?.employee_permissions ?? []);
+  const { isOwner, isAdmin } = useRole();
+  const { isAbsolute } = useEmployeePermissions();
 
   // A1 fix: очищаем selectedOrderId при входе в карточку,
   // чтобы возврат на список заказов не вызывал повторный редирект.
@@ -165,7 +170,16 @@ export default function ChapanOrderDetailPage() {
     return { backPath: '/workzone/chapan/orders', backLabel: 'Заказы' };
   })();
 
-  const { data: order, isLoading, isError } = useOrder(id!);
+  const canViewAllOrderCards = isOwner
+    || isAdmin
+    || isAbsolute
+    || employeePermissions.includes('chapan_full_access');
+  const mineOnlyOrderContext = location.pathname.startsWith('/workzone/chapan/orders/') && !canViewAllOrderCards;
+
+  const { data: order, isLoading, isError } = useOrder(
+    id!,
+    mineOnlyOrderContext ? { mineOnly: true } : undefined,
+  );
   const changeStatus = useChangeOrderStatus();
   const addPayment = useAddPayment();
   const addActivity = useAddOrderActivity();

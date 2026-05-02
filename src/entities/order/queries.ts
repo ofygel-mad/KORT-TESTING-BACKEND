@@ -46,10 +46,10 @@ export const useOrders = (params?: Parameters<typeof ordersApi.list>[0]) =>
     refetchInterval: 5 * 60_000,
   });
 
-export const useOrder = (id: string) =>
+export const useOrder = (id: string, params?: Parameters<typeof ordersApi.get>[1]) =>
   useQuery({
-    queryKey: orderKeys.detail(id),
-    queryFn: () => ordersApi.get(id),
+    queryKey: [...orderKeys.detail(id), params] as const,
+    queryFn: () => ordersApi.get(id, params),
     enabled: Boolean(id),
     staleTime: 120_000,
   });

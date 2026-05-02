@@ -23,12 +23,13 @@ export const ordersApi = {
     createdFrom?: string;
     createdTo?: string;
     managerId?: string;
+    mineOnly?: boolean;
     customerType?: string;
   }) =>
     api.get<ListResponse<ChapanOrder>>('/chapan/orders', params),
 
-  get: (id: string) =>
-    api.get<ChapanOrder>(`/chapan/orders/${id}`),
+  get: (id: string, params?: { mineOnly?: boolean }) =>
+    api.get<ChapanOrder>(`/chapan/orders/${id}`, params),
 
   getWarehouseState: (id: string) =>
     api.get<OrderWarehouseState>(`/chapan/orders/${id}/warehouse-state`),

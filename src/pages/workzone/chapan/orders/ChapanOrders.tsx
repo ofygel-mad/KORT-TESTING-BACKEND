@@ -193,16 +193,7 @@ export default function ChapanOrdersPage() {
   const canViewAllOrders = isOwner
     || isAdmin
     || isAbsolute
-    || employeePermissions.includes('production')
-    || employeePermissions.includes('warehouse_manager')
-    || employeePermissions.includes('chapan_full_access')
-    || employeePermissions.includes('chapan_access_production')
-    || employeePermissions.includes('chapan_access_ready')
-    || employeePermissions.includes('chapan_access_archive')
-    || employeePermissions.includes('chapan_access_warehouse_nav')
-    || employeePermissions.includes('chapan_manage_production')
-    || employeePermissions.includes('chapan_confirm_invoice')
-    || employeePermissions.includes('chapan_manage_settings');
+    || employeePermissions.includes('chapan_full_access');
   const effectiveManagerId = canViewAllOrders ? (managerFilter || undefined) : userId;
   const handleSeedOrders = async () => {
     setIsSeedingOrders(true);
@@ -330,6 +321,7 @@ const setViewMode = (mode: ViewMode) => {
       status: statusFilter || undefined,
       paymentStatus: payFilter || undefined,
       managerId: effectiveManagerId,
+      mineOnly: !canViewAllOrders,
       archived: false,
       limit: 200,
       createdFrom: calendarDateFrom,
@@ -356,6 +348,7 @@ const setViewMode = (mode: ViewMode) => {
     createdFrom: monthFrom,
     createdTo: monthTo,
     managerId: effectiveManagerId,
+    mineOnly: !canViewAllOrders,
   });
 
   const daysWithOrders = useMemo(() => {
