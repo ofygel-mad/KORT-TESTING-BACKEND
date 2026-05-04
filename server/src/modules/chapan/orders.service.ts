@@ -10,7 +10,7 @@ import {
   consumeCanonicalWarehouseReservationsForOrder as consumeCanonicalWarehouseReservationsForOrderV2,
 } from '../warehouse/warehouse-order-orchestration.service.js';
 
-// Async fire-and-forget helper � never throws, never blocks the main flow
+// Async fire-and-forget helper ? never throws, never blocks the main flow
 function fireSheetSync(orgId: string, orderId: string) {
   syncOrderToSheets(orgId, orderId).then(result => {
     if (!result.ok) console.warn('[sheets.sync] non-blocking error:', result.error);
@@ -90,7 +90,7 @@ type RouteOrderItemsInput = Array<{
 
 // Helpers
 
-const CLIENT_NAME_WORD_START_RE = /(^|[\s-]+)([a-z�-��?�???????])/giu;
+const CLIENT_NAME_WORD_START_RE = /(^|[\s-]+)([a-z?-???????????])/giu;
 
 function normalizeClientName(value: string) {
   return value
@@ -159,10 +159,10 @@ async function buildOrderItemVariantSnapshot(
   });
 
   const ATTR_KEY_RU: Record<string, string> = {
-    color: '����', gender: '���', size: '������', length: '�����',
+    color: '????', gender: '???', size: '??????', length: '?????',
   };
   const ATTR_VAL_RU: Record<string, string> = {
-    female: '�������', male: '�������',
+    female: '???????', male: '???????',
   };
 
   const rawAttributes = Object.fromEntries(
@@ -213,10 +213,10 @@ function buildCanonicalReservationActivityContent(summary: {
     .join('; ');
 
   if (summary.mode === 'skipped') {
-    return `Canonical ������ ������ ��������: ${summary.reason ?? 'unknown_reason'}.`;
+    return `Canonical ?????? ?????? ????????: ${summary.reason ?? 'unknown_reason'}.`;
   }
 
-  return `Canonical ������ ������: ������� ${summary.reservedCount}, �������� ������������ ${summary.replayedCount}, ��������� ${summary.skippedCount}, ������ ${summary.failedCount}${details ? `. ������: ${details}` : ''}`;
+  return `Canonical ?????? ??????: ??????? ${summary.reservedCount}, ???????? ???????????? ${summary.replayedCount}, ????????? ${summary.skippedCount}, ?????? ${summary.failedCount}${details ? `. ??????: ${details}` : ''}`;
 }
 
 function hasWarehouseFulfillmentItems(items: Array<{ fulfillmentMode: string }>) {
@@ -252,7 +252,7 @@ async function nextOrderNumber(orgId: string, tx: Prisma.TransactionClient): Pro
   const row = rows[0];
   if (!row) throw new Error(`Chapan profile not found for org ${orgId}`);
   const { order_counter, order_prefix } = row;
-  const prefix = (order_prefix ?? '��').trim().slice(0, 6).toUpperCase();
+  const prefix = (order_prefix ?? '??').trim().slice(0, 6).toUpperCase();
   return `${prefix}-${String(order_counter).padStart(3, '0')}`;
 }
 
@@ -263,25 +263,25 @@ function computePaymentStatus(paidAmount: number, totalAmount: number): string {
 }
 
 function getOrderStatusLabel(status: string) {
-  if (status === 'new') return '�����';
-  if (status === 'confirmed') return '����������';
-  if (status === 'in_production') return '� ������������';
-  if (status === 'ready') return '������';
-  if (status === 'transferred') return '�������';
-  if (status === 'on_warehouse') return '�� ������';
-  if (status === 'shipped') return '���������';
-  if (status === 'completed') return '��������';
-  if (status === 'cancelled') return '������';
+  if (status === 'new') return '?????';
+  if (status === 'confirmed') return '??????????';
+  if (status === 'in_production') return '? ????????????';
+  if (status === 'ready') return '??????';
+  if (status === 'transferred') return '???????';
+  if (status === 'on_warehouse') return '?? ??????';
+  if (status === 'shipped') return '?????????';
+  if (status === 'completed') return '????????';
+  if (status === 'cancelled') return '??????';
   return status;
 }
 
 function formatPaymentMethod(method: string) {
-  if (method === 'cash') return '��������';
-  if (method === 'card') return '�����';
+  if (method === 'cash') return '????????';
+  if (method === 'card') return '?????';
   if (method === 'kaspi_qr') return 'Kaspi QR';
-  if (method === 'kaspi_terminal') return 'Kaspi ��������';
-  if (method === 'transfer') return '�������';
-  if (method === 'mixed') return '��������� ������';
+  if (method === 'kaspi_terminal') return 'Kaspi ????????';
+  if (method === 'transfer') return '???????';
+  if (method === 'mixed') return '????????? ??????';
   return method;
 }
 
@@ -387,10 +387,10 @@ async function resolveOrderClient(
   const clientPhoneForeign = data.clientPhoneForeign?.trim() || undefined;
 
   if (!clientName) {
-    throw new ValidationError('������� ��� �������');
+    throw new ValidationError('??????? ??? ???????');
   }
   if (!clientPhone && !clientPhoneForeign) {
-    throw new ValidationError('������� ������� �������');
+    throw new ValidationError('??????? ??????? ???????');
   }
 
   // For client lookup use KZ phone if available, otherwise the foreign phone
@@ -402,7 +402,7 @@ async function resolveOrderClient(
     });
 
     if (!client) {
-      throw new ValidationError('��������� ������ �� ������ � ������� �����������');
+      throw new ValidationError('????????? ?????? ?? ?????? ? ??????? ???????????');
     }
 
     return {
@@ -597,7 +597,7 @@ export async function returnToReady(
   const order = await prisma.chapanOrder.findFirst({ where: { id, orgId } });
   if (!order) throw new NotFoundError('ChapanOrder', id);
   if (order.status !== 'on_warehouse') {
-    throw new ValidationError('����� �� ��������� �� ������');
+    throw new ValidationError('????? ?? ????????? ?? ??????');
   }
   await prisma.$transaction(async (tx) => {
     await tx.chapanOrder.update({ where: { id }, data: { status: 'ready' } });
@@ -605,7 +605,7 @@ export async function returnToReady(
       data: {
         orderId: id,
         type: 'status_change',
-        content: `�� ������ > ������ (������� �� ������): ${reason}`,
+        content: `?? ?????? > ?????? (??????? ?? ??????): ${reason}`,
         authorId,
         authorName,
       },
@@ -631,13 +631,13 @@ export async function create(orgId: string, authorId: string, authorName: string
 
   const mapped = await prisma.$transaction(async (tx) => {
     // Order number is incremented atomically inside the transaction so that
-    // a rollback also rolls back the counter � no skipped numbers, no races.
+    // a rollback also rolls back the counter ? no skipped numbers, no races.
     const orderNumber = await nextOrderNumber(orgId, tx);
     const client = await resolveOrderClient(tx, orgId, data);
     const activityEntries: Prisma.ChapanActivityCreateWithoutOrderInput[] = [
       {
         type: 'system',
-        content: '����� ������',
+        content: '????? ??????',
         authorId,
         authorName,
       },
@@ -646,7 +646,7 @@ export async function create(orgId: string, authorId: string, authorName: string
     if (prepayment > 0) {
       activityEntries.push({
         type: 'payment',
-        content: `���������� ${prepayment.toLocaleString('ru-RU')} ? (${formatPaymentMethod(paymentMethod)})`,
+        content: `?????????? ${prepayment.toLocaleString('ru-RU')} ? (${formatPaymentMethod(paymentMethod)})`,
         authorId,
         authorName,
       });
@@ -763,8 +763,8 @@ export async function create(orgId: string, authorId: string, authorName: string
     timeout: 20_000,
   });
 
-  // P3: ����������� ��������� ����������� ������ ��� �������� ������ (����� ����������).
-  // ����������� ����� ������� ����������, non-fatal � �� ������ ����������� �������� ������.
+  // P3: ??????????? ????????? ??????????? ?????? ??? ???????? ?????? (????? ??????????).
+  // ??????????? ????? ??????? ??????????, non-fatal ? ?? ?????? ??????????? ???????? ??????.
   try {
     const { autoCreateFromOrder, reserveNewOrderItems, createOrderTransitEntries } =
       await import('../warehouse/warehouse.service.js');
@@ -783,9 +783,9 @@ export async function create(orgId: string, authorId: string, authorName: string
     await autoCreateFromOrder(orgId, warehouseItems, mapped.id, authorName || 'system');
     await reserveNewOrderItems(orgId, mapped.id, warehouseItems);
     await createOrderTransitEntries(orgId, mapped.id, warehouseItems);
-  } catch { /* non-fatal: �� ������ ����������� �������� ������ */ }
+  } catch { /* non-fatal: ?? ?????? ??????????? ???????? ?????? */ }
 
-  // Sprint 10: async sync to Google Sheets � fire-and-forget, never blocks
+  // Sprint 10: async sync to Google Sheets ? fire-and-forget, never blocks
   fireSheetSync(orgId, mapped.id);
   return mapped;
 }
@@ -809,7 +809,7 @@ async function applyItemRouting(
 
   if (!order) throw new NotFoundError('ChapanOrder', id);
   if (order.status !== 'new') {
-    throw new ValidationError('������������� ������� ����� ������ ������ ��� ������ ������');
+    throw new ValidationError('????????????? ??????? ????? ?????? ?????? ??? ?????? ??????');
   }
 
   const requestedModes = new Map<string, FulfillmentMode>();
@@ -818,12 +818,12 @@ async function applyItemRouting(
   }
 
   if (requestedModes.size !== order.items.length) {
-    throw new ValidationError('����� ������� ������� ��� ������ ������� ������');
+    throw new ValidationError('????? ??????? ??????? ??? ?????? ??????? ??????');
   }
 
   for (const item of order.items) {
     if (!requestedModes.has(item.id)) {
-      throw new ValidationError('����� ������� ������� ��� ������ ������� ������');
+      throw new ValidationError('????? ??????? ??????? ??? ?????? ??????? ??????');
     }
   }
 
@@ -831,7 +831,7 @@ async function applyItemRouting(
   const productionItems = order.items.filter((item) => requestedModes.get(item.id) === 'production');
 
   if (warehouseItems.length === 0 && productionItems.length === 0) {
-    throw new ValidationError('�������� ���� �� ���� ������� ��� ������ ��� ������������');
+    throw new ValidationError('???????? ???? ?? ???? ??????? ??? ?????? ??? ????????????');
   }
 
   const nextStatus = productionItems.length > 0 ? 'confirmed' : 'ready';
@@ -894,7 +894,7 @@ async function applyItemRouting(
       data: {
         orderId: id,
         type: 'system',
-        content: `������� �������: �� ����� ${warehouseItems.length}, � ������������ ${productionItems.length}.`,
+        content: `??????? ???????: ?? ????? ${warehouseItems.length}, ? ???????????? ${productionItems.length}.`,
         authorId,
         authorName,
       },
@@ -931,7 +931,7 @@ async function applyItemRouting(
         data: {
           orderId: id,
           type: 'system',
-          content: 'Canonical ������ ������ �� �������� ��-�� ������ ����������.',
+          content: 'Canonical ?????? ?????? ?? ???????? ??-?? ?????? ??????????.',
           authorId,
           authorName,
         },
@@ -1000,7 +1000,7 @@ export async function updateStatus(orgId: string, id: string, status: string, au
     },
   });
   if (!order) throw new NotFoundError('ChapanOrder', id);
-  if (order.isArchived) throw new ValidationError('������� ������������ ����� �� ������');
+  if (order.isArchived) throw new ValidationError('??????? ???????????? ????? ?? ??????');
 
   // Centralized status transition validation
   const productionTasks = await prisma.chapanProductionTask.findMany({
@@ -1042,13 +1042,13 @@ export async function updateStatus(orgId: string, id: string, status: string, au
       data: {
         orderId: id,
         type: 'system',
-        content: `? ������� ��������� ������������ ����� (�������: ${balance.toLocaleString('ru-KZ')} ?).`,
+        content: `? ??????? ????????? ???????????? ????? (???????: ${balance.toLocaleString('ru-KZ')} ?).`,
         authorId,
         authorName,
       },
     });
 
-    throw new ValidationError('������ ��������� ����� � ������������ ��������.');
+    throw new ValidationError('?????? ????????? ????? ? ???????????? ????????.');
   }
 
   const now = new Date();
@@ -1172,7 +1172,7 @@ export async function addPayment(orgId: string, orderId: string, authorId: strin
       data: {
         orderId,
         type: 'payment',
-        content: `������ ${data.amount.toLocaleString('ru-RU')} ? (${formatPaymentMethod(data.method)})`,
+        content: `?????? ${data.amount.toLocaleString('ru-RU')} ? (${formatPaymentMethod(data.method)})`,
         authorId,
         authorName,
       },
@@ -1242,7 +1242,7 @@ export async function confirmTransfer(orgId: string, orderId: string, by: 'manag
         data: {
           orderId,
           type: 'transfer',
-          content: '�������� ������������',
+          content: '???????? ????????????',
           authorId,
           authorName,
         },
@@ -1297,10 +1297,10 @@ export async function update(orgId: string, id: string, authorId: string, author
   const order = await prisma.chapanOrder.findFirst({ where: { id, orgId }, include: { items: true } });
   if (!order) throw new NotFoundError('ChapanOrder', id);
   if (['completed', 'cancelled'].includes(order.status)) {
-    throw new ValidationError('����������� ��� ��������� ����� ������ �������������');
+    throw new ValidationError('??????????? ??? ????????? ????? ?????? ?????????????');
   }
   if (data.items && !['new', 'confirmed'].includes(order.status)) {
-    throw new ValidationError('������� ����� �������� ������ �� ������ ������������');
+    throw new ValidationError('??????? ????? ???????? ?????? ?? ?????? ????????????');
   }
 
   return prisma.$transaction(async (tx) => {
@@ -1308,7 +1308,7 @@ export async function update(orgId: string, id: string, authorId: string, author
     if (data.clientName) {
       const clientName = normalizeClientName(data.clientName);
       if (!clientName) {
-        throw new ValidationError('������� ��� �������');
+        throw new ValidationError('??????? ??? ???????');
       }
       updateData.clientName = clientName;
     }
@@ -1416,7 +1416,7 @@ export async function update(orgId: string, id: string, authorId: string, author
     });
 
     await tx.chapanActivity.create({
-      data: { orderId: id, type: 'edit', content: '����� ��������������', authorId, authorName },
+      data: { orderId: id, type: 'edit', content: '????? ??????????????', authorId, authorName },
     });
 
     return mapOrder(updated);
@@ -1431,7 +1431,7 @@ export async function restore(orgId: string, id: string, authorId: string, autho
   const isCancelled = order.status === 'cancelled' || order.status === 'canceled';
   const isArchived = order.isArchived;
   if (!isCancelled && !isArchived) {
-    throw new ValidationError('������ ��������� ��� �������� ������ ����� ������������');
+    throw new ValidationError('?????? ????????? ??? ???????? ?????? ????? ????????????');
   }
 
   await prisma.$transaction(async (tx) => {
@@ -1463,7 +1463,7 @@ export async function restore(orgId: string, id: string, authorId: string, autho
     });
 
     await tx.chapanActivity.create({
-      data: { orderId: id, type: 'status_change', content: '����� ������������ > �����', authorId, authorName },
+      data: { orderId: id, type: 'status_change', content: '????? ???????????? > ?????', authorId, authorName },
     });
   });
 }
@@ -1474,7 +1474,7 @@ export async function archive(orgId: string, id: string, authorId: string, autho
   const order = await prisma.chapanOrder.findFirst({ where: { id, orgId } });
   if (!order) throw new NotFoundError('ChapanOrder', id);
   if (!['completed', 'cancelled'].includes(order.status)) {
-    throw new ValidationError('������������ ����� ������ ����������� ��� ��������� ������');
+    throw new ValidationError('???????????? ????? ?????? ??????????? ??? ????????? ??????');
   }
 
   await prisma.$transaction(async (tx) => {
@@ -1485,7 +1485,7 @@ export async function archive(orgId: string, id: string, authorId: string, autho
     });
 
     await tx.chapanActivity.create({
-      data: { orderId: id, type: 'system', content: '����� ��������� � �����', authorId, authorName },
+      data: { orderId: id, type: 'system', content: '????? ????????? ? ?????', authorId, authorName },
     });
   });
 }
@@ -1504,9 +1504,9 @@ export async function close(orgId: string, id: string, authorId: string, authorN
     },
   });
   if (!order) throw new NotFoundError('ChapanOrder', id);
-  if (order.isArchived) throw new ValidationError('����� ��� ��������� � ������');
+  if (order.isArchived) throw new ValidationError('????? ??? ????????? ? ??????');
   if (!['ready', 'transferred', 'on_warehouse', 'shipped', 'completed'].includes(order.status)) {
-    throw new ValidationError('������� ������ ����� ������ �� �������� ������');
+    throw new ValidationError('??????? ?????? ????? ?????? ?? ???????? ??????');
   }
 
   const now = new Date();
@@ -1546,7 +1546,7 @@ export async function close(orgId: string, id: string, authorId: string, authorN
       data: {
         orderId: id,
         type: 'system',
-        content: '������ �������, ����� �������� � ��������� � �����',
+        content: '?????? ???????, ????? ???????? ? ????????? ? ?????',
         authorId,
         authorName,
       },
@@ -1558,7 +1558,7 @@ export async function close(orgId: string, id: string, authorId: string, authorN
         data: {
           orderId: id,
           type: 'system',
-          content: `? ������ ������� � ������������ ��������: ${balance.toLocaleString('ru-KZ')} ? (������: ${order.paymentStatus === 'not_paid' ? '�� �������' : '�������� �������'})`,
+          content: `? ?????? ??????? ? ???????????? ????????: ${balance.toLocaleString('ru-KZ')} ? (??????: ${order.paymentStatus === 'not_paid' ? '?? ???????' : '???????? ???????'})`,
           authorId,
           authorName,
         },
@@ -1601,7 +1601,7 @@ export async function shipOrder(
   });
   if (!order) throw new NotFoundError('ChapanOrder', id);
   if (order.status !== 'on_warehouse') {
-    throw new ValidationError('��������� ����� ������ ����� �� �������� ��� ������');
+    throw new ValidationError('????????? ????? ?????? ????? ?? ???????? ??? ??????');
   }
   if (order.paymentStatus !== 'paid') {
     const balance = order.totalAmount - order.paidAmount;
@@ -1610,20 +1610,20 @@ export async function shipOrder(
       data: {
         orderId: id,
         type: 'system',
-        content: `? ������� �������� ������������� ������ (�������: ${balance.toLocaleString('ru-KZ')} ?). ��������� ���������.`,
+        content: `? ??????? ???????? ????????????? ?????? (???????: ${balance.toLocaleString('ru-KZ')} ?). ????????? ?????????.`,
         authorId,
         authorName,
       },
     });
-    throw new ValidationError('����� �� �������. �������� ����������, ��������� ���������.');
+    throw new ValidationError('????? ?? ???????. ???????? ??????????, ????????? ?????????.');
   }
 
   await prisma.$transaction(async (tx) => {
     const noteLines: string[] = [];
-    if (shippingData?.courierType) noteLines.push(`������: ${shippingData.courierType}`);
-    if (shippingData?.recipientName) noteLines.push(`����������: ${shippingData.recipientName}`);
-    if (shippingData?.recipientAddress) noteLines.push(`�����: ${shippingData.recipientAddress}`);
-    if (shippingData?.shippingNote) noteLines.push(`�����������: ${shippingData.shippingNote}`);
+    if (shippingData?.courierType) noteLines.push(`??????: ${shippingData.courierType}`);
+    if (shippingData?.recipientName) noteLines.push(`??????????: ${shippingData.recipientName}`);
+    if (shippingData?.recipientAddress) noteLines.push(`?????: ${shippingData.recipientAddress}`);
+    if (shippingData?.shippingNote) noteLines.push(`???????????: ${shippingData.shippingNote}`);
     const compiledNote = noteLines.length > 0 ? noteLines.join(' | ') : undefined;
 
     await applyWarehouseOrderTransitionSideEffectsTxV2(tx, orgId, {
@@ -1658,8 +1658,8 @@ export async function shipOrder(
         orderId: id,
         type: 'system',
         content: compiledNote
-          ? `����� ��������� ������� � ${compiledNote}`
-          : '����� ��������� �������',
+          ? `????? ????????? ??????? ? ${compiledNote}`
+          : '????? ????????? ???????',
         authorId,
         authorName,
       },
@@ -1716,13 +1716,13 @@ export async function requestItemChange(
   const order = await prisma.chapanOrder.findFirst({ where: { id: orderId, orgId } });
   if (!order) throw new NotFoundError('ChapanOrder', orderId);
   if (order.status !== 'in_production') {
-    throw new ValidationError('������ �� ��������� �������� ������ ��� ������� � ������������');
+    throw new ValidationError('?????? ?? ????????? ???????? ?????? ??? ??????? ? ????????????');
   }
 
   // Cancel any previous pending request for this order
   await prisma.chapanChangeRequest.updateMany({
     where: { orderId, status: 'pending' },
-    data: { status: 'rejected', rejectReason: '������ ����� ��������', resolvedBy: authorName },
+    data: { status: 'rejected', rejectReason: '?????? ????? ????????', resolvedBy: authorName },
   });
 
   const changeRequest = await prisma.chapanChangeRequest.create({
@@ -1739,7 +1739,7 @@ export async function requestItemChange(
     data: {
       orderId,
       type: 'system',
-      content: `�������� ${authorName} �������� ��������� ������� ������. ������� ������������ ����.`,
+      content: `???????? ${authorName} ???????? ????????? ??????? ??????. ??????? ???????????? ????.`,
       authorId,
       authorName,
     },
@@ -1793,9 +1793,9 @@ export async function approveChangeRequest(
     });
 
     // -- Diff: only ADD items that don't exist yet ----------------------------
-    // We match by (productName, size) tuple � exact matches are kept as-is.
+    // We match by (productName, size) tuple ? exact matches are kept as-is.
     // New entries (not matching any current item) get a new OrderItem + queued ProductionTask.
-    // Existing tasks are NEVER deleted � seamstress keeps her current work.
+    // Existing tasks are NEVER deleted ? seamstress keeps her current work.
 
     const currentItems = order.items;
 
@@ -1809,7 +1809,7 @@ export async function approveChangeRequest(
       (p) => !existingKeys.has(itemKey(p.productName, p.size)),
     );
 
-    // Update prices/notes on existing items (non-disruptive � no task changes)
+    // Update prices/notes on existing items (non-disruptive ? no task changes)
     for (const proposed of proposedItems) {
       const key = itemKey(proposed.productName, proposed.size);
       const existing = currentItems.find((i) => itemKey(i.productName, i.size) === key);
@@ -1865,19 +1865,19 @@ export async function approveChangeRequest(
       data: {
         totalAmount,
         paymentStatus: computePaymentStatus(order.paidAmount, totalAmount),
-        // Status stays in_production � seamstress keeps her existing tasks
+        // Status stays in_production ? seamstress keeps her existing tasks
       },
     });
 
     const addedSummary = addedItems.length > 0
-      ? `��������� ����� �������: ${addedItems.map((i) => `${i.productName} / ${i.size}`).join(', ')}.`
-      : '�������� ������ ������������ �������.';
+      ? `????????? ????? ???????: ${addedItems.map((i) => `${i.productName} / ${i.size}`).join(', ')}.`
+      : '???????? ?????? ???????????? ???????.';
 
     await tx.chapanActivity.create({
       data: {
         orderId: order.id,
         type: 'system',
-        content: `��� ���������� ��������� ������� (${authorName}). ${addedSummary} ������������ ������������.`,
+        content: `??? ?????????? ????????? ??????? (${authorName}). ${addedSummary} ???????????? ????????????.`,
         authorId,
         authorName,
       },
@@ -1907,7 +1907,7 @@ export async function rejectChangeRequest(
       data: {
         orderId: changeRequest.orderId,
         type: 'system',
-        content: `��� �������� ��������� ������� (${authorName}): ${rejectReason.trim()}`,
+        content: `??? ???????? ????????? ??????? (${authorName}): ${rejectReason.trim()}`,
         authorId,
         authorName,
       },
@@ -1934,7 +1934,7 @@ export async function routeSingleItem(
   });
   if (!order) throw new NotFoundError('ChapanOrder', orderId);
   if (!['new', 'confirmed', 'in_production'].includes(order.status)) {
-    throw new ValidationError('������������� ������� ����� ������ ������ ��� ������, �������������� ������ ��� ������ � ������������');
+    throw new ValidationError('????????????? ??????? ????? ?????? ?????? ??? ??????, ?????????????? ?????? ??? ?????? ? ????????????');
   }
   const item = order.items.find((i) => i.id === itemId);
   if (!item) throw new NotFoundError('ChapanOrderItem', itemId);
@@ -1975,12 +1975,12 @@ export async function routeSingleItem(
       await tx.chapanOrder.update({ where: { id: orderId }, data: { status: 'confirmed' } });
     }
 
-    const label = fulfillmentMode === 'production' ? '���������� � ���' : '���������� �������� �� �����';
+    const label = fulfillmentMode === 'production' ? '?????????? ? ???' : '?????????? ???????? ?? ?????';
     await tx.chapanActivity.create({
       data: {
         orderId,
         type: 'system',
-        content: `������� �${item.productName} / ${item.size}� ${label} (${authorName}).`,
+        content: `??????? ?${item.productName} / ${item.size}? ${label} (${authorName}).`,
         authorId,
         authorName,
       },
@@ -2002,7 +2002,7 @@ export async function routeSingleItem(
 export async function trashOrder(orgId: string, id: string, authorId: string, authorName: string) {
   const order = await prisma.chapanOrder.findFirst({ where: { id, orgId } });
   if (!order) throw new NotFoundError('ChapanOrder', id);
-  if (order.deletedAt) throw new ValidationError('����� ��� � �������.');
+  if (order.deletedAt) throw new ValidationError('????? ??? ? ???????.');
   if (['completed', 'cancelled'].includes(order.status)) {
     // Allow trashing completed/cancelled orders
   }
@@ -2013,7 +2013,7 @@ export async function trashOrder(orgId: string, id: string, authorId: string, au
       data: { deletedAt: new Date() },
     });
     await tx.chapanActivity.create({
-      data: { orderId: id, type: 'edit', content: '����� ��������� � �������', authorId, authorName },
+      data: { orderId: id, type: 'edit', content: '????? ????????? ? ???????', authorId, authorName },
     });
   });
 
@@ -2024,7 +2024,7 @@ export async function trashOrder(orgId: string, id: string, authorId: string, au
 export async function restoreFromTrash(orgId: string, id: string, authorId: string, authorName: string) {
   const order = await prisma.chapanOrder.findFirst({ where: { id, orgId } });
   if (!order) throw new NotFoundError('ChapanOrder', id);
-  if (!order.deletedAt) throw new ValidationError('����� �� � �������.');
+  if (!order.deletedAt) throw new ValidationError('????? ?? ? ???????.');
 
   await prisma.$transaction(async (tx) => {
     await tx.chapanOrder.update({
@@ -2032,7 +2032,7 @@ export async function restoreFromTrash(orgId: string, id: string, authorId: stri
       data: { deletedAt: null },
     });
     await tx.chapanActivity.create({
-      data: { orderId: id, type: 'edit', content: '����� ������������ �� �������', authorId, authorName },
+      data: { orderId: id, type: 'edit', content: '????? ???????????? ?? ???????', authorId, authorName },
     });
   });
 
@@ -2048,11 +2048,11 @@ export async function permanentDelete(orgId: string, id: string) {
   if (!order) throw new NotFoundError('ChapanOrder', id);
   if (!order.deletedAt) {
     throw new ValidationError(
-      '����� �� � �������. ������� ����������� ��� � �������.',
+      '????? ?? ? ???????. ??????? ??????????? ??? ? ???????.',
     );
   }
 
-  // Hard delete � cascades to items, tasks, payments via Prisma relations
+  // Hard delete ? cascades to items, tasks, payments via Prisma relations
   await prisma.chapanOrder.delete({ where: { id } });
 
   return { ok: true };
@@ -2084,7 +2084,7 @@ export async function reassignManager(
   const order = await prisma.chapanOrder.findFirst({ where: { id: orderId, orgId } });
   if (!order) throw new NotFoundError('ChapanOrder', orderId);
 
-  const prevManagerName = order.managerName ?? '�� ��������';
+  const prevManagerName = order.managerName ?? '?? ????????';
 
   await prisma.$transaction(async (tx) => {
     await tx.chapanOrder.update({
@@ -2096,7 +2096,7 @@ export async function reassignManager(
       data: {
         orderId,
         type: 'manager_reassign',
-        content: `�������� ������: ${prevManagerName} > ${newManagerName}`,
+        content: `???????? ??????: ${prevManagerName} > ${newManagerName}`,
         authorId: actorId,
         authorName: actorName,
       },
