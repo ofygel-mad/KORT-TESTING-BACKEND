@@ -1,8 +1,9 @@
 import { expect, test } from '@playwright/test';
-import { clearSession, preparePage } from './helpers';
+import { preparePage } from './helpers';
+
+test.use({ storageState: { cookies: [], origins: [] } });
 
 test('pending first-login employee is redirected to set password step', async ({ page }) => {
-  await clearSession(page);
   await preparePage(page);
   await page.goto('/auth/login');
 

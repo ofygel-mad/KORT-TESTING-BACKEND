@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ChapanPurchasePage from './ChapanPurchase';
 
@@ -90,7 +91,11 @@ describe('ChapanPurchasePage', () => {
       },
     });
 
-    render(<ChapanPurchasePage />);
+    render(
+      <MemoryRouter>
+        <ChapanPurchasePage />
+      </MemoryRouter>,
+    );
 
     await user.click(screen.getByRole('button', { name: /xlsx/i }));
 

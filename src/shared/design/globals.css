@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800&family=DM+Sans:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800&family=DM+Sans:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap');
 
 /* ═══════════════════════════════════════════════════════════════════════
    KORT DESIGN SYSTEM — Layer 1: Primitive Tokens
@@ -175,6 +175,18 @@
   --status-shell-border: color-mix(in srgb, var(--border-default) 84%, transparent);
   --confirmation-shell-bg: color-mix(in srgb, var(--fill-positive-soft) 54%, var(--bg-surface));
   --confirmation-shell-border: color-mix(in srgb, var(--fill-positive) 28%, var(--border-default));
+
+  /* ── Mercury Design System tokens ── */
+  --color-mercury-blue:    #5266eb;
+  --color-ghost-blue:      #cdddff;
+  --color-deep-space:      #171721;
+  --color-midnight-slate:  #1e1e2a;
+  --color-graphite:        #272735;
+  --color-lead:            #70707d;
+  --color-starlight:       #ededf3;
+  --color-silver:          #c3c3cc;
+  --radius-pill:           32px;
+  --radius-pill-sm:        40px;
 
 }
 
@@ -435,9 +447,49 @@
    DESIGN CONSTANTS
    ═══════════════════════════════════════════════════════════════════════ */
 :root {
-  --font-display: 'Plus Jakarta Sans', -apple-system, sans-serif;
-  --font-body:    'DM Sans', -apple-system, sans-serif;
+  /* Mercury Design System — Font Families */
+  --font-arcadiadisplay: 'Manrope', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-arcadia:        'Manrope', ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  --font-display: var(--font-arcadiadisplay);
+  --font-body:    var(--font-arcadia);
   --font-mono:    'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Mercury — Font Weights */
+  --font-weight-w360: 360;
+  --font-weight-regular: 400;
+  --font-weight-w420: 420;
+  --font-weight-w480: 480;
+  --font-weight-w530: 530;
+
+  /* Mercury — Typography Scale */
+  --text-caption: 12px;
+  --leading-caption: 1.5;
+  --tracking-caption: 0.24px;
+  --text-body-sm: 14px;
+  --leading-body-sm: 1.5;
+  --tracking-body-sm: 0.28px;
+  --text-body: 16px;
+  --leading-body: 1.5;
+  --tracking-body: 0.16px;
+  --text-subheading: 18px;
+  --leading-subheading: 1.4;
+  --text-heading-sm: 21px;
+  --leading-heading-sm: 1.35;
+  --text-heading: 32px;
+  --leading-heading: 1.2;
+  --text-heading-lg: 49px;
+  --leading-heading-lg: 1.15;
+  --text-display: 65px;
+  --leading-display: 1.1;
+  --tracking-display: 0.65px;
+
+  /* Mercury — Named Radii */
+  --radius-cards:      0px;
+  --radius-inputs:     32px;
+  --radius-buttons:    32px;
+  --radius-buttons-lg: 40px;
+  --radius-containers: 4px;
 
   --text-size-xs:   11px;
   --text-size-sm:   12px;
@@ -638,17 +690,17 @@ header, nav, main, aside, section, article,
 /* ═══════════════════════════════════════════════════════════════════════
    TYPOGRAPHY PRESETS — fixed role hierarchy
    ═══════════════════════════════════════════════════════════════════════ */
-.text-display-xl { font-family:var(--font-display); font-size:var(--text-size-4xl); font-weight:800; line-height:1.1; letter-spacing:-0.03em; color:var(--text-primary); }
-.text-display-lg { font-family:var(--font-display); font-size:var(--text-size-3xl); font-weight:700; line-height:1.15; letter-spacing:-0.025em; color:var(--text-primary); }
-.text-heading-1  { font-family:var(--font-display); font-size:var(--text-size-2xl); font-weight:700; line-height:1.15; letter-spacing:-0.022em; color:var(--text-primary); }
-.text-heading-2  { font-family:var(--font-display); font-size:var(--text-size-xl); font-weight:700; line-height:1.2; letter-spacing:-0.016em; color:var(--text-primary); }
-.text-heading-3  { font-family:var(--font-display); font-size:var(--text-size-lg); font-weight:600; line-height:1.3; letter-spacing:-0.014em; color:var(--text-primary); }
-.text-modal-title { font-family:var(--font-display); font-size:var(--text-size-2xl); font-weight:700; line-height:1.15; letter-spacing:-0.022em; color:var(--text-primary); }
-.text-spa-title { font-family:var(--font-display); font-size:var(--text-size-xl); font-weight:700; line-height:1.2; letter-spacing:-0.016em; color:var(--text-primary); }
-.text-title      { font-size:var(--text-size-md); font-weight:600; line-height:1.4; color:var(--text-primary); }
+.text-display-xl { font-family:var(--font-display); font-size:var(--text-size-4xl); font-weight:360; line-height:1.1; letter-spacing:0.02em; color:var(--text-primary); font-feature-settings:"ss01" on; }
+.text-display-lg { font-family:var(--font-display); font-size:var(--text-size-3xl); font-weight:360; line-height:1.15; letter-spacing:0.015em; color:var(--text-primary); font-feature-settings:"ss01" on; }
+.text-heading-1  { font-family:var(--font-display); font-size:var(--text-size-2xl); font-weight:480; line-height:1.2; letter-spacing:0.01em; color:var(--text-primary); font-feature-settings:"ss01" on; }
+.text-heading-2  { font-family:var(--font-display); font-size:var(--text-size-xl); font-weight:480; line-height:1.25; letter-spacing:0.01em; color:var(--text-primary); font-feature-settings:"ss01" on; }
+.text-heading-3  { font-family:var(--font-display); font-size:var(--text-size-lg); font-weight:480; line-height:1.3; letter-spacing:0.008em; color:var(--text-primary); font-feature-settings:"ss01" on; }
+.text-modal-title { font-family:var(--font-display); font-size:var(--text-size-2xl); font-weight:480; line-height:1.2; letter-spacing:0.01em; color:var(--text-primary); font-feature-settings:"ss01" on; }
+.text-spa-title { font-family:var(--font-display); font-size:var(--text-size-xl); font-weight:480; line-height:1.25; letter-spacing:0.01em; color:var(--text-primary); font-feature-settings:"ss01" on; }
+.text-title      { font-size:var(--text-size-md); font-weight:480; line-height:1.4; letter-spacing:0.005em; color:var(--text-primary); }
 .text-body       { font-size:var(--text-size-md); font-weight:400; line-height:1.6; color:var(--text-primary); }
 .text-body-sm    { font-size:var(--text-size-base); font-weight:400; line-height:1.55; color:var(--text-secondary); }
-.text-label      { font-size:var(--text-size-base); font-weight:500; line-height:1.4; color:var(--text-secondary); }
+.text-label      { font-size:var(--text-size-base); font-weight:420; line-height:1.4; letter-spacing:0.005em; color:var(--text-secondary); }
 .text-caption    { font-size:var(--text-size-sm); font-weight:400; line-height:1.45; color:var(--text-tertiary); }
 .text-mono       { font-family:var(--font-mono); font-size:var(--text-size-sm); color:var(--text-secondary); }
 
@@ -677,7 +729,7 @@ header, nav, main, aside, section, article,
 .kort-textarea::placeholder {
   color: color-mix(in srgb, var(--input-text) 50%, var(--input-placeholder));
   opacity: 1;
-  font-weight: 700;
+  font-weight: 400;
   letter-spacing: 0.01em;
 }
 .kort-textarea:focus { border-color:var(--input-border-focus); box-shadow:var(--shadow-focus); }

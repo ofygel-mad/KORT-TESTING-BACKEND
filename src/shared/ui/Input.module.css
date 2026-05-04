@@ -46,7 +46,7 @@
 .input::placeholder {
   color: color-mix(in srgb, var(--input-text) 50%, var(--input-placeholder));
   opacity: 1;
-  font-weight: 700;
+  font-weight: 400;
   letter-spacing: 0.01em;
 }
 .input:hover:not(:disabled):not(.error) { border-color: var(--input-border-hover); }

@@ -1,9 +1,13 @@
-import { expect, test } from '@playwright/test';
-import { loginAs, navigateWithinApp } from './helpers';
+import { expect, test, type Page } from '@playwright/test';
+import { preparePage } from './helpers';
+
+async function loginOwner(page: Page) {
+  await preparePage(page);
+}
 
 test('chapan orders route opens without crashing', async ({ page }) => {
-  await loginAs(page, 'admin@kort.local');
-  await navigateWithinApp(page, '/workzone/chapan/orders');
+  await loginOwner(page);
+  await page.goto('/workzone/chapan/orders', { waitUntil: 'networkidle' });
 
   await expect(page).toHaveURL(/\/workzone\/chapan\/orders$/);
   await expect(page.getByText('Чапан', { exact: true })).toBeVisible();
@@ -12,8 +16,8 @@ test('chapan orders route opens without crashing', async ({ page }) => {
 });
 
 test('chapan warehouse route opens without crashing', async ({ page }) => {
-  await loginAs(page, 'admin@kort.local');
-  await navigateWithinApp(page, '/workzone/chapan/warehouse');
+  await loginOwner(page);
+  await page.goto('/workzone/chapan/warehouse', { waitUntil: 'networkidle' });
 
   await expect(page).toHaveURL(/\/workzone\/chapan\/warehouse$/);
   await expect(page.getByRole('heading', { name: 'Склад' })).toBeVisible();

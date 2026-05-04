@@ -1,7 +1,9 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
-import { clearSession, preparePage } from './helpers';
+import { preparePage } from './helpers';
 
 const E2E_API_BASE_URL = process.env.E2E_API_BASE_URL || `http://${process.env.E2E_HOST || '127.0.0.1'}:${process.env.E2E_BACKEND_PORT || '8002'}/api/v1`;
+
+test.use({ storageState: { cookies: [], origins: [] } });
 
 async function expectFullyVisibleInViewport(page: Page, locator: Locator) {
   await expect(locator).toBeVisible();
@@ -19,7 +21,6 @@ async function expectFullyVisibleInViewport(page: Page, locator: Locator) {
 test('company registration submits on Enter from password confirmation', async ({ page }) => {
   const unique = Date.now();
 
-  await clearSession(page);
   await preparePage(page);
   await page.goto('/auth/register');
 
@@ -39,7 +40,6 @@ test('company registration submits on Enter from password confirmation', async (
 
 test('company registration footer stays visible on short desktop viewport', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 640 });
-  await clearSession(page);
   await preparePage(page);
   await page.goto('/auth/register');
 
@@ -77,7 +77,6 @@ test('login rejects an invalid password for an existing account', async ({ page,
     },
   });
 
-  await clearSession(page);
   await preparePage(page);
   await page.goto('/auth/login');
 

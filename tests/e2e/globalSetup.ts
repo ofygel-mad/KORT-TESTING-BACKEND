@@ -1,4 +1,4 @@
-import { chromium, expect } from '@playwright/test';
+import { chromium, expect, type StorageState } from '@playwright/test';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -14,52 +14,63 @@ async function globalSetup() {
     fs.mkdirSync(authDir, { recursive: true });
   }
 
-  const browser = await chromium.launch();
-  const page = await browser.newPage();
+  async function authenticate() {
+    const browser = await chromium.launch();
+    const page = await browser.newPage();
 
-  try {
-    page.on('console', (msg) => {
-      if (msg.type() === 'error') console.error('Browser console error:', msg.text());
-    });
+    try {
+      page.on('console', (msg) => {
+        if (msg.type() === 'error') console.error('[chromium] Browser console error:', msg.text());
+      });
 
-    console.log('Navigating to login page...');
-    await page.goto(`${E2E_BASE_URL}/auth/login`, { waitUntil: 'networkidle' });
-    console.log('Login page loaded');
+      console.log('[chromium] Navigating to login page...');
+      await page.goto(`${E2E_BASE_URL}/auth/login`, { waitUntil: 'domcontentloaded' }).catch(() => {});
+      await page.waitForURL(/\/auth\/login$/, { timeout: 30000 }).catch(() => {});
+      console.log('[chromium] Login page loaded');
 
-    const email = 'admin@kort.local';
-    const password = 'demo1234';
+      const email = 'admin@kort.local';
+      const password = 'demo1234';
 
-    console.log('Filling login form...');
-    const fields = page.locator('form input:not([type="checkbox"])');
-    await expect(fields).toHaveCount(2);
-    await fields.nth(0).fill(email);
-    await fields.nth(1).fill(password);
+      console.log('[chromium] Filling login form...');
+      const fields = page.locator('form input:not([type="checkbox"])');
+      await expect(fields).toHaveCount(2, { timeout: 30000 });
+      await fields.nth(0).fill(email);
+      await fields.nth(1).fill(password);
 
-    console.log('Submitting login form...');
-    await page.locator('form button[type="submit"]').click();
+      console.log('[chromium] Submitting login form...');
+      await page.locator('form button[type="submit"]').click();
 
-    console.log('Waiting for redirect from login page (30s timeout)...');
-    await page.waitForURL((url) => !url.pathname.includes('/auth/login'), { timeout: 30000 });
-    console.log('Successfully redirected from login page');
+      console.log('[chromium] Waiting for redirect from login page (30s timeout)...');
+      await page.waitForURL((url) => !url.pathname.includes('/auth/login'), { timeout: 30000 });
+      console.log('[chromium] Successfully redirected from login page');
 
-    await page.evaluate(() => {
-      window.sessionStorage.setItem('kort.workspace:intro-v1', '1');
-    });
+      await page.evaluate(() => {
+        window.sessionStorage.setItem('kort.workspace:intro-v1', '1');
+      });
 
-    const state = await page.context().storageState();
+      const rawState = await page.context().storageState();
+      const sanitizedState: StorageState = {
+        cookies: rawState.cookies,
+        origins: rawState.origins.map((origin) => ({
+          origin: origin.origin,
+          localStorage: origin.localStorage ?? [],
+        })),
+      };
 
-    fs.writeFileSync(path.join(authDir, 'chromium.json'), JSON.stringify(state, null, 2));
-    fs.writeFileSync(path.join(authDir, 'firefox.json'), JSON.stringify(state, null, 2));
-    fs.writeFileSync(path.join(authDir, 'webkit.json'), JSON.stringify(state, null, 2));
-
-    console.log('Global setup: Authentication successful');
-    console.log(`Saved auth state to ${authDir}`);
-  } catch (error) {
-    console.error('Global setup failed:', error);
-    throw new Error('Failed to authenticate during global setup');
-  } finally {
-    await browser.close();
+      for (const browserName of ['chromium', 'firefox', 'webkit'] as const) {
+        const stateFile = path.join(authDir, `${browserName}.json`);
+        fs.writeFileSync(stateFile, JSON.stringify(sanitizedState, null, 2));
+        console.log(`[${browserName}] Saved auth state to ${stateFile}`);
+      }
+    } catch (error) {
+      console.error('[chromium] Global setup failed:', error);
+      throw new Error('Failed to authenticate during global setup');
+    } finally {
+      await browser.close();
+    }
   }
+
+  await authenticate();
 }
 
 export default globalSetup;

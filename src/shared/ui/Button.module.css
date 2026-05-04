@@ -6,11 +6,11 @@
   justify-content: center;
   gap: 6px;
   cursor: pointer;
-  font-weight: 500;
+  font-weight: var(--font-weight-w480, 480);
   font-family: var(--font-body);
   letter-spacing: 0.01em;
   border: none;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-buttons, 32px);
   white-space: nowrap;
   flex-shrink: 0;
   position: relative;
@@ -19,7 +19,6 @@
   transition:
     background-color var(--motion-fast) var(--motion-ease),
     border-color var(--motion-fast) var(--motion-ease),
-    box-shadow var(--motion-fast) var(--motion-ease),
     opacity var(--motion-fast) var(--motion-ease),
     transform var(--motion-fast) var(--motion-ease);
 }
@@ -33,7 +32,8 @@
 }
 
 .btn:focus-visible {
-  box-shadow: var(--shadow-focus);
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
 }
 
 /* ─── Variants ────────────────────────────────────────────────────────────── */
@@ -41,13 +41,12 @@
 .primary {
   background: var(--btn-primary-bg);
   color: var(--btn-primary-text);
-  box-shadow: var(--shadow-accent);
 }
 .primary:hover:not(:disabled) {
-  box-shadow: var(--shadow-lg), var(--shadow-accent);
+  opacity: 0.88;
 }
 .primary:active:not(:disabled) {
-  box-shadow: var(--shadow-sm);
+  opacity: 0.78;
 }
 
 .secondary {
@@ -89,31 +88,31 @@
 /* ─── Sizes ───────────────────────────────────────────────────────────────── */
 
 .xs {
-  padding: 3px 8px;
+  padding: 3px 10px;
   font-size: var(--text-size-xs);
   height: 26px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-buttons, 32px);
 }
 
 .sm {
-  padding: 5px 12px;
+  padding: 5px 14px;
   font-size: var(--text-size-base);
   height: 32px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-buttons, 32px);
 }
 
 .md {
-  padding: 8px 16px;
+  padding: 8px 20px;
   font-size: var(--text-size-md);
   height: 40px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-buttons, 32px);
 }
 
 .lg {
-  padding: 10px 22px;
+  padding: 10px 28px;
   font-size: var(--text-size-md);
   height: 44px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-buttons-lg, 40px);
 }
 
 /* ─── States ──────────────────────────────────────────────────────────────── */

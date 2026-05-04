@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isCI = process.env.CI === 'true';
+const runAllBrowsers = process.env.E2E_ALL_BROWSERS === 'true';
 const e2eHost = process.env.E2E_HOST || '127.0.0.1';
 const e2eFrontendPort = process.env.E2E_FRONTEND_PORT || (isCI ? '4173' : '4174');
 const e2eBackendPort = process.env.E2E_BACKEND_PORT || (isCI ? '8000' : '8002');
@@ -39,15 +40,15 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'], storageState: 'tests/e2e/.auth/chromium.json' },
     },
-    {
+    ...((isCI || runAllBrowsers) ? [{
       name: 'firefox',
       use: { ...devices['Desktop Firefox'], storageState: 'tests/e2e/.auth/firefox.json' },
-    },
-    // WebKit requires libwoff2dec which is unavailable on GitHub Actions Linux runners
-    ...(isCI ? [] : [{
+    }] : []),
+    // WebKit remains opt-in locally because storage/session behavior differs across engines.
+    ...(!isCI && runAllBrowsers ? [{
       name: 'webkit',
       use: { ...devices['Desktop Safari'], storageState: 'tests/e2e/.auth/webkit.json' },
-    }]),
+    }] : []),
   ],
 
   ...(isCI

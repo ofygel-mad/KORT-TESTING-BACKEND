@@ -7,12 +7,8 @@ import {
   Building2,
   Eye,
   EyeOff,
-  Factory,
   KeyRound,
-  ShieldCheck,
   ShieldX,
-  TrendingUp,
-  Workflow,
 } from 'lucide-react';
 import { api } from '../../shared/api/client';
 import type { AuthSessionResponse } from '../../shared/api/contracts';
@@ -44,7 +40,6 @@ import styles from './AuthModal.module.css';
  * (сотрудники регистрируются только через администратора в настройках)
  */
 type Step = 'login' | 'pin' | 'company' | 'set-password' | 'forgot' | 'password-set';
-type BrandScene = 'network' | 'briefing' | 'flow' | 'metrics';
 
 interface AuthModalProps {
   open: boolean;
@@ -53,38 +48,6 @@ interface AuthModalProps {
   initialStep?: Step;
 }
 
-// ─── Brand carousel data ──────────────────────────────────────────────────────
-
-const BRAND_CAROUSEL = [
-  {
-    icon: Workflow,
-    label: 'Поток',
-    title: 'Клиенты, сделки и задачи в одном ритме',
-    description: 'Единый экран без лишнего визуального шума.',
-    scene: 'flow' as BrandScene,
-  },
-  {
-    icon: ShieldCheck,
-    label: 'Доступ',
-    title: 'Роли и связи читаются с первого взгляда',
-    description: 'Команда, права и контакты собраны в одной структуре.',
-    scene: 'network' as BrandScene,
-  },
-  {
-    icon: Factory,
-    label: 'Операции',
-    title: 'Продажи, сервис и производство держатся вместе',
-    description: 'Интерфейс остаётся собранным даже при параллельной работе.',
-    scene: 'briefing' as BrandScene,
-  },
-  {
-    icon: TrendingUp,
-    label: 'Контроль',
-    title: 'Финансы и аналитика всегда под рукой',
-    description: 'Ключевые метрики, воронка и выручка — в одном рабочем пространстве.',
-    scene: 'metrics' as BrandScene,
-  },
-] as const;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -156,113 +119,6 @@ function PasswordField({
   );
 }
 
-function BrandScenePreview({ scene }: { scene: BrandScene }) {
-  if (scene === 'network') {
-    return (
-      <div className={`${styles.slideScene} ${styles.sceneNetwork}`} aria-hidden="true">
-        <span className={styles.sceneGlow} />
-        <span className={`${styles.sceneNode} ${styles.sceneNodeCore}`} />
-        <span className={`${styles.sceneNode} ${styles.sceneNodeTop}`} />
-        <span className={`${styles.sceneNode} ${styles.sceneNodeLeft}`} />
-        <span className={`${styles.sceneNode} ${styles.sceneNodeRight}`} />
-        <span className={`${styles.sceneNode} ${styles.sceneNodeBottom}`} />
-        <span className={`${styles.sceneLink} ${styles.sceneLinkTop}`} />
-        <span className={`${styles.sceneLink} ${styles.sceneLinkLeft}`} />
-        <span className={`${styles.sceneLink} ${styles.sceneLinkRight}`} />
-        <span className={`${styles.sceneLink} ${styles.sceneLinkBottom}`} />
-        <div className={`${styles.sceneMiniCard} ${styles.sceneMiniCardTop}`}>
-          <span className={styles.sceneMiniLabel}>роли</span>
-          <strong>owner / admin / team</strong>
-        </div>
-        <div className={`${styles.sceneMiniCard} ${styles.sceneMiniCardBottom}`}>
-          <span className={styles.sceneMiniLabel}>контакты</span>
-          <strong>единая структура</strong>
-        </div>
-      </div>
-    );
-  }
-
-  if (scene === 'briefing') {
-    return (
-      <div className={`${styles.slideScene} ${styles.sceneBriefing}`} aria-hidden="true">
-        <span className={styles.sceneGlow} />
-        <span className={styles.sceneTable} />
-        <span className={`${styles.sceneAvatar} ${styles.sceneAvatarOne}`} />
-        <span className={`${styles.sceneAvatar} ${styles.sceneAvatarTwo}`} />
-        <span className={`${styles.sceneAvatar} ${styles.sceneAvatarThree}`} />
-        <span className={`${styles.sceneAvatar} ${styles.sceneAvatarFour}`} />
-        <div className={styles.sceneBoard}>
-          <span className={`${styles.sceneBoardRow} ${styles.sceneBoardRowLong}`} />
-          <span className={`${styles.sceneBoardRow} ${styles.sceneBoardRowShort}`} />
-          <span className={`${styles.sceneBoardRow} ${styles.sceneBoardRowMid}`} />
-        </div>
-        <div className={styles.sceneBriefCard}>
-          <span className={styles.sceneMiniLabel}>синхронизация</span>
-          <strong>обсуждение и решения</strong>
-        </div>
-      </div>
-    );
-  }
-
-  if (scene === 'metrics') {
-    return (
-      <div className={`${styles.slideScene} ${styles.sceneMetrics}`} aria-hidden="true">
-        <span className={styles.sceneGlow} />
-        <div className={styles.sceneMetricGrid}>
-          <div className={styles.sceneMetricCard}>
-            <span className={styles.sceneMiniLabel}>выручка</span>
-            <strong className={styles.sceneMetricValue}>₸ 4.2М</strong>
-            <span className={`${styles.sceneMetricTrend} ${styles.sceneMetricTrendUp}`}>↑ 18%</span>
-          </div>
-          <div className={styles.sceneMetricCard}>
-            <span className={styles.sceneMiniLabel}>заказов</span>
-            <strong className={styles.sceneMetricValue}>147</strong>
-            <span className={`${styles.sceneMetricTrend} ${styles.sceneMetricTrendUp}`}>↑ 6%</span>
-          </div>
-        </div>
-        <div className={styles.sceneSparkline}>
-          <span className={`${styles.sceneSparkBar} ${styles.sceneSparkS1}`} />
-          <span className={`${styles.sceneSparkBar} ${styles.sceneSparkS2}`} />
-          <span className={`${styles.sceneSparkBar} ${styles.sceneSparkS3}`} />
-          <span className={`${styles.sceneSparkBar} ${styles.sceneSparkS4}`} />
-          <span className={`${styles.sceneSparkBar} ${styles.sceneSparkS5}`} />
-          <span className={`${styles.sceneSparkBar} ${styles.sceneSparkS6}`} />
-          <span className={`${styles.sceneSparkBar} ${styles.sceneSparkS7}`} />
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className={`${styles.slideScene} ${styles.sceneFlow}`} aria-hidden="true">
-      <span className={styles.sceneGlow} />
-      <div className={styles.sceneLane}>
-        <div className={`${styles.sceneStage} ${styles.sceneStageActive}`}>
-          <span className={styles.sceneStageLabel}>лид</span>
-          <strong className={styles.sceneStageValue}>24</strong>
-          <span className={styles.sceneStageBar} />
-        </div>
-        <div className={styles.sceneStage}>
-          <span className={styles.sceneStageLabel}>сделка</span>
-          <strong className={styles.sceneStageValue}>17</strong>
-          <span className={styles.sceneStageBar} />
-        </div>
-        <div className={styles.sceneStage}>
-          <span className={styles.sceneStageLabel}>задача</span>
-          <strong className={styles.sceneStageValue}>31</strong>
-          <span className={styles.sceneStageBar} />
-        </div>
-      </div>
-      <div className={styles.sceneGraph}>
-        <span className={`${styles.sceneGraphBar} ${styles.sceneGraphBarLow}`} />
-        <span className={`${styles.sceneGraphBar} ${styles.sceneGraphBarMid}`} />
-        <span className={`${styles.sceneGraphBar} ${styles.sceneGraphBarTall}`} />
-        <span className={`${styles.sceneGraphBar} ${styles.sceneGraphBarMid}`} />
-        <span className={`${styles.sceneGraphBar} ${styles.sceneGraphBarLow}`} />
-      </div>
-    </div>
-  );
-}
 
 function PinStep({
   onSuccess,
@@ -355,7 +211,6 @@ export function AuthModal({ open, onClose, onAuthSuccess, initialStep }: AuthMod
   }, [initialStep, isTrustedDevice, pin, user]);
 
   const [step, setStep] = useState<Step>(defaultStep);
-  const [activeBrandSlide, setActiveBrandSlide] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -397,19 +252,7 @@ export function AuthModal({ open, onClose, onAuthSuccess, initialStep }: AuthMod
     setLoginPassword('');
   }, [defaultStep, open]);
 
-  useEffect(() => {
-    if (!open) return;
-    setActiveBrandSlide(0);
-    const timer = window.setInterval(() => {
-      setActiveBrandSlide((c) => (c + 1) % BRAND_CAROUSEL.length);
-    }, 5000);
-    return () => window.clearInterval(timer);
-  }, [open]);
-
   if (!open) return null;
-
-  const activeStory = BRAND_CAROUSEL[activeBrandSlide];
-  const ActiveStoryIcon = activeStory.icon;
 
   function applySession(session: AuthSessionResponse) {
     setAuth(
@@ -612,55 +455,6 @@ export function AuthModal({ open, onClose, onAuthSuccess, initialStep }: AuthMod
         }}
       >
         <div className={styles.panel}>
-          {/* ── Brand side ── */}
-          <div className={styles.brandSide}>
-            <span className={styles.brandTopAccent} aria-hidden="true" />
-            <div className={styles.brandHero}>
-              <div className={styles.brandDisplay}>KORT</div>
-            </div>
-            <div className={styles.brandCarousel}>
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.article
-                  key={activeStory.title}
-                  className={styles.brandSlide}
-                  initial={{ opacity: 0, x: 26, scale: 0.98 }}
-                  animate={{ opacity: 1, x: 0, scale: 1 }}
-                  exit={{ opacity: 0, x: -26, scale: 0.985 }}
-                  transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
-                >
-                  <div className={styles.slideTop}>
-                    <span className={styles.slideBadge}>
-                      <ActiveStoryIcon size={14} />
-                      {activeStory.label}
-                    </span>
-                    <span className={styles.slideCounter}>
-                      {String(activeBrandSlide + 1).padStart(2, '0')}
-                      {' / '}
-                      {String(BRAND_CAROUSEL.length).padStart(2, '0')}
-                    </span>
-                  </div>
-                  <BrandScenePreview scene={activeStory.scene} />
-                  <div className={styles.slideCopy}>
-                    <strong className={styles.slideTitle}>{activeStory.title}</strong>
-                    <p className={styles.slideText}>{activeStory.description}</p>
-                  </div>
-                </motion.article>
-              </AnimatePresence>
-              <div className={styles.carouselDots} aria-label="Навигация по карточкам">
-                {BRAND_CAROUSEL.map((story, index) => (
-                  <button
-                    key={story.title}
-                    type="button"
-                    className={`${styles.carouselDot} ${index === activeBrandSlide ? styles.carouselDotActive : ''}`}
-                    onClick={() => setActiveBrandSlide(index)}
-                    aria-label={`Показать карточку ${index + 1}`}
-                  />
-                ))}
-              </div>
-            </div>
-
-          </div>
-
           {/* ── Form side ── */}
           <div className={styles.formSide}>
             <div className={styles.formHeader}>
@@ -676,6 +470,7 @@ export function AuthModal({ open, onClose, onAuthSuccess, initialStep }: AuthMod
                   </button>
                 )}
               </div>
+              <span className={styles.authBrand}>KORT</span>
             </div>
 
             <div className={styles.formViewport}>

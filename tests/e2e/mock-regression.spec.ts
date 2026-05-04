@@ -1,9 +1,13 @@
-import { expect, test } from '@playwright/test';
-import { loginAs, navigateWithinApp } from './helpers';
+import { expect, test, type Page } from '@playwright/test';
+import { preparePage } from './helpers';
+
+async function loginOwner(page: Page) {
+  await preparePage(page);
+}
 
 test('seeded customer opens in CRM drawer', async ({ page }) => {
-  await loginAs(page, 'admin@kort.local');
-  await navigateWithinApp(page, '/crm/customers');
+  await loginOwner(page);
+  await page.goto('/crm/customers', { waitUntil: 'domcontentloaded' });
 
   await page.getByRole('row', { name: /aidana@example\.kz/i }).click();
 
@@ -11,8 +15,8 @@ test('seeded customer opens in CRM drawer', async ({ page }) => {
 });
 
 test('team settings show seeded employees', async ({ page }) => {
-  await loginAs(page, 'admin@kort.local');
-  await navigateWithinApp(page, '/settings/team');
+  await loginOwner(page);
+  await page.goto('/settings/team', { waitUntil: 'domcontentloaded' });
 
   await expect(page).toHaveURL(/\/settings$/);
   await expect(page.getByText('Workspace', { exact: true })).toBeVisible();

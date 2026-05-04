@@ -5,7 +5,6 @@ import { toast, Toaster } from 'sonner';
 import * as Sentry from '@sentry/react';
 import { AppRouter } from './app/router';
 import { ConsoleRoot } from './console';
-import { Launch } from './pages/launch/Launch';
 import { api } from './shared/api/client';
 import type { AuthSessionResponse } from './shared/api/contracts';
 import { readApiErrorMessage, readApiErrorStatus } from './shared/api/errors';
@@ -44,34 +43,6 @@ const queryClient = new QueryClient({
 
 type BootstrapResponse = Omit<AuthSessionResponse, 'access' | 'refresh'> & { orgs?: import('./shared/stores/auth').OrgSummary[] };
 
-const INTRO_KEY = 'kort.workspace:intro-v1';
-
-function hasSeenIntro(): boolean {
-  try {
-    return window.localStorage.getItem(INTRO_KEY) === '1';
-  } catch {
-    return false;
-  }
-}
-
-function isMobileDevice(): boolean {
-  try {
-    return window.matchMedia('(max-width: 768px)').matches ||
-      /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
-  } catch {
-    return false;
-  }
-}
-
-function shouldSkipIntro(): boolean {
-  try {
-    // H1 fix: на мобильных устройствах intro не показываем совсем
-    if (isMobileDevice()) return true;
-    return window.location.pathname === '/workzone/request';
-  } catch {
-    return false;
-  }
-}
 
 function SessionBootstrap({ children }: { children: ReactNode }) {
   const token = useAuthStore((state) => state.token);
@@ -177,9 +148,6 @@ function SessionBootstrap({ children }: { children: ReactNode }) {
 }
 
 function App() {
-  const skipIntro = shouldSkipIntro();
-  const [introDone, setIntroDone] = useState(() => skipIntro || hasSeenIntro());
-
   return (
     <QueryClientProvider client={queryClient}>
       <SessionBootstrap>
@@ -187,13 +155,6 @@ function App() {
       </SessionBootstrap>
       <Toaster position="bottom-right" richColors />
       <ConsoleRoot />
-
-      {!skipIntro && !introDone && (
-        <Launch
-          introSessionKey={INTRO_KEY}
-          onComplete={() => setIntroDone(true)}
-        />
-      )}
     </QueryClientProvider>
   );
 }

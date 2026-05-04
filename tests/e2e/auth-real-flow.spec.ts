@@ -1,8 +1,9 @@
 import { expect, test } from '@playwright/test';
-import { clearSession, loginAs, preparePage } from './helpers';
+import { loginAs, preparePage } from './helpers';
+
+test.use({ storageState: { cookies: [], origins: [] } });
 
 test('company registration creates an account that can log in again', async ({ page }) => {
-  await clearSession(page);
   await preparePage(page);
 
   const unique = Date.now();
