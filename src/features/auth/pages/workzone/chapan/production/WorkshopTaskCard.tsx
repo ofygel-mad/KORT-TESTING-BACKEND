@@ -1,6 +1,7 @@
 import React from 'react';
 import { Check, MessageSquare, AlertCircle, Star } from 'lucide-react';
 import type { ProductionTask, ProductionStatus } from '@/entities/order/types';
+import { formatOrderItemNumber } from '../../../../../../shared/utils/orderItemNumber';
 import styles from './ChapanProduction.module.css';
 
 interface WorkshopTaskCardProps {
@@ -53,13 +54,6 @@ const formatDate = (dateStr: string | null | undefined): string => {
 
 const hasNotes = (task: ProductionTask): boolean => Boolean(task.notes || task.workshopNotes);
 
-const getOrderPositionLabel = (task: ProductionTask): string => {
-  const rawOrderNumber = String(task.order.orderNumber ?? '');
-  const normalizedOrderNumber = rawOrderNumber.replace(/^ORD-/i, '');
-  const position = task.id.split('-').pop() || '1';
-  return `${normalizedOrderNumber}-${position}`;
-};
-
 export default function WorkshopTaskCard({
   task,
   isSelected,
@@ -72,6 +66,8 @@ export default function WorkshopTaskCard({
   const isVIP = task.order.isDemandingClient && !isUrgent;
   const noteText = task.workshopNotes || task.notes;
   const showsNoteRow = hasNotes(task);
+  const parsedTaskSuffix = Number(task.id.split('-').pop());
+  const taskPosition = task.orderItemPosition ?? (Number.isFinite(parsedTaskSuffix) && parsedTaskSuffix > 0 ? parsedTaskSuffix : null);
 
   return (
     <div
@@ -106,7 +102,7 @@ export default function WorkshopTaskCard({
       </div>
 
       <div className={styles.cell}>
-        <span className={styles.orderNum}>{`\u2116${getOrderPositionLabel(task)}`}</span>
+        <span className={styles.orderNum}>{`\u2116${formatOrderItemNumber(task.order.orderNumber, taskPosition)}`}</span>
       </div>
 
       <div className={`${styles.cell} ${styles.productCell}`}>

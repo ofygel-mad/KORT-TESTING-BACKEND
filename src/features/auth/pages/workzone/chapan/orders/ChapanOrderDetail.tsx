@@ -17,6 +17,7 @@ import { apiClient } from '../../../../shared/api/client';
 import { useAuthStore } from '../../../../shared/stores/auth';
 import { useChapanUiStore } from '../../../../features/workzone/chapan/store';
 import { buildItemLine } from '../../../../shared/utils/itemLine';
+import { formatOrderItemNumber } from '../../../../../../shared/utils/orderItemNumber';
 import styles from './ChapanOrderDetail.module.css';
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
@@ -486,7 +487,7 @@ export default function ChapanOrderDetailPage() {
                   <div key={item.id} className={styles.itemRow}>
                     <div className={styles.itemInfo}>
                       <div className={styles.itemHead}>
-                        <span className={styles.itemName}>{buildItemLine(item)}</span>
+                        <span className={styles.itemName}>{`#${formatOrderItemNumber(order.orderNumber, item.position)} ${buildItemLine(item) || item.productName}`}</span>
                         {showBadge && (
                           <span className={`${styles.routeBadge} ${badgeClass}`}>
                             {effectiveBadgeLabel}
@@ -513,7 +514,7 @@ export default function ChapanOrderDetailPage() {
                           <button
                             type="button"
                             className={`${styles.routeActionBtn} ${route === 'warehouse' ? styles.routeActionBtnActive : ''}`}
-                            onClick={() => setRouteConfirmDraft({ itemId: item.id, itemName: buildItemLine(item), fulfillmentMode: 'warehouse' })}
+                            onClick={() => setRouteConfirmDraft({ itemId: item.id, itemName: `#${formatOrderItemNumber(order.orderNumber, item.position)} ${buildItemLine(item) || item.productName}`, fulfillmentMode: 'warehouse' })}
                             disabled={routeSingleItem.isPending || route === 'warehouse'}
                             title={route === 'warehouse' ? 'Позиция уже зафиксирована как готовая' : undefined}
                           >
@@ -522,7 +523,7 @@ export default function ChapanOrderDetailPage() {
                           <button
                             type="button"
                             className={`${styles.routeActionBtn} ${styles.routeActionBtnPrimary} ${route === 'production' ? styles.routeActionBtnActive : ''}`}
-                            onClick={() => setRouteConfirmDraft({ itemId: item.id, itemName: buildItemLine(item), fulfillmentMode: 'production' })}
+                            onClick={() => setRouteConfirmDraft({ itemId: item.id, itemName: `#${formatOrderItemNumber(order.orderNumber, item.position)} ${buildItemLine(item) || item.productName}`, fulfillmentMode: 'production' })}
                             disabled={routeSingleItem.isPending || route === 'production'}
                             title={route === 'production' ? 'Позиция уже отправлена в цех' : undefined}
                           >

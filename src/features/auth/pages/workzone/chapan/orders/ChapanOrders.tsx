@@ -14,6 +14,7 @@ import { useChapanUiStore } from '../../../../../workzone/chapan/store';
 import { useUnpaidAlerts } from '../../../../../../entities/alert/queries';
 import OrderDetailDrawer from './OrderDetailDrawer';
 import styles from './ChapanOrders.module.css';
+import { formatOrderItemNumber } from '../../../../../../shared/utils/orderItemNumber';
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
   new: 'Новый', confirmed: 'Подтверждён', in_production: 'В цехе',
@@ -106,6 +107,10 @@ function itemSignature(item: ChapanOrder['items'][number]) {
     String(item.quantity ?? 0),
     String(item.unitPrice ?? 0),
   ].join('|');
+}
+
+function formatOrderItemLabel(orderNumber: string, item: ChapanOrder['items'][number]) {
+  return `#${formatOrderItemNumber(orderNumber, item.position)} ${buildItemLine(item) || item.productName}`;
 }
 
 function groupSignature(order: ChapanOrder): string {
@@ -890,7 +895,7 @@ const OrderCard = memo(function OrderCard({ order, onSelectOrder, hasAlert, stoc
     >
       {first && (
         <div className={styles.cardItems}>
-          <span className={styles.cardItemName}>{buildItemLine(first)}</span>
+          <span className={styles.cardItemName}>{formatOrderItemLabel(order.orderNumber, first)}</span>
           {(first.size) && (
             <span className={styles.cardItemMeta}>
               {[first.size, first.length ? `дл. ${first.length}` : ''].filter(Boolean).join(' · ')}
@@ -990,7 +995,7 @@ const BatchCard = memo(function BatchCard({ group, onSelectOrder }: { group: { o
 
         {item && (
           <div className={styles.batchProduct}>
-            <span className={styles.batchProductName}>{buildItemLine(item)}</span>
+            <span className={styles.batchProductName}>{formatOrderItemLabel(first.orderNumber, item)}</span>
             {item.size && (
               <span className={styles.cardItemMeta}>{item.size}</span>
             )}
@@ -1094,7 +1099,7 @@ const OrderRow = memo(function OrderRow({ order, onSelectOrder, hasAlert, stockM
       <div className={styles.rowProduct}>
         {first ? (
           <>
-            <span className={styles.cardItemName}>{buildItemLine(first)}</span>
+            <span className={styles.cardItemName}>{formatOrderItemLabel(order.orderNumber, first)}</span>
             {first.size && (
               <span className={styles.cardItemMeta}>
                 {[first.size, first.length ? `дл. ${first.length}` : ''].filter(Boolean).join(' · ')}
@@ -1181,9 +1186,9 @@ const BatchRow = memo(function BatchRow({ group, onSelectOrder }: { group: { ord
       >
         <span className={styles.rowStripe} />
         <div className={styles.rowProduct}>
-          {item ? (
-            <>
-              <span className={styles.cardItemName}>{buildItemLine(item)}</span>
+        {item ? (
+          <>
+              <span className={styles.cardItemName}>{formatOrderItemLabel(first.orderNumber, item)}</span>
               {item.size && (
                 <span className={styles.cardItemMeta}>{item.size}</span>
               )}

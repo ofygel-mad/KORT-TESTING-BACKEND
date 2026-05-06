@@ -117,17 +117,27 @@ export async function syncOrderToSheets(
       internalNote:          (order as any).internalNote          ?? null,
       shippingNote:          (order as any).shippingNote          ?? null,
       sourceRequestId:       (order as any).sourceRequestId       ?? null,
-      items: order.items.map(item => ({
-        productName:   item.productName,
-        color:         item.color,
-        gender:        item.gender,
-        length:        item.length,
-        size:          item.size,
-        quantity:      item.quantity,
-        unitPrice:     item.unitPrice,
-        itemDiscount:  (item as any).itemDiscount ?? 0,
-        workshopNotes: item.workshopNotes,
-      })),
+      items: [...order.items]
+        .sort((left, right) => {
+          const leftPosition = Number((left as any).position ?? 0);
+          const rightPosition = Number((right as any).position ?? 0);
+          if (leftPosition !== rightPosition) {
+            return leftPosition - rightPosition;
+          }
+          return left.id.localeCompare(right.id);
+        })
+        .map(item => ({
+          position: (item as any).position ?? null,
+          productName:   item.productName,
+          color:         item.color,
+          gender:        item.gender,
+          length:        item.length,
+          size:          item.size,
+          quantity:      item.quantity,
+          unitPrice:     item.unitPrice,
+          itemDiscount:  (item as any).itemDiscount ?? 0,
+          workshopNotes: item.workshopNotes,
+        })),
       payments: order.payments.map(p => ({
         method: p.method,
         amount: (p as any).amount ?? 0,

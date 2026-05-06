@@ -77,6 +77,7 @@ export interface ChapanOrder {
 export interface OrderItem {
   id: string;
   orderId: string;
+  position?: number | null;
   productName: string;
   size: string;             // was: sizeName
   quantity: number;         // was: qty
@@ -93,6 +94,7 @@ export interface ProductionTask {
   id: string;
   orderId: string;
   orderItemId: string;
+  orderItemPosition?: number | null;
   productName: string;
   size: string;
   quantity: number;

@@ -106,6 +106,13 @@ function parseOptionalAmount(value: string) {
   return Number.isFinite(n) ? n : undefined;
 }
 
+function parseOptionalInteger(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  const n = Number(trimmed);
+  return Number.isFinite(n) ? Math.trunc(n) : undefined;
+}
+
 
 const DELIVERY = ['Самовывоз', 'Курьер по городу', 'Казпочта', 'СДЭК', 'Другое'];
 
@@ -215,7 +222,7 @@ export default function ChapanEditOrderPage() {
 
   const {
     register, control, handleSubmit, reset, watch, setValue,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, dirtyFields },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { urgency: 'normal', isDemandingClient: false, items: [] },
@@ -245,8 +252,10 @@ export default function ChapanEditOrderPage() {
   // F3: auto-fill delivery fee when delivery type changes
   useEffect(() => {
     const autoFee = deliveryFeeMap[deliveryType ?? ''];
-    if (autoFee !== undefined) setValue('deliveryFee', autoFee);
-  }, [deliveryType, profile?.kazpostDeliveryFee, profile?.railDeliveryFee, profile?.airDeliveryFee]);
+    if (autoFee !== undefined && deliveryFeeRaw == null && !dirtyFields.deliveryFee) {
+      setValue('deliveryFee', autoFee, { shouldDirty: false, shouldTouch: false });
+    }
+  }, [deliveryType, deliveryFeeRaw, dirtyFields.deliveryFee, profile?.kazpostDeliveryFee, profile?.railDeliveryFee, profile?.airDeliveryFee, setValue]);
 
   const itemsTotal            = items.reduce((s, i) => s + (Number(i.quantity) || 0) * (Number(i.unitPrice) || 0), 0);
   const orderDiscount         = Number.isFinite(orderDiscountRaw)  ? (orderDiscountRaw  ?? 0) : 0;
@@ -259,12 +268,11 @@ export default function ChapanEditOrderPage() {
   const debt                  = Math.max(0, finalTotal - prepayment);
   const mixedSum = Object.values(paymentBreakdownWatch ?? {}).reduce((s, v) => s + (Number(v) || 0), 0);
 
-  // to avoid wiping user's in-progress edits (React Query refetchOnMount reuses the same
-  // component instance but may deliver a new object reference for the same data).
-  const formPopulated = useRef(false);
+  // Preserve in-progress edits for the same order, but rehydrate when the order id changes.
+  const populatedOrderIdRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!order || formPopulated.current) return;
-    formPopulated.current = true;
+    if (!order || populatedOrderIdRef.current === order.id) return;
+    populatedOrderIdRef.current = order.id;
     reset({
       clientName:  formatPersonNameInput(order.clientName),
       clientPhone: order.clientPhone ? formatKazakhPhoneInput(order.clientPhone) : '',
@@ -644,26 +652,36 @@ export default function ChapanEditOrderPage() {
                   <div className={styles.itemRow2}>
                     <div className={styles.field}>
                       <label className={styles.label}>Кол-во</label>
-                      <input
-                        {...register(`items.${idx}.quantity`, { valueAsNumber: true })}
-                        type="number" min="1"
-                        disabled={!editable}
-                        className={styles.input}
-                        onWheel={e => e.currentTarget.blur()}
-                        onFocus={e => e.target.select()}
-                      />
+                      <Controller control={control} name={`items.${idx}.quantity`} render={({ field: f }) => (
+                        <input
+                          type="number"
+                          min="1"
+                          disabled={!editable}
+                          className={styles.input}
+                          value={f.value ?? ''}
+                          onChange={(e) => f.onChange(parseOptionalInteger(e.target.value))}
+                          onBlur={f.onBlur}
+                          onWheel={e => e.currentTarget.blur()}
+                          onFocus={e => e.target.select()}
+                        />
+                      )} />
                     </div>
                     <div className={styles.field}>
                       <label className={styles.label}>Цена за ед. (₸)</label>
-                      <input
-                        {...register(`items.${idx}.unitPrice`, { valueAsNumber: true })}
-                        type="number" min="0"
-                        disabled={!editable}
-                        className={styles.input}
-                        placeholder="0"
-                        onWheel={e => e.currentTarget.blur()}
-                        onFocus={e => e.target.select()}
-                      />
+                      <Controller control={control} name={`items.${idx}.unitPrice`} render={({ field: f }) => (
+                        <input
+                          type="number"
+                          min="0"
+                          disabled={!editable}
+                          className={styles.input}
+                          placeholder="0"
+                          value={f.value ?? ''}
+                          onChange={(e) => f.onChange(parseOptionalAmount(e.target.value))}
+                          onBlur={f.onBlur}
+                          onWheel={e => e.currentTarget.blur()}
+                          onFocus={e => e.target.select()}
+                        />
+                      )} />
                     </div>
                   </div>
 
@@ -868,7 +886,7 @@ export default function ChapanEditOrderPage() {
                         const pct = parseFloat(e.target.value);
                         if (Number.isFinite(pct) && itemsTotal > 0) {
                           setValue('orderDiscount', Math.round(itemsTotal * pct / 100));
-                        } else if (!e.target.value) { setValue('orderDiscount', 0); }
+                        } else if (!e.target.value) { setValue('orderDiscount', undefined); }
                       }}
                       onWheel={e => e.currentTarget.blur()}
                       onFocus={e => e.target.select()}

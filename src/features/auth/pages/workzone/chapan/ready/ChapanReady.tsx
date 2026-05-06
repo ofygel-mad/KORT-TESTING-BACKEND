@@ -5,6 +5,7 @@ import { useArchiveOrder, useChangeOrderStatus, useConfirmSeamstress, useCreateI
 import type { ChapanOrder, InvoiceDocumentPayload, OrderStatus, Priority, Urgency } from '../../../../entities/order/types';
 import { useAuthStore } from '@/shared/stores/auth';
 import { buildItemLine } from '../../../../shared/utils/itemLine';
+import { formatOrderItemNumber } from '../../../../../../shared/utils/orderItemNumber';
 import { useChapanUiStore } from '../../../../features/workzone/chapan/store';
 import ChapanInvoicePreviewModal from '../invoices/ChapanInvoicePreviewModal';
 import styles from './ChapanReady.module.css';
@@ -109,6 +110,10 @@ function buildItemSignature(orderItem: ChapanOrder['items'][number]) {
     String(orderItem.quantity ?? 0),
     String(orderItem.unitPrice ?? 0),
   ].join('|');
+}
+
+function formatOrderItemLabel(orderNumber: string, item: ChapanOrder['items'][number]) {
+  return `#${formatOrderItemNumber(orderNumber, item.position)} ${buildItemLine(item) || item.productName}`;
 }
 
 function groupSignature(order: ChapanOrder) {
@@ -715,7 +720,7 @@ function ReadyProductionDetailModal({
                     return (
                       <div key={item.id} className={styles.itemRow}>
                         <div className={styles.itemName}>
-                          {buildItemLine(item) || item.productName}
+                          {formatOrderItemLabel(order.orderNumber, item)}
                         </div>
                         <div className={styles.itemMeta}>
                           <span>{item.size}</span>
@@ -820,7 +825,7 @@ function ReadyCard({
       <div className={`${styles.readyCell} ${styles.cellItems}`}>
         {firstItem && (
           <>
-            <span className={styles.itemName}>{buildItemLine(firstItem)}</span>
+            <span className={styles.itemName}>{formatOrderItemLabel(order.orderNumber, firstItem)}</span>
             <span className={styles.itemMeta}>{firstItem.size}{firstItem.quantity > 1 && ` × ${firstItem.quantity}`}</span>
           </>
         )}
@@ -896,7 +901,7 @@ function ReadyCard({
               }
               return (
                 <div key={item.id} className={styles.positionRow}>
-                  <span className={styles.positionName}>{buildItemLine(item) || item.productName}</span>
+                  <span className={styles.positionName}>{formatOrderItemLabel(order.orderNumber, item)}</span>
                   <span className={styles.positionStatus} style={{ color }}>{label}</span>
                 </div>
               );
@@ -948,7 +953,7 @@ function ReadyBatchCard({
 
       {firstItem && (
         <div className={styles.batchProduct}>
-          <span className={styles.itemName}>{buildItemLine(firstItem)}</span>
+          <span className={styles.itemName}>{formatOrderItemLabel(firstOrder.orderNumber, firstItem)}</span>
           <span className={styles.itemMeta}>{firstItem.size ?? ''}</span>
         </div>
       )}
@@ -1015,7 +1020,7 @@ function ReadyRow({
       <div className={styles.rowMain}>
         <div className={styles.rowTop}>
           {isSelected && <Check size={13} className={styles.rowCheckmark} />}
-          <span className={styles.itemName}>{buildItemLine(firstItem) || 'Без позиции'}{order.items.length > 1 && ` +${order.items.length - 1}`}</span>
+          <span className={styles.itemName}>{`${firstItem ? formatOrderItemLabel(order.orderNumber, firstItem) : '\u0411\u0435\u0437 \u043f\u043e\u0437\u0438\u0446\u0438\u0438'}${order.items.length > 1 ? ` +${order.items.length - 1}` : ''}`}</span>
           <span className={styles.statusBadge}>{STATUS_LABEL[order.status]}</span>
           {isPendingRouting && (
             <span className={styles.pendingRoutingBadge}><AlertTriangle size={10} /> {pendingCount} без маршрута</span>
@@ -1110,7 +1115,7 @@ function ReadyBatchRow({
             <span className={styles.batchCount}>{orders.length}</span>
             <span className={styles.statusBadge}>{STATUS_LABEL[firstOrder.status]}</span>
           </div>
-          <div className={styles.rowClient}>{firstItem?.productName ?? 'Без позиции'}</div>
+          <div className={styles.rowClient}>{firstItem ? formatOrderItemLabel(firstOrder.orderNumber, firstItem) : '\u0411\u0435\u0437 \u043f\u043e\u0437\u0438\u0446\u0438\u0438'}</div>
           <div className={styles.rowMeta}>
             <span>{orders.length} заказов</span>
             <span>{formatDate(firstOrder.dueDate)}</span>

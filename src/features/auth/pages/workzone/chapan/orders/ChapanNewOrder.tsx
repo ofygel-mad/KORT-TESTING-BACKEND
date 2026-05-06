@@ -174,6 +174,13 @@ function parseOptionalAmount(value: string) {
   return Number.isFinite(n) ? n : undefined;
 }
 
+function parseOptionalInteger(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  const n = Number(trimmed);
+  return Number.isFinite(n) ? Math.trunc(n) : undefined;
+}
+
 function buildPayloadItems(items: FormData['items'], orderDiscount: number) {
   const discountedLines = items.map((item) => {
     const quantity = Number(item.quantity) || 0;
@@ -244,6 +251,7 @@ export default function ChapanNewOrderPage() {
   const [draftRestored, setDraftRestored] = useState(false);
   const [editingRate, setEditingRate] = useState(false);
   const [rateInput, setRateInput] = useState('');
+  const [bankCommissionPrefilled, setBankCommissionPrefilled] = useState(false);
 
   // File state — UI selection only; server upload endpoint not yet implemented.
   // receiptFileNames sends file names to order metadata; actual bytes are not persisted yet.
@@ -256,7 +264,7 @@ export default function ChapanNewOrderPage() {
 
   const {
     register, control, handleSubmit, watch, setValue, reset,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, dirtyFields },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: savedDraft.current ?? createEmptyFormDefaults(),
@@ -288,6 +296,8 @@ export default function ChapanNewOrderPage() {
   }, [watch, userId]);
 
   const deliveryType          = watch('deliveryType');
+  const deliveryFeeRaw        = watch('deliveryFee');
+  const bankCommissionPctRaw  = watch('bankCommissionPercent');
 
   const deliveryFeeMap: Record<string, number> = {
     'Казпочта': profile?.kazpostDeliveryFee ?? 2000,
@@ -298,18 +308,23 @@ export default function ChapanNewOrderPage() {
   // F3: Автоматически проставляем сумму доставки при выборе типа
   useEffect(() => {
     const autoFee = deliveryFeeMap[deliveryType ?? ''];
-    if (autoFee !== undefined) {
-      setValue('deliveryFee', autoFee);
+    if (autoFee !== undefined && deliveryFeeRaw == null && !dirtyFields.deliveryFee) {
+      setValue('deliveryFee', autoFee, { shouldDirty: false, shouldTouch: false });
     }
-  }, [deliveryType, profile?.kazpostDeliveryFee, profile?.railDeliveryFee, profile?.airDeliveryFee]);
+  }, [deliveryType, deliveryFeeRaw, dirtyFields.deliveryFee, profile?.kazpostDeliveryFee, profile?.railDeliveryFee, profile?.airDeliveryFee, setValue]);
 
   // Авто-подстановка глобальной ставки комиссии если поле пустое
   useEffect(() => {
-    if (profile?.bankCommissionPercent && !savedDraft.current?.bankCommissionPercent) {
-      const current = watch('bankCommissionPercent');
-      if (!current) setValue('bankCommissionPercent', profile.bankCommissionPercent);
+    if (
+      profile?.bankCommissionPercent != null
+      && bankCommissionPctRaw == null
+      && !dirtyFields.bankCommissionPercent
+      && !bankCommissionPrefilled
+    ) {
+      setValue('bankCommissionPercent', profile.bankCommissionPercent, { shouldDirty: false, shouldTouch: false });
+      setBankCommissionPrefilled(true);
     }
-  }, [profile?.bankCommissionPercent]);
+  }, [bankCommissionPctRaw, bankCommissionPrefilled, dirtyFields.bankCommissionPercent, profile?.bankCommissionPercent, setValue]);
 
   // Показываем тост один раз, если черновик был восстановлен
   useEffect(() => {
@@ -347,9 +362,6 @@ export default function ChapanNewOrderPage() {
     return sum + Math.max(0, line - (Number(item.itemDiscount) || 0));
   }, 0);
 
-  const deliveryFeeRaw        = watch('deliveryFee');
-  const bankCommissionPctRaw  = watch('bankCommissionPercent');
-
   const orderDiscount       = Number.isFinite(orderDiscountRaw)       ? (orderDiscountRaw       ?? 0) : 0;
   const prepayment          = Number.isFinite(prepaymentRaw)          ? (prepaymentRaw          ?? 0) : 0;
   const deliveryFee         = Number.isFinite(deliveryFeeRaw)         ? (deliveryFeeRaw         ?? 0) : 0;
@@ -383,7 +395,16 @@ export default function ChapanNewOrderPage() {
     clearDraft(userId);
     savedDraft.current = null;
     reset(createEmptyFormDefaults());
+    setDiscountPercent('');
+    setEditingRate(false);
+    setRateInput('');
+    setItemPhotos({});
+    setReceipts([]);
+    if (receiptInputRef.current) {
+      receiptInputRef.current.value = '';
+    }
     setDraftRestored(false);
+    setBankCommissionPrefilled(false);
     autosaveEnabledRef.current = true;
   }
 
@@ -437,6 +458,14 @@ export default function ChapanNewOrderPage() {
     stopDraftAutosave();
     clearDraft(userId);
     reset(createEmptyFormDefaults());
+    setDiscountPercent('');
+    setEditingRate(false);
+    setRateInput('');
+    setItemPhotos({});
+    setReceipts([]);
+    if (receiptInputRef.current) {
+      receiptInputRef.current.value = '';
+    }
     navigate('/workzone/chapan/orders');
   }
 
@@ -700,17 +729,38 @@ export default function ChapanNewOrderPage() {
                       </div>
                       <div className={styles.wtableCell}>
                         <Controller control={control} name={`items.${idx}.quantity`} render={({ field: f }) => (
-                          <input type="number" min="1" className={styles.wtableNum} value={f.value ?? 1} onChange={e => f.onChange(Number(e.target.value))} onBlur={f.onBlur} />
+                          <input
+                            type="number"
+                            min="1"
+                            className={styles.wtableNum}
+                            value={f.value ?? ''}
+                            onChange={e => f.onChange(parseOptionalInteger(e.target.value))}
+                            onBlur={f.onBlur}
+                          />
                         )} />
                       </div>
                       <div className={styles.wtableCell}>
                         <Controller control={control} name={`items.${idx}.unitPrice`} render={({ field: f }) => (
-                          <input type="number" min="0" className={styles.wtableNum} value={f.value ?? 0} onChange={e => f.onChange(Number(e.target.value))} onBlur={f.onBlur} />
+                          <input
+                            type="number"
+                            min="0"
+                            className={styles.wtableNum}
+                            value={f.value ?? ''}
+                            onChange={e => f.onChange(parseOptionalAmount(e.target.value))}
+                            onBlur={f.onBlur}
+                          />
                         )} />
                       </div>
                       <div className={styles.wtableCell}>
                         <Controller control={control} name={`items.${idx}.itemDiscount`} render={({ field: f }) => (
-                          <input type="number" min="0" className={styles.wtableNum} value={f.value ?? 0} onChange={e => f.onChange(Number(e.target.value))} onBlur={f.onBlur} />
+                          <input
+                            type="number"
+                            min="0"
+                            className={styles.wtableNum}
+                            value={f.value ?? ''}
+                            onChange={e => f.onChange(parseOptionalAmount(e.target.value))}
+                            onBlur={f.onBlur}
+                          />
                         )} />
                       </div>
                       <div className={`${styles.wtableCell} ${styles.wtableTotalCell}`}>{fmt(lineTotal)}</div>
@@ -859,8 +909,18 @@ export default function ChapanNewOrderPage() {
                       </div>
                       <div className={styles.field}>
                         <label className={styles.label}>Кол-во</label>
-                        <input {...register(`items.${idx}.quantity`, { valueAsNumber: true })} type="number" min="1"
-                          className={styles.input} onWheel={e => e.currentTarget.blur()} onFocus={e => e.target.select()} />
+                        <Controller control={control} name={`items.${idx}.quantity`} render={({ field: f }) => (
+                          <input
+                            type="number"
+                            min="1"
+                            className={styles.input}
+                            value={f.value ?? ''}
+                            onChange={(e) => f.onChange(parseOptionalInteger(e.target.value))}
+                            onBlur={f.onBlur}
+                            onWheel={e => e.currentTarget.blur()}
+                            onFocus={e => e.target.select()}
+                          />
+                        )} />
                       </div>
                       <div className={styles.field}>
                         <label className={styles.label}>Цена за ед. (₸)</label>
@@ -1077,7 +1137,7 @@ export default function ChapanNewOrderPage() {
                         const pct = parseFloat(e.target.value);
                         if (Number.isFinite(pct) && itemsTotal > 0) {
                           setValue('orderDiscount', Math.round(itemsTotal * pct / 100));
-                        } else if (!e.target.value) { setValue('orderDiscount', 0); }
+                        } else if (!e.target.value) { setValue('orderDiscount', undefined); }
                       }}
                       onWheel={(e) => e.currentTarget.blur()}
                       onFocus={(e) => e.target.select()}

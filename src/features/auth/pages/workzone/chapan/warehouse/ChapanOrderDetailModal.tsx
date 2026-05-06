@@ -8,6 +8,7 @@ import {
 } from '../../../../entities/order/queries';
 import type { ChapanOrder } from '../../../../entities/order/types';
 import { useChapanPermissions } from '../../../../shared/hooks/useChapanPermissions';
+import { formatOrderItemNumber } from '../../../../../../shared/utils/orderItemNumber';
 import modalStyles from '../invoices/ChapanInvoicePreviewModal.module.css';
 
 const URGENCY_LABEL: Record<string, string> = { normal: '', urgent: 'Срочно' };
@@ -237,7 +238,7 @@ export default function ChapanOrderDetailModal({ orderId, open, onClose }: Props
                       <tbody>
                         {items.map((item) => (
                           <tr key={item.id} className={modalStyles.tableRow}>
-                            <td style={{ paddingLeft: 10 }}>{item.productName}</td>
+                            <td style={{ paddingLeft: 10 }}>{`#${formatOrderItemNumber(orderNumber, item.position)} ${item.productName}`}</td>
                             <td style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{item.size}</td>
                             <td style={{ textAlign: 'center', fontSize: 12 }}>{item.quantity}</td>
                             <td style={{ textAlign: 'right', fontSize: 12 }}>{fmtMoney(item.unitPrice)}</td>
