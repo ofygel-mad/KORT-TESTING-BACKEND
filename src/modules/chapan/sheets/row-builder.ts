@@ -8,6 +8,8 @@
  * go at the end so existing spreadsheets don't shift their column layout.
  */
 
+import { formatOrderItemNumber } from '../order-item-number.js';
+
 export const SHEET_HEADER = [
   'ID заказа',            // A — idempotency key
   'Номер заказа',         // B
@@ -91,7 +93,8 @@ function buildItemPrimaryLine(item: {
   return line && gender ? `${line} (${gender})` : line;
 }
 
-function buildShortItemSummary(items: Array<{
+function buildShortItemSummary(orderNumber: string, items: Array<{
+  position?: number | null;
   productName?: string | null;
   color?: string | null;
   gender?: string | null;
@@ -100,7 +103,9 @@ function buildShortItemSummary(items: Array<{
   quantity?: number | null;
 }>): string {
   return items.map((item) => {
+    const itemNumber = formatOrderItemNumber(orderNumber, item.position);
     return [
+      `#${itemNumber}`,
       buildItemPrimaryLine(item),
       compact(item.size),
       item.length ? `дл. ${compact(item.length)}` : '',
@@ -109,7 +114,8 @@ function buildShortItemSummary(items: Array<{
   }).join('; ');
 }
 
-function buildItemsJson(items: Array<{
+function buildItemsJson(orderNumber: string, items: Array<{
+  position?: number | null;
   productName?: string | null;
   color?: string | null;
   gender?: string | null;
@@ -121,6 +127,8 @@ function buildItemsJson(items: Array<{
   workshopNotes?: string | null;
 }>): string {
   return JSON.stringify(items.map((item) => ({
+    position: item.position ?? null,
+    orderItemNumber: formatOrderItemNumber(orderNumber, item.position),
     productName:   compact(item.productName),
     color:         compact(item.color),
     gender:        compact(item.gender),
@@ -151,10 +159,18 @@ function buildAttachmentNames(attachments: Array<{ originalName?: string | null;
     .join('; ');
 }
 
-function buildWorkshopNotes(items: Array<{ workshopNotes?: string | null; productName?: string | null }>): string {
+function buildWorkshopNotes(orderNumber: string, items: Array<{
+  position?: number | null;
+  workshopNotes?: string | null;
+  productName?: string | null;
+}>): string {
   return items
     .filter(i => compact(i.workshopNotes))
-    .map(i => `${compact(i.productName) || 'Позиция'}: ${compact(i.workshopNotes)}`)
+    .map(i => {
+      const itemNumber = formatOrderItemNumber(orderNumber, i.position);
+      const title = compact(i.productName) || '\u041f\u043e\u0437\u0438\u0446\u0438\u044f';
+      return `#${itemNumber} ${title}: ${compact(i.workshopNotes)}`;
+    })
     .join(' | ');
 }
 
@@ -189,6 +205,7 @@ export type SheetOrderPayload = {
   shippingNote?: string | null;
   sourceRequestId?: string | null;
   items: Array<{
+    position?: number | null;
     productName?: string | null;
     color?: string | null;
     gender?: string | null;
@@ -231,8 +248,8 @@ export function buildSheetRow(order: SheetOrderPayload): string[] {
     compact(order.source),
     fmtDate(order.dueDate ?? null),
     compact(order.expectedPaymentMethod),
-    buildShortItemSummary(order.items),
-    buildItemsJson(order.items),
+    buildShortItemSummary(order.orderNumber, order.items),
+    buildItemsJson(order.orderNumber, order.items),
     String(itemCount),
     String(unitCount),
     fmtMoney(itemsSubtotal),
@@ -249,7 +266,7 @@ export function buildSheetRow(order: SheetOrderPayload): string[] {
     compact(order.shippingNote),
     order.attachments.length > 0 ? String(order.attachments.length) : '',
     buildAttachmentNames(order.attachments),
-    buildWorkshopNotes(order.items),
+    buildWorkshopNotes(order.orderNumber, order.items),
     compact(order.sourceRequestId),
     fmtDate(order.updatedAt),
   ];

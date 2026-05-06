@@ -9,6 +9,10 @@ import {
   applyWarehouseOrderTransitionSideEffectsTx as applyWarehouseOrderTransitionSideEffectsTxV2,
   consumeCanonicalWarehouseReservationsForOrder as consumeCanonicalWarehouseReservationsForOrderV2,
 } from '../warehouse/warehouse-order-orchestration.service.js';
+import {
+  getNextOrderItemPosition,
+  sortOrderItemsByPosition,
+} from './order-item-number.js';
 
 // Async fire-and-forget helper ? never throws, never blocks the main flow
 function fireSheetSync(orgId: string, orderId: string) {
@@ -342,10 +346,11 @@ function inferFulfillmentMode(params: {
 
 function mapOrder(order: OrderRecord) {
   const productionItemIds = new Set(order.productionTasks.map((task) => task.orderItemId));
+  const items = sortOrderItemsByPosition(order.items);
 
   return {
     ...order,
-    items: order.items.map((item) => ({
+    items: items.map((item) => ({
       ...item,
       fulfillmentMode: inferFulfillmentMode({
         rawMode: item.fulfillmentMode,
@@ -662,9 +667,10 @@ export async function create(orgId: string, authorId: string, authorName: string
     }
 
     const orderItemCreates = await Promise.all(
-      data.items.map(async (item) => {
+      data.items.map(async (item, index) => {
         const variantSnapshot = await buildOrderItemVariantSnapshot(tx, orgId, item);
         return {
+          position: index + 1,
           productName: item.productName,
           color: item.color?.trim() || undefined,
           gender: item.gender?.trim() || undefined,
@@ -953,7 +959,7 @@ export async function confirm(orgId: string, id: string, authorId: string, autho
     id,
     authorId,
     authorName,
-    order.items.map((item) => ({ itemId: item.id, fulfillmentMode: 'production' })),
+    sortOrderItemsByPosition(order.items).map((item) => ({ itemId: item.id, fulfillmentMode: 'production' })),
   );
 }
 
@@ -981,7 +987,7 @@ export async function fulfillFromStock(orgId: string, id: string, authorId: stri
     id,
     authorId,
     authorName,
-    order.items.map((item) => ({ itemId: item.id, fulfillmentMode: 'warehouse' })),
+    sortOrderItemsByPosition(order.items).map((item) => ({ itemId: item.id, fulfillmentMode: 'warehouse' })),
   );
 }
 
@@ -1369,11 +1375,12 @@ export async function update(orgId: string, id: string, authorId: string, author
       }
 
       await tx.chapanOrderItem.deleteMany({ where: { orderId: id } });
-      for (const item of data.items) {
+      for (const [index, item] of data.items.entries()) {
         const variantSnapshot = await buildOrderItemVariantSnapshot(tx, orgId, item);
         await tx.chapanOrderItem.create({
           data: {
             orderId: id,
+            position: index + 1,
             productName: item.productName,
             color: item.color?.trim() || null,
             gender: item.gender?.trim() || null,
@@ -1797,13 +1804,14 @@ export async function approveChangeRequest(
     // New entries (not matching any current item) get a new OrderItem + queued ProductionTask.
     // Existing tasks are NEVER deleted ? seamstress keeps her current work.
 
-    const currentItems = order.items;
+    const currentItems = sortOrderItemsByPosition(order.items);
 
     function itemKey(productName: string, size: string) {
       return `${productName}|${size}`;
     }
 
     const existingKeys = new Set(currentItems.map((i) => itemKey(i.productName, i.size)));
+    let nextPosition = getNextOrderItemPosition(currentItems);
 
     const addedItems = proposedItems.filter(
       (p) => !existingKeys.has(itemKey(p.productName, p.size)),
@@ -1833,6 +1841,7 @@ export async function approveChangeRequest(
       const newItem = await tx.chapanOrderItem.create({
         data: {
           orderId: order.id,
+          position: nextPosition++,
           productName: item.productName,
           size: item.size,
           quantity: item.quantity,

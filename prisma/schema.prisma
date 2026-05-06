@@ -813,6 +813,7 @@ model ChapanOrder {
 model ChapanOrderItem {
   id                String  @id @default(cuid())
   orderId           String  @map("order_id")
+  position          Int     @map("item_position")
   productName       String  @map("product_name")
   size              String
   quantity          Int     @default(1)
@@ -831,6 +832,8 @@ model ChapanOrderItem {
   order          ChapanOrder           @relation(fields: [orderId], references: [id], onDelete: Cascade)
   productionTask ChapanProductionTask?
 
+  @@unique([orderId, position])
+  @@index([orderId, position])
   @@map("chapan_order_items")
 }
 
