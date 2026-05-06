@@ -1651,14 +1651,57 @@ export async function checkVariantAvailability(
 
     const variantKey = buildWarehouseVariantKey(name, attrs);
     const hasAttributes = Object.keys(attrs).length > 0;
+    const normalizedName = normalizeWarehouseName(name);
 
-    // Exact variantKey match first
+    // 1. New catalog system: WarehouseProductCatalog → WarehouseVariant → WarehouseStockBalance
+    const catalogProduct = await prisma.warehouseProductCatalog.findFirst({
+      where: {
+        orgId,
+        OR: [
+          { normalizedName },
+          { name: { contains: name, mode: 'insensitive' } },
+        ],
+      },
+      select: { id: true, name: true },
+    });
+
+    if (catalogProduct) {
+      const catalogVariants = await prisma.warehouseVariant.findMany({
+        where: hasAttributes
+          ? { orgId, productCatalogId: catalogProduct.id, variantKey }
+          : { orgId, productCatalogId: catalogProduct.id },
+        select: { id: true },
+      });
+
+      if (catalogVariants.length > 0) {
+        const balance = await prisma.warehouseStockBalance.aggregate({
+          where: {
+            orgId,
+            variantId: { in: catalogVariants.map((cv) => cv.id) },
+            stockStatus: 'available',
+          },
+          _sum: { qtyAvailable: true },
+        });
+
+        const totalAvailable = balance._sum.qtyAvailable ?? 0;
+        const status: VariantAvailabilityStatus = totalAvailable === 0 ? 'none' : 'ok';
+
+        result[variantKey] = {
+          qty: totalAvailable,
+          available: totalAvailable,
+          status,
+          itemName: catalogProduct.name,
+        };
+        continue;
+      }
+    }
+
+    // 2. Fall back to legacy WarehouseItem
     let item = await prisma.warehouseItem.findFirst({
       where: { orgId, variantKey },
       select: { name: true, qty: true, qtyReserved: true, qtyMin: true },
     });
 
-    // Fall back to name-only match when no attributes given
     if (!item && !hasAttributes) {
       item = await prisma.warehouseItem.findFirst({
         where: { orgId, name: { contains: name, mode: 'insensitive' } },
