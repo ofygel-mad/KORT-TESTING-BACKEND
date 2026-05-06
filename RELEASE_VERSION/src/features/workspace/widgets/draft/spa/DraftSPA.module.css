@@ -1,0 +1,343 @@
+.root {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 14px;
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--fill-accent-soft) 34%, transparent) 0%, transparent 30%),
+    linear-gradient(180deg, color-mix(in srgb, var(--bg-surface-elevated) 88%, var(--bg-canvas)) 0%, color-mix(in srgb, var(--bg-canvas) 94%, black 6%) 100%);
+}
+
+.toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 92%, transparent);
+  flex-shrink: 0;
+}
+
+.toolbarCopy {
+  display: grid;
+  gap: 4px;
+}
+
+.eyebrow {
+  color: var(--text-tertiary);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.title {
+  color: var(--text-primary);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.sub {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.55;
+  max-width: 48ch;
+}
+
+.addBtn,
+.emptyBtn,
+.pickerCard,
+.blockRemove {
+  font: inherit;
+}
+
+.addBtn,
+.emptyBtn {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--fill-accent) 22%, transparent);
+  background: color-mix(in srgb, var(--fill-accent-soft) 82%, transparent);
+  color: var(--fill-accent);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    transform var(--motion-fast) var(--motion-ease),
+    border-color var(--motion-fast) var(--motion-ease),
+    box-shadow var(--motion-fast) var(--motion-ease);
+}
+
+.addBtn:hover,
+.emptyBtn:hover,
+.pickerCard:hover,
+.blockRemove:hover {
+  transform: var(--feedback-raise-hover);
+}
+
+.addBtn:hover,
+.emptyBtn:hover {
+  border-color: var(--fill-accent);
+  box-shadow: var(--shadow-sm);
+}
+
+.picker {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 16px 18px 0;
+  flex-shrink: 0;
+}
+
+.pickerCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 20px;
+  border: 1px solid var(--rc-detail-surface-border);
+  background: var(--rc-detail-surface-bg);
+  box-shadow: var(--surface-shadow-rest);
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    transform var(--motion-fast) var(--motion-ease),
+    border-color var(--motion-fast) var(--motion-ease),
+    box-shadow var(--motion-fast) var(--motion-ease);
+}
+
+.pickerCard:hover {
+  border-color: var(--brand-panel-border);
+  box-shadow: var(--brand-panel-shadow);
+}
+
+.pickerIconWrap {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--fill-accent-soft) 72%, transparent);
+  flex-shrink: 0;
+}
+
+.pickerIcon {
+  color: var(--fill-accent);
+}
+
+.pickerText {
+  display: grid;
+  gap: 4px;
+}
+
+.pickerLabel {
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.pickerDesc {
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.canvas {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 18px 18px;
+}
+
+.canvas::-webkit-scrollbar {
+  width: 4px;
+}
+
+.canvas::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--border-default) 88%, transparent);
+}
+
+.empty {
+  flex: 1;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 10px;
+  padding: 32px 20px;
+  border-radius: 24px;
+  border: 1px dashed color-mix(in srgb, var(--border-subtle) 88%, transparent);
+  background: color-mix(in srgb, var(--bg-surface-inset) 76%, transparent);
+  text-align: center;
+}
+
+.emptyIconWrap {
+  width: 60px;
+  height: 60px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--fill-accent-soft) 70%, transparent);
+}
+
+.emptyIcon {
+  color: var(--fill-accent);
+}
+
+.emptyTitle {
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.emptyDesc {
+  max-width: 34ch;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.block {
+  overflow: hidden;
+  border-radius: 22px;
+  border: 1px solid var(--rc-detail-surface-border);
+  background: var(--rc-detail-surface-bg);
+  box-shadow: var(--surface-shadow-rest);
+  flex-shrink: 0;
+}
+
+.blockHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 88%, transparent);
+}
+
+.blockTitle {
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.blockRemove {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition:
+    transform var(--motion-fast) var(--motion-ease),
+    color var(--motion-fast) var(--motion-ease),
+    background var(--motion-fast) var(--motion-ease);
+}
+
+.blockRemove:hover {
+  color: var(--fill-negative-text);
+  background: color-mix(in srgb, var(--fill-negative-soft) 74%, transparent);
+}
+
+.noteArea {
+  width: 100%;
+  min-height: 140px;
+  padding: 14px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+}
+
+.noteArea::placeholder {
+  color: var(--text-tertiary);
+}
+
+.tablePlaceholder,
+.chartPlaceholder {
+  min-height: 110px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  text-align: center;
+}
+
+.chartBars {
+  display: flex;
+  align-items: flex-end;
+  gap: 5px;
+  height: 58px;
+}
+
+.chartBar {
+  width: 16px;
+  border-radius: 6px 6px 0 0;
+}
+
+.chartBarAccent {
+  background: color-mix(in srgb, var(--fill-accent) 72%, white 28%);
+}
+
+.chartBarMuted {
+  background: color-mix(in srgb, var(--fill-accent-soft) 82%, transparent);
+}
+
+@media (max-width: 860px) {
+  .picker {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .toolbarCopy {
+    width: 100%;
+  }
+
+  .addBtn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .canvas {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .blockHeader {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+}

@@ -423,7 +423,7 @@ export default function ChapanNewOrderPage() {
       receiptInputRef.current.value = '';
     }
     setDraftRestored(false);
-    setBankCommissionPrefilled(true);
+    setBankCommissionPrefilled(false);
     autosaveEnabledRef.current = true;
   }
 
@@ -474,17 +474,7 @@ export default function ChapanNewOrderPage() {
 
     // Rotate the key so the next order from this session gets its own unique key
     idemKeyRef.current = crypto.randomUUID();
-    stopDraftAutosave();
-    clearDraft(userId);
-    reset(createEmptyFormDefaults());
-    setDiscountPercent('');
-    setEditingRate(false);
-    setRateInput('');
-    setItemPhotos({});
-    setReceipts([]);
-    if (receiptInputRef.current) {
-      receiptInputRef.current.value = '';
-    }
+    resetDraftState();
     navigate('/workzone/chapan/orders');
   }
 

@@ -1,0 +1,179 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   Launch overlay
+   Palette is intentionally close to the real Kort workspace:
+     – background deep charcoal-navy  #0b0e17
+     – cards / surfaces               #131924
+     – accent warm amber              #c27c30  (matches workspace orange-amber)
+   So the curtain lifting feels like a natural continuation of the app's mood,
+   not a jarring switch from one world to another.
+───────────────────────────────────────────────────────────────────────────── */
+
+.launch-root {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  overflow: hidden;
+  pointer-events: none;
+  /*
+    NO background-color here — intentional.
+    The WebGL curtain canvas starts at y=innerHeight (full screen covered),
+    so there is no visible gap during GL initialisation.
+    Pixels above the wave edge are discarded (alpha=0) in the fragment shader,
+    which must reveal the workspace rendered beneath — not a colour layer.
+    The body background from index.html (#100E0B) covers the sub-frame
+    init period on slow devices.
+  */
+}
+
+/* ── Film grain ─────────────────────────────────────────────────────────── */
+.launch-grain {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  opacity: 0.07;
+}
+
+/* ── Text layer — above the WebGL curtain ───────────────────────────────── */
+.launch-copy {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+/* ─── KORT logotype ──────────────────────────────────────────────────────── */
+.launch-title {
+  margin: 0;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+
+  font-family: 'Plus Jakarta Sans', 'DM Sans', 'Segoe UI', sans-serif;
+  font-size: clamp(62px, 10vw, 160px);
+
+  /*
+   * 600 (SemiBold): more confident than 500, less aggressive than 700/900.
+   * For a short corporate acronym like KORT this reads as authoritative
+   * and architecturally solid — not heavy-handed.
+   */
+  font-weight: 600;
+
+  /*
+   * Generous tracking (letter-spacing) = premium / architectural feel.
+   * Luxury brands, automotive, high-end SaaS all do this with short names.
+   * 0.32em gives visible spacing without the word feeling disjointed.
+   */
+  letter-spacing: 0.32em;
+  text-indent: 0.32em;   /* compensate so the word stays visually centred */
+  text-transform: uppercase;
+  line-height: 1;
+
+  /* Slightly off-white — less harsh than pure #fff on the dark surface */
+  color: rgba(246, 240, 232, 0.96);
+
+  /*
+   * Bloom: two layers of text-shadow create an optical glow as if the
+   * letters emit light onto the dark background (cinema-title effect).
+   * Layer 1: tight, bright — simulates the lit surface of the glyph
+   * Layer 2: wide, diffuse — the halo spread
+   * Layer 3: very subtle drop — anchors the text vs. the grain
+   */
+  text-shadow:
+    0 0  28px rgba(238, 214, 182, 0.24),
+    0 0  80px rgba(184, 146, 92, 0.14),
+    0 0 160px rgba(105, 128, 176, 0.10),
+    0 2px  5px rgba(0,   0,   0,  0.50);
+}
+
+/* ─── ERP cinematic subtitle ─────────────────────────────────────────────── */
+.launch-subtitle-wrap {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+/* Decorative horizontal rules */
+.launch-lines {
+  position: relative;
+  width: clamp(240px, 40vw, 620px);
+  display: flex;
+  justify-content: space-between;
+}
+
+.lr {
+  display: block;
+  height: 1px;
+  width: 47%;
+  background: linear-gradient(
+    90deg,
+    transparent               0%,
+    rgba(214, 173, 121, 0.28) 40%,
+    rgba(214, 173, 121, 0.28) 60%,
+    transparent               100%
+  );
+}
+
+/* ERP words row */
+.launch-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 0.48em;
+  white-space: nowrap;
+}
+
+/* Each word clips the slide-up reveal */
+.lw-outer {
+  display: inline-block;
+  overflow: hidden;
+  padding-bottom: 0.06em;
+}
+
+.lw-inner {
+  display: block;
+  font-family: 'Plus Jakarta Sans', 'DM Sans', 'Segoe UI', sans-serif;
+  font-size: clamp(9px, 1.15vw, 17px);
+  font-weight: 500;
+  letter-spacing: 0.42em;
+  text-indent: 0.42em;
+  text-transform: uppercase;
+  color: rgba(230, 212, 190, 0.78);
+  /* translateY set / animated by GSAP */
+}
+
+/* ── WebGL curtain ──────────────────────────────────────────────────────── */
+.launch-curtain {
+  position: absolute;
+  inset: 0;
+  z-index: 3;     /* above grain(1); text sits at z:4 above it */
+  pointer-events: none;
+  display: block;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+@media (max-width: 720px) {
+  .launch-title {
+    font-size: clamp(48px, 15vw, 96px);
+    letter-spacing: 0.24em;
+    text-indent: 0.24em;
+  }
+
+  .lw-inner {
+    font-size: clamp(8px, 2.4vw, 13px);
+    letter-spacing: 0.30em;
+    text-indent: 0.30em;
+  }
+
+  .launch-lines {
+    width: clamp(180px, 72vw, 380px);
+  }
+}

@@ -1,0 +1,50 @@
+.card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: start;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid var(--border-default);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--bg-surface-elevated) 92%, rgba(88, 132, 191, 0.08)) 0%, var(--bg-surface) 100%);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.18);
+}
+
+.compact {
+  padding: 16px;
+  border-radius: 16px;
+}
+
+.icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  color: var(--fill-info-text);
+  background: color-mix(in srgb, var(--fill-info-soft) 76%, transparent);
+  border: 1px solid color-mix(in srgb, var(--fill-info-text) 20%, transparent);
+}
+
+.body {
+  min-width: 0;
+}
+
+.title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.subtitle {
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.actions {
+  grid-column: 2;
+  margin-top: 12px;
+}

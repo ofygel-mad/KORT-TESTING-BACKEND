@@ -1,0 +1,25 @@
+export type AnalyticsEventName =
+  | 'auth_login_success'
+  | 'dashboard_today_focus_opened'
+  | 'dashboard_quick_action_used'
+  | 'customer_created'
+  | 'customer_profile_opened'
+  | 'deal_created'
+  | 'deal_stage_changed'
+  | 'task_completed'
+  | 'activity_logged'
+  | 'import_started'
+  | 'import_review_opened'
+  | 'import_committed'
+  | 'spreadsheet_sync_started'
+  | 'spreadsheet_sync_completed'
+  | 'export_started'
+  | 'search_opened'
+  | 'search_result_opened'
+  | 'command_palette_action_run'
+  | 'automation_enabled'
+  | 'notification_clicked'
+  | 'mobile_fab_used'
+  | 'focus_mode_started';
+
+export type AnalyticsPayload = Record<string, string | number | boolean | null | undefined>;

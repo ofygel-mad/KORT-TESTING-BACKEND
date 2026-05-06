@@ -1,0 +1,12 @@
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 0;
+  flex-wrap: wrap;
+}
+.item { display: flex; align-items: center; gap: 4px; }
+.chevron { color: var(--text-tertiary); }
+.link { font-size: 13px; color: var(--text-tertiary); text-decoration: none; transition: color var(--motion-duration-fast) var(--motion-ease-standard); }
+.link:hover { color: var(--text-secondary); }
+.current { font-size: 13px; font-weight: 500; color: var(--text-primary); }

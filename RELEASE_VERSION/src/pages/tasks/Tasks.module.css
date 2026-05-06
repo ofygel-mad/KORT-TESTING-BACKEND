@@ -1,0 +1,387 @@
+/* ═══════════════════════════════════════════════════════════════
+   TASKS PAGE — CSS Module
+   Ни одного inline-стиля в TSX. Всё через токены.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Page shell ─────────────────────────────────────────────── */
+.page {
+  padding: 24px 28px;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ── Filter tabs row ────────────────────────────────────────── */
+.filterBar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 20px;
+  padding: 4px;
+  background: var(--bg-surface-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: calc(var(--surface-radius-tight) - 2px);
+  width: fit-content;
+}
+
+.filterTab {
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--font-body);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition:
+    background var(--motion-duration-fast) var(--motion-ease-standard),
+    color      var(--motion-duration-fast) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-fast) var(--motion-ease-standard);
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.filterTab:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.filterTab.active {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border-color: var(--border-default);
+  box-shadow: var(--shadow-xs);
+}
+
+/* ── Stats strip ────────────────────────────────────────────── */
+.statsStrip {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.statPill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.statPill svg {
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.statPill.danger {
+  background: var(--fill-negative-soft);
+  border-color: transparent;
+  color: var(--fill-negative-text);
+}
+
+.statPill.warning {
+  background: var(--fill-warning-soft);
+  border-color: transparent;
+  color: var(--fill-warning-text);
+}
+
+.statPill.success {
+  background: var(--fill-positive-soft);
+  border-color: transparent;
+  color: var(--fill-positive-text);
+}
+
+/* ── Task list ──────────────────────────────────────────────── */
+.taskList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* ── Task item ──────────────────────────────────────────────── */
+.taskItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  transition:
+    border-color var(--motion-duration-fast) var(--motion-ease-standard),
+    box-shadow   var(--motion-duration-fast) var(--motion-ease-standard),
+    opacity      var(--motion-duration-fast) var(--motion-ease-standard);
+  cursor: default;
+}
+
+.taskItem:hover {
+  border-color: var(--border-default);
+  box-shadow: var(--shadow-xs);
+}
+
+.taskItem.done {
+  opacity: 0.5;
+}
+
+.taskItem.overdue {
+  border-color: var(--p-danger-200);
+}
+
+.taskItem.dueToday {
+  border-color: var(--p-warning-200);
+}
+
+/* ── Checkbox button ────────────────────────────────────────── */
+.checkBtn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  margin-top: 1px;
+  border-radius: var(--radius-sm);
+  transition: color var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.checkBtn:hover {
+  color: var(--fill-accent);
+}
+
+.checkBtn.checked {
+  color: var(--fill-positive);
+  cursor: default;
+}
+
+/* ── Task body ──────────────────────────────────────────────── */
+.taskBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.taskTitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+.taskTitle.done {
+  text-decoration: line-through;
+  color: var(--text-tertiary);
+}
+
+.taskMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.metaChip {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.metaChip svg {
+  flex-shrink: 0;
+}
+
+.metaChip.overdue {
+  color: var(--fill-negative-text);
+}
+
+.metaChip.dueToday {
+  color: var(--fill-warning-text);
+}
+
+/* ── Task actions (hover) ───────────────────────────────────── */
+.taskActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.taskItem:hover .taskActions {
+  opacity: 1;
+}
+
+.actionBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  color: var(--text-tertiary);
+  transition:
+    background var(--motion-duration-fast) var(--motion-ease-standard),
+    color      var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.actionBtn:hover {
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+}
+
+.actionBtn.danger:hover {
+  background: var(--fill-negative-soft);
+  color: var(--fill-negative);
+}
+
+/* ── Section separator (grouping) ───────────────────────────── */
+.sectionLabel {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  padding: 12px 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sectionLabel::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-subtle);
+}
+
+/* ── Drawer form ────────────────────────────────────────────── */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fieldLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.fieldRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* ── Priority badge inline ──────────────────────────────────── */
+.priorityDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.priorityDot.low    { background: var(--text-tertiary); }
+.priorityDot.medium { background: var(--fill-warning); }
+.priorityDot.high   { background: var(--fill-negative); }
+
+/* ── Mobile ─────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .page {
+    padding: 14px 16px;
+  }
+
+  .filterBar {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .filterBar::-webkit-scrollbar { display: none; }
+
+  .statsStrip { display: none; }
+
+  .taskActions { opacity: 1; }
+
+  .fieldRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+.skeletonCheck {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface-inset);
+  flex-shrink: 0;
+}
+
+.skeletonTitle {
+  height: 13px;
+  width: 55%;
+  margin-bottom: 8px;
+  border-radius: 4px;
+  background: var(--bg-surface-inset);
+}
+
+.skeletonMeta {
+  height: 11px;
+  width: 30%;
+  border-radius: 4px;
+  background: var(--bg-surface-inset);
+}
+
+.drawerFooter {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.shortcutKey {
+  margin-left: 6px;
+  font-size: 10px;
+  opacity: 0.55;
+}
+
+.textarea {
+  min-height: 72px;
+}
+
+.taskList > * { scroll-margin-top: 88px; }
+
+
+.emptyStateWrap { display: grid; gap: 12px; }
+.emptyRecoveryRail { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.emptyRecoveryBtn { min-height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--empty-recovery-border); background: var(--empty-recovery-bg); color: var(--text-secondary); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; transition: transform var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease), color var(--motion-fast) var(--motion-ease), box-shadow var(--motion-fast) var(--motion-ease); }
+.emptyRecoveryBtn:hover { transform: var(--feedback-raise-hover); border-color: var(--fill-accent); box-shadow: var(--shadow-sm); color: var(--text-primary); }
+.emptyRecoveryBtn:active { transform: var(--feedback-soft-press); }
+.taskItem { background: var(--rc-table-shell-bg); border-color: var(--rc-table-shell-border); }
+.taskItem:hover { background: var(--rc-table-row-hover); }

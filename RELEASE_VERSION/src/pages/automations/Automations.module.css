@@ -1,0 +1,678 @@
+.page {
+  padding: var(--space-page-y) var(--space-page-x);
+  width: min(100%, 900px);
+  margin: 0 auto;
+  min-height: 100%;
+}
+
+.accessDenied {
+  padding: var(--space-page-y) var(--space-page-x);
+}
+
+.rulesCard,
+.executionsCard,
+.groupCard,
+.actionCard,
+.preview,
+.selectorButton,
+.addActionMenu,
+.actionPickerButton,
+.steps,
+.stepButton,
+.previewToggle,
+.addGroupButton,
+.addConditionButton,
+.addActionButton,
+.iconButton,
+.logicButton,
+.removeButton,
+.chooseActionClose,
+.footerActions,
+.footerButtons,
+.executionRow,
+.ruleRow,
+.ruleMeta,
+.ruleActions,
+.conditionRow,
+.conditionList,
+.actionFields,
+.actionHeader,
+.groupHeader,
+.selectorIcon,
+.ruleIcon,
+.executionDot,
+.actionTypeGrid,
+.ruleListSkeleton,
+.conditionIntro,
+.actionsIntro,
+.builderBody,
+.nameInputWrap,
+.sectionTitle,
+.executionsTitle,
+.ruleContent,
+.ruleTitle,
+.ruleMetaText,
+.previewTitle,
+.previewText,
+.stepText,
+.emptyHint,
+.groupLogic,
+.fieldLabel,
+.actionTitle,
+.actionOrder,
+.actionMove,
+.actionIconWrap,
+.actionPickerIcon,
+.previewHighlight,
+.previewMuted,
+.nameInput,
+.compactInput,
+.rowGrow,
+.stepButtonInner,
+.executionName,
+.executionMeta,
+.ruleTitleRow,
+.ruleStatus,
+.skeletonRow,
+.selectorText,
+.triggerGrid {
+  box-sizing: border-box;
+}
+
+.triggerGrid,
+.builderBody,
+.conditionList,
+.actionFields,
+.footerButtons,
+.ruleActions,
+.ruleMeta,
+.conditionRow {
+  display: flex;
+}
+
+.triggerGrid,
+.builderBody,
+.conditionList,
+.actionFields {
+  flex-direction: column;
+}
+
+.triggerGrid {
+  gap: 6px;
+}
+
+.selectorButton {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--border-default);
+  background: var(--bg-surface);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color var(--motion-duration-fast) var(--motion-ease-standard),
+    background var(--motion-duration-fast) var(--motion-ease-standard),
+    transform var(--motion-duration-fast) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.selectorButton:hover {
+  transform: translateX(2px);
+  box-shadow: var(--shadow-xs);
+}
+
+.selectorButtonActive {
+  border-color: var(--trigger-color, var(--fill-accent));
+  background: color-mix(in srgb, var(--trigger-color, var(--fill-accent)) 10%, var(--bg-surface));
+}
+
+.selectorIcon,
+.ruleIcon,
+.actionIconWrap,
+.actionPickerIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.selectorIcon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--trigger-color, var(--fill-accent)) 12%, transparent);
+  color: var(--trigger-color, var(--fill-accent));
+}
+
+.selectorText {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.selectorButtonActive .selectorText {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.rowGrow,
+.ruleContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.compactInput {
+  font-size: 12px;
+}
+
+.conditionRow {
+  gap: 6px;
+  align-items: center;
+}
+
+.flex2 { flex: 2; }
+.flex1 { flex: 1; }
+
+.removeButton,
+.iconButton,
+.logicButton,
+.addConditionButton,
+.addGroupButton,
+.addActionButton,
+.previewToggle,
+.chooseActionClose,
+.modeLink {
+  font-family: var(--font-body);
+}
+
+.removeButton,
+.iconButton,
+.chooseActionClose {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition:
+    background var(--motion-duration-fast) var(--motion-ease-standard),
+    color var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.removeButton,
+.iconButton { padding: 4px; }
+.chooseActionClose { padding: 2px; }
+.removeButton:hover,
+.iconButton:hover,
+.chooseActionClose:hover { background: var(--bg-hover); color: var(--text-primary); }
+.dangerButton:hover { background: var(--fill-negative-soft); color: var(--fill-negative); }
+
+.groupCard,
+.actionCard,
+.rulesCard,
+.executionsCard,
+.preview,
+.addActionMenu {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+}
+
+.groupCard {
+  border-radius: var(--radius-md);
+  padding: 12px;
+}
+
+.groupHeader,
+.actionHeader,
+.ruleRow,
+.executionRow,
+.footerActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+.groupHeader {
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.groupLogic {
+  display: flex;
+  gap: 4px;
+}
+
+.logicButton {
+  padding: 2px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-default);
+  background: transparent;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  cursor: pointer;
+}
+
+.logicButtonActive {
+  border-color: var(--fill-accent);
+  background: var(--fill-accent-soft);
+  color: var(--fill-accent);
+}
+
+.conditionList { gap: 6px; }
+
+.addConditionButton {
+  margin-top: 8px;
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--fill-accent);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.addGroupButton {
+  padding: 8px;
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border-default);
+  background: none;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.actionCard {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.actionHeader {
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-surface-inset);
+}
+
+.actionMove {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.moveButton {
+  padding: 0;
+  line-height: 1;
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+}
+
+.moveButton:disabled { color: var(--border-strong); cursor: default; }
+
+.actionIconWrap {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--action-color, var(--fill-accent)) 12%, transparent);
+  color: var(--action-color, var(--fill-accent));
+}
+
+.actionOrder {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.actionFields {
+  padding: 12px;
+  gap: 8px;
+}
+
+.fieldLabel {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.addActionMenu {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.addActionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-surface-inset);
+}
+
+.sectionTitle,
+.executionsTitle,
+.previewTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.actionTypeGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  padding: 10px;
+}
+
+.actionPickerButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background var(--motion-duration-fast) var(--motion-ease-standard),
+    transform var(--motion-duration-fast) var(--motion-ease-standard),
+    border-color var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.actionPickerButton:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-default);
+  transform: translateY(-1px);
+}
+
+.actionPickerIcon {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--action-color, var(--fill-accent)) 12%, transparent);
+  color: var(--action-color, var(--fill-accent));
+}
+
+.actionTitle {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.addActionButton {
+  padding: 9px;
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--fill-accent);
+  background: var(--fill-accent-soft);
+  color: var(--fill-accent);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.preview {
+  padding: 14px;
+  border-radius: var(--radius-md);
+  background: var(--bg-surface-inset);
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.previewTitle {
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.previewHighlight {
+  color: var(--fill-accent);
+  font-weight: 600;
+}
+
+.previewTextStrong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.previewMuted { color: var(--text-tertiary); }
+
+.builderBody {
+  gap: 20px;
+}
+
+.nameInput {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.steps {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--bg-surface-inset);
+  border-radius: var(--radius-md);
+}
+
+.stepButton {
+  flex: 1;
+  padding: 0;
+  border: none;
+  background: transparent;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.stepButtonInner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  border-radius: 7px;
+}
+
+.stepButtonActive .stepButtonInner {
+  background: var(--bg-surface);
+  color: var(--fill-accent);
+  box-shadow: var(--shadow-xs);
+}
+
+.stepButtonDone .stepButtonInner {
+  color: var(--fill-positive);
+}
+
+.conditionIntro,
+.actionsIntro {
+  margin: 0 0 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.footerActions {
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.footerButtons {
+  gap: 8px;
+}
+
+.previewToggle {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.rulesCard,
+.executionsCard {
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+.ruleRow {
+  gap: 14px;
+  padding: var(--space-card-padding-compact) 18px;
+}
+
+.ruleDivider,
+.executionDivider,
+.skeletonDivider {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.ruleIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background: var(--bg-surface-inset);
+  color: var(--text-tertiary);
+}
+
+.ruleIconActive {
+  background: color-mix(in srgb, var(--trigger-color, var(--fill-accent)) 10%, transparent);
+  color: var(--trigger-color, var(--fill-accent));
+}
+
+.ruleTitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.ruleMeta {
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ruleMetaText {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.ruleMetaSuccess {
+  color: var(--fill-positive);
+}
+
+.separatorDot {
+  color: var(--border-strong);
+}
+
+.ruleActions { gap: 4px; }
+
+.executionsWrapper { margin-top: 20px; }
+
+.executionsTitle {
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.executionRow {
+  gap: 12px;
+  padding: 10px 16px;
+}
+
+.executionDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--fill-warning);
+  flex-shrink: 0;
+}
+
+.executionDotCompleted { background: var(--fill-positive); }
+.executionDotFailed { background: var(--fill-negative); }
+
+.executionName {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+.executionMeta {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.skeletonRow {
+  padding: var(--space-card-padding-compact) 18px;
+}
+
+.modeLink {
+  margin-left: auto;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--fill-accent);
+}
+
+@media (max-width: 768px) {
+  .page,
+  .accessDenied {
+    padding: 20px 16px;
+  }
+
+  .actionTypeGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .conditionRow,
+  .ruleRow,
+  .footerActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ruleActions,
+  .footerButtons {
+    justify-content: flex-end;
+  }
+
+  .steps {
+    overflow-x: auto;
+  }
+}
+
+.selectorChevron {
+  margin-left: auto;
+  color: var(--trigger-color, var(--fill-accent));
+}
+
+
+.rulesCard, .executionsCard, .groupCard, .actionCard, .preview, .addActionMenu { box-shadow: var(--surface-shadow-rest); }
+.selectorButton:active, .logicButton:active, .addConditionButton:active, .addGroupButton:active, .addActionButton:active, .moveButton:active { transform: var(--feedback-soft-press); }
+.ruleRow, .executionRow { transition: background var(--motion-duration-fast) var(--motion-ease-standard), transform var(--motion-duration-fast) var(--motion-ease-standard); }
+.ruleRow:hover, .executionRow:hover { background: var(--bg-hover); transform: translateY(-1px); }
+
+.ruleRow:hover, .executionRow:hover { background: color-mix(in srgb, var(--bg-hover) 64%, transparent); }
+
+
+.groupCard, .actionCard, .rulesCard, .executionsCard, .preview, .addActionMenu { background: var(--rc-detail-surface-bg); border-color: var(--rc-detail-surface-border); box-shadow: var(--brand-panel-shadow); }
+.selectorButton, .logicButton, .previewToggle { transition: transform var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease), box-shadow var(--motion-fast) var(--motion-ease); }
+.selectorButton:hover, .logicButton:hover, .previewToggle:hover { transform: var(--feedback-raise-hover); box-shadow: var(--shadow-sm); }

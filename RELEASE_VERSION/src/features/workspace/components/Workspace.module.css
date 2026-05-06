@@ -1,0 +1,1848 @@
+/* ═══════════════════════════════════════════════
+   VIEWPORT — fills full page below topbar
+   Sharp edges, no border-radius
+   ═══════════════════════════════════════════════ */
+.workspaceViewport {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border: none;
+  background: linear-gradient(180deg, #081120 0%, #04070f 100%);
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  perspective: 1800px;
+  perspective-origin: 50% 38%;
+  --scene-sky-top: #091221;
+  --scene-sky-bottom: #314867;
+  --scene-hud-border: rgba(255,255,255,0.12);
+  --scene-hud-fill: rgba(9,16,29,0.72);
+  --scene-hud-text: #eff5ff;
+}
+
+.workspaceViewport:active {
+  cursor: grabbing;
+}
+
+/* When a Three.js effect is active, viewport background is transparent */
+.workspaceViewportEffect {
+  background: transparent;
+}
+
+.workspaceViewportFlight {
+  cursor: default;
+}
+
+/* ═══════════════════════════════════════════════
+   EFFECT BG LAYER — Three.js canvas behind world
+   ═══════════════════════════════════════════════ */
+.workspaceBgLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(circle at 50% 16%, rgba(255,255,255,0.08), transparent 28%),
+    linear-gradient(180deg, var(--scene-sky-top) 0%, color-mix(in srgb, var(--scene-sky-top) 52%, var(--scene-sky-bottom)) 42%, var(--scene-sky-bottom) 100%);
+  transition: background 320ms ease;
+  pointer-events: none;
+}
+
+.workspaceBgCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+  opacity: 1;
+  filter: saturate(1.08);
+  pointer-events: none;
+}
+
+.workspaceBgLayer::before,
+.workspaceBgLayer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.workspaceBgLayer::before {
+  background:
+    radial-gradient(circle at 50% 78%, rgba(255,255,255,0.1), transparent 34%),
+    radial-gradient(circle at 50% 30%, rgba(118, 173, 255, 0.06), transparent 42%);
+  mix-blend-mode: screen;
+}
+
+.workspaceBgLayer::after {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 26%),
+    radial-gradient(circle at 50% 0%, rgba(255,255,255,0.04), transparent 44%);
+  opacity: 0.12;
+}
+
+.workspaceBgLayerFlight .workspaceBgCanvas {
+  pointer-events: auto;
+}
+
+.workspaceBgPhoto {
+  position: absolute;
+  inset: 0;
+  background-image: url('/canvasbg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  pointer-events: none;
+}
+
+.sceneControlDock {
+  position: absolute;
+  top: calc(var(--topbar-height) + 18px);
+  right: 22px;
+  z-index: 80;
+  display: grid;
+  gap: 12px;
+  justify-items: end;
+  max-height: calc(100% - (var(--topbar-height) + 36px));
+  pointer-events: auto;
+}
+
+.sceneControlToggle,
+.sceneControlPanel {
+  border: 1px solid var(--scene-hud-border);
+  background: var(--scene-hud-fill);
+  color: var(--scene-hud-text);
+  -webkit-backdrop-filter: blur(8px) saturate(135%);
+  backdrop-filter: blur(8px) saturate(135%);
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.sceneControlToggle {
+  width: min(320px, calc(100vw - 48px));
+  min-width: 248px;
+  min-height: 58px;
+  padding: 0 16px 0 18px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  cursor: pointer;
+  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+}
+
+.sceneControlToggle:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--scene-hud-border) 52%, white);
+}
+
+.sceneControlMeta {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+  text-align: left;
+}
+
+.sceneControlTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.sceneControlIndicator {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.16),
+    0 0 14px rgba(255,255,255,0.18);
+  flex-shrink: 0;
+}
+
+.sceneControlSub {
+  font-size: 12px;
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--scene-hud-text) 64%, transparent);
+}
+
+.sceneControlChevron {
+  flex-shrink: 0;
+  opacity: 0.72;
+  transition: transform 180ms ease, opacity 180ms ease;
+}
+
+.sceneControlChevronOpen {
+  transform: rotate(-90deg);
+  opacity: 1;
+}
+
+.sceneControlPanel {
+  width: min(320px, calc(100vw - 48px));
+  max-height: min(720px, calc(100dvh - 118px));
+  padding: 16px;
+  border-radius: 24px;
+  display: none;
+  gap: 16px;
+  opacity: 0;
+  transform: translateY(-8px) scale(0.98);
+  pointer-events: none;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: auto;
+  touch-action: pan-y pinch-zoom;
+  scrollbar-gutter: stable;
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.sceneControlPanelOpen {
+  display: grid;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.sceneControlHeader,
+.sceneControlSection {
+  display: grid;
+  gap: 10px;
+}
+
+.sceneControlSectionTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.sceneControlSectionSub,
+.sceneControlHint {
+  color: color-mix(in srgb, var(--scene-hud-text) 64%, transparent);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.sceneControlThemeGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.sceneControlTerrainGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.sceneControlBgGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.sceneControlThemeButton,
+.sceneControlFlightButton,
+.sceneControlTerrainButton {
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.05);
+  color: var(--scene-hud-text);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: center;
+  white-space: normal;
+  cursor: pointer;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.sceneControlThemeButton:hover,
+.sceneControlFlightButton:hover,
+.sceneControlTerrainButton:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255,255,255,0.12);
+}
+
+.sceneControlThemeButtonActive {
+  background: rgba(196, 226, 255, 0.14);
+  border-color: rgba(196, 226, 255, 0.22);
+}
+
+.sceneControlTerrainButtonActive {
+  background: rgba(196, 226, 255, 0.14);
+  border-color: rgba(196, 226, 255, 0.22);
+}
+
+.sceneControlTerrainButtonVoid {
+  background: rgba(255,255,255,0.04);
+}
+
+.sceneControlTerrainButtonVoid.sceneControlTerrainButtonActive {
+  background: rgba(170, 205, 255, 0.18);
+  border-color: rgba(170, 205, 255, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03), 0 0 18px rgba(122, 168, 255, 0.12);
+}
+
+.sceneControlFlightButton {
+  width: 100%;
+}
+
+.sceneControlFlightButtonActive {
+  background: rgba(196, 226, 255, 0.16);
+  border-color: rgba(196, 226, 255, 0.22);
+}
+
+/* ═══════════════════════════════════════════════
+   WORLD — 300% scrollable canvas
+   ═══════════════════════════════════════════════ */
+.workspaceWorld {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 300%;
+  height: 300%;
+  will-change: transform;
+  z-index: 1;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform-style: preserve-3d;
+  transition: opacity 220ms ease;
+}
+
+.workspaceViewportFlight .workspaceWorld {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.flightTileField {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  pointer-events: none;
+}
+
+/* Dot grid — subtle structural guide, not decorative wallpaper */
+.workspaceGrid {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.18) 1px, transparent 1px);
+  background-size: 28px 28px;
+  opacity: 0.28;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════════
+   TILE — compact glass card
+   ═══════════════════════════════════════════════ */
+.tile {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 16px;
+  border: 1px solid rgba(169,205,255,0.1);
+  background: linear-gradient(158deg, rgba(16,20,27,0.86) 0%, rgba(8,11,17,0.94) 100%);
+  -webkit-backdrop-filter: blur(8px) saturate(124%);
+  backdrop-filter: blur(8px) saturate(124%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.05),
+    0 12px 32px rgba(0,0,0,0.35),
+    0 0 0 1px rgba(59,115,189,0.06);
+  cursor: grab;
+  touch-action: none;
+  transition: left 180ms ease-out, top 180ms ease-out, transform 220ms ease, border-color 180ms ease, box-shadow 180ms ease, opacity 220ms ease;
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+.tileSurface {
+  --tile-surface-scale: 1;
+}
+
+.tileFlight {
+  --tile-flight-scale: 0.84;
+  --tile-flight-opacity: 0.92;
+  --tile-flight-blur: 0px;
+  --tile-flight-lift: 0px;
+  --tile-flight-focus-scale: 1;
+  pointer-events: auto;
+  transform: translate(-50%, calc(-50% + var(--tile-flight-lift))) scale(calc(var(--tile-flight-scale) * var(--tile-flight-focus-scale)));
+  opacity: var(--tile-flight-opacity);
+  /* Flight blur removed for performance — opacity handles depth cue */
+  -webkit-backdrop-filter: blur(8px) saturate(128%);
+  backdrop-filter: blur(8px) saturate(128%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.06),
+    0 24px 56px rgba(0,0,0,0.42),
+    0 0 0 1px rgba(88,130,196,0.08);
+}
+
+.tileFlight::after {
+  opacity: 0.4;
+}
+
+.tile::before,
+.tile::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.tile::before {
+  background: radial-gradient(circle at 50% 16%, rgba(255,255,255,0.14), transparent 58%);
+  opacity: 0.55;
+  transform: translateZ(12px);
+}
+
+.tile::after {
+  inset: 8px 10px 10px;
+  background: radial-gradient(circle at 50% 50%, rgba(84,137,214,0.18), transparent 72%);
+  filter: blur(12px);
+  opacity: 0.54;
+  transform: translate3d(0, 16px, -28px) scale(0.9);
+}
+
+/* Active (being dragged) state */
+.tile:active {
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    0 16px 40px rgba(0,0,0,0.55),
+    0 0 0 1px rgba(160,104,56,0.2);
+}
+
+.tile:hover {
+  border-color: rgba(160,100,50,0.28);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.07),
+    0 10px 28px rgba(0,0,0,0.46);
+}
+
+.tileHovered3d {
+  border-color: rgba(140, 205, 255, 0.28);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.09),
+    0 18px 42px rgba(0,0,0,0.48),
+    0 0 0 1px rgba(111, 192, 255, 0.18);
+}
+
+.tileActive {
+  border-color: rgba(208, 168, 102, 0.34);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.09),
+    0 22px 46px rgba(0,0,0,0.52),
+    0 0 0 1px rgba(208, 168, 102, 0.18);
+}
+
+.tileFlight.tileHovered3d,
+.tileFlight.tileActive {
+  --tile-flight-lift: -10px;
+  --tile-flight-focus-scale: 1.04;
+}
+
+.tileDrifting {
+  opacity: 0.92;
+}
+
+.tileDragging {
+  cursor: grabbing;
+  transition: none;
+}
+
+.tileFlightHidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.tileDistanceNear {
+  border-color: rgba(169,205,255,0.13);
+}
+
+.tileDistanceMid {
+  border-color: rgba(169,205,255,0.1);
+}
+
+.tileDistanceFar {
+  border-color: rgba(169,205,255,0.08);
+}
+
+/* ── Freshly created tile — accent ring fades out ─── */
+@keyframes newTileGlow {
+  0%   { box-shadow: 0 0 0 2px rgba(160,104,56,0.65), 0 6px 20px rgba(0,0,0,0.4); border-color: rgba(160,104,56,0.5); }
+  55%  { box-shadow: 0 0 0 2px rgba(160,104,56,0.3),  0 6px 20px rgba(0,0,0,0.4); border-color: rgba(160,104,56,0.28); }
+  100% { box-shadow: 0 0 0 0px rgba(160,104,56,0),    0 6px 20px rgba(0,0,0,0.4); border-color: rgba(255,255,255,0.09); }
+}
+
+.tileNew {
+  animation: newTileGlow 2.8s ease-out forwards;
+}
+
+/* ── Tile inner parts ─────────────────────── */
+.tileHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.tileIdentity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.tileIcon {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(160,104,56,0.18);
+  color: rgba(210,160,90,0.9);
+  flex-shrink: 0;
+}
+
+
+/* ── Tile badge (unread counter) ─── */
+.tileIconWrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.tileBadge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  border: 1.5px solid rgba(12,10,8,0.95);
+  pointer-events: none;
+  letter-spacing: -0.02em;
+  z-index: 2;
+  animation: badgePop 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+@keyframes badgePop {
+  from { transform: scale(0); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+.tileIconLg {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(160,104,56,0.18);
+  color: rgba(210,160,90,0.9);
+  flex-shrink: 0;
+}
+
+.tileTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tileSubtitle {
+  margin-top: 1px;
+  font-size: 10px;
+  color: var(--text-tertiary);
+}
+
+/* Mini-monitor inside tile */
+.tileMonitor {
+  flex: 1;
+  min-height: 0;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.05);
+  background: rgba(5,6,8,0.96);
+  overflow: hidden;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.tileMonitorViewport {
+  height: 100%;
+  transform: scale(0.6);
+  transform-origin: top left;
+  width: 166.5%;
+  pointer-events: none;
+}
+
+.tileMonitorLocked {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 8px;
+  padding: 18px;
+  text-align: center;
+  background:
+    radial-gradient(circle at 50% 24%, rgba(205, 164, 108, 0.12), transparent 52%),
+    linear-gradient(160deg, rgba(17, 13, 9, 0.98), rgba(8, 6, 4, 0.98));
+}
+
+.tileMonitorLockedIcon {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(210, 160, 90, 0.12);
+  color: rgba(220, 176, 109, 0.92);
+  border: 1px solid rgba(210, 160, 90, 0.18);
+}
+
+.tileMonitorLockedTitle {
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.tileMonitorLockedText {
+  max-width: 250px;
+  color: var(--text-tertiary);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.tileFlight .tileMonitor {
+  background: rgba(5, 6, 8, 0.98);
+}
+
+.tileFlight .tileMonitorViewport {
+  transform: scale(0.64);
+  width: 156.25%;
+}
+
+/* ═══════════════════════════════════════════════
+   MODAL — portal to <body>, truly full-screen
+   ═══════════════════════════════════════════════ */
+.tileModalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, var(--bg-overlay) 92%, rgba(0, 0, 0, 0.12));
+  -webkit-backdrop-filter: blur(10px) saturate(118%);
+  backdrop-filter: blur(10px) saturate(118%);
+  z-index: 200;
+  cursor: default;
+  border: none;
+}
+
+/* Flex centering shell */
+.tileModalShell {
+  position: fixed;
+  inset: 0;
+  z-index: 201;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  padding: 18px;
+}
+
+.tileModal {
+  pointer-events: all;
+  position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(0,1fr);
+  gap: 0;
+  border-radius: calc(var(--surface-radius) + 10px);
+  border: 1px solid var(--brand-panel-border);
+  background: var(--brand-surface-3);
+  box-shadow: var(--brand-panel-shadow-strong);
+  overflow: hidden;
+  color-scheme: light dark;
+}
+
+.tileModalDefault {
+  width:  min(88vw, 1200px);
+  height: min(86dvh, 820px);
+}
+
+.tileModalCompact {
+  width:  min(70vw, 940px);
+  height: min(76dvh, 660px);
+}
+
+.tileModalWide {
+  width:  min(97vw, 1540px);
+  height: min(94dvh, 940px);
+}
+
+/* Header — glass strip */
+.tileModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid color-mix(in srgb, var(--brand-panel-border) 84%, transparent);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, white 10%, transparent) 0%, transparent 100%),
+    color-mix(in srgb, var(--bg-surface) 88%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  flex-shrink: 0;
+}
+
+.tileModalTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.15;
+}
+
+.tileModalSubtitle {
+  margin-top: 2px;
+  color: var(--text-tertiary);
+  font-size: 11px;
+  max-width: 480px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Header right-side action buttons */
+.tileModalActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.tileModalAction {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--brand-panel-border) 86%, transparent);
+  background: color-mix(in srgb, var(--bg-surface-elevated) 86%, transparent);
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    transform var(--motion-fast) var(--motion-ease),
+    background var(--motion-fast) var(--motion-ease),
+    border-color var(--motion-fast) var(--motion-ease),
+    color var(--motion-fast) var(--motion-ease),
+    box-shadow var(--motion-fast) var(--motion-ease);
+}
+
+.tileModalAction:hover {
+  transform: var(--feedback-raise-hover);
+  background: color-mix(in srgb, var(--bg-hover) 76%, var(--fill-accent-subtle));
+  border-color: color-mix(in srgb, var(--fill-accent) 22%, var(--brand-panel-border));
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.tileModalActionActive {
+  background: color-mix(in srgb, var(--fill-accent-soft) 74%, var(--bg-surface)) !important;
+  border-color: color-mix(in srgb, var(--fill-accent) 34%, var(--brand-panel-border)) !important;
+  color: var(--text-accent) !important;
+}
+
+.tileModalActionClose:hover {
+  background: color-mix(in srgb, var(--fill-negative-soft) 72%, var(--bg-surface)) !important;
+  border-color: color-mix(in srgb, var(--fill-negative) 24%, var(--border-subtle)) !important;
+  color: var(--fill-negative-text) !important;
+}
+
+/* SPA content — full remaining space, no inner border */
+.tileModalMonitor {
+  min-height: 0;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--bg-surface-elevated) 92%, transparent);
+}
+
+.tileModalGate {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 50% 22%, color-mix(in srgb, var(--fill-accent) 10%, transparent) 0%, transparent 34%),
+    linear-gradient(160deg, color-mix(in srgb, var(--bg-surface) 94%, transparent), color-mix(in srgb, var(--bg-surface-inset) 96%, transparent));
+}
+
+.tileModalGateHint {
+  margin-top: 10px;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* Legacy — kept for backward compat */
+.tileModalContent {
+  height: 100%;
+}
+
+/* Legacy close btn (used nowhere now but keep for safety) */
+.tileModalClose,
+.tileSettingsButton,
+.menuClose {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-muted);
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 140ms, border-color 140ms, color 140ms;
+}
+
+.tileModalClose:hover,
+.tileSettingsButton:hover,
+.menuClose:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-default);
+  color: var(--text-primary);
+}
+
+/* ── Settings popover — portal to <body>, always on top ─ */
+.tileSettingsPopover {
+  /* position/top/right/z-index set inline via JS getPopoverStyle() */
+  width: min(300px, calc(100vw - 48px));
+  padding: 14px;
+  border-radius: calc(var(--surface-radius-tight) + 2px);
+  border: 1px solid var(--brand-panel-border);
+  background: color-mix(in srgb, var(--bg-surface-elevated) 94%, transparent);
+  box-shadow: var(--brand-panel-shadow-strong);
+  display: grid;
+  gap: 10px;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+.tileSettingsHeader {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.tileSettingsField {
+  display: grid;
+  gap: 6px;
+}
+
+.tileSettingsField > span {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.tileSettingsField input {
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid var(--brand-panel-border);
+  background: color-mix(in srgb, var(--bg-surface) 86%, transparent);
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+  transition:
+    border-color var(--motion-fast) var(--motion-ease),
+    background var(--motion-fast) var(--motion-ease),
+    box-shadow var(--motion-fast) var(--motion-ease);
+}
+
+.tileSettingsField input:focus {
+  border-color: color-mix(in srgb, var(--fill-accent) 34%, var(--border-default));
+  background: color-mix(in srgb, var(--bg-surface-elevated) 92%, transparent);
+  box-shadow: var(--brand-focus-ring);
+}
+
+.tileSettingsSegmented {
+  display: flex;
+  gap: 6px;
+}
+
+.tileSettingsSegment {
+  flex: 1;
+  min-height: 34px;
+  padding: 0 6px;
+  border-radius: 9px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.03);
+  color: var(--text-tertiary);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 140ms;
+}
+
+.tileSettingsSegment:hover {
+  background: rgba(255,255,255,0.06);
+  color: var(--text-secondary);
+}
+
+.tileSettingsSegmentActive {
+  border-color: rgba(160,104,56,0.55);
+  color: rgba(210,160,90,0.9);
+  background: rgba(160,104,56,0.12);
+}
+
+.tileSettingsAction {
+  min-height: 38px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid var(--brand-panel-border);
+  background: color-mix(in srgb, var(--bg-surface) 84%, transparent);
+  color: var(--text-secondary);
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  transition:
+    transform var(--motion-fast) var(--motion-ease),
+    background var(--motion-fast) var(--motion-ease),
+    border-color var(--motion-fast) var(--motion-ease),
+    color var(--motion-fast) var(--motion-ease);
+}
+
+.tileSettingsAction:hover {
+  transform: var(--feedback-raise-hover);
+  background: color-mix(in srgb, var(--bg-hover) 76%, var(--fill-accent-subtle));
+  border-color: color-mix(in srgb, var(--fill-accent) 22%, var(--brand-panel-border));
+  color: var(--text-primary);
+}
+
+.tileSettingsDanger {
+  border-color: color-mix(in srgb, var(--fill-negative) 16%, var(--border-subtle));
+  color: var(--fill-negative-text);
+}
+
+.tileSettingsDanger:hover {
+  background: color-mix(in srgb, var(--fill-negative-soft) 74%, var(--bg-surface));
+  border-color: color-mix(in srgb, var(--fill-negative) 24%, var(--border-subtle));
+  color: var(--fill-negative-text);
+}
+
+/* ═══════════════════════════════════════════════
+   ADD-TILE MENU — fixed & centered
+   ═══════════════════════════════════════════════ */
+.menuOverlay {
+  position: fixed;
+  inset: 0;
+  border: 0;
+  background: var(--bg-overlay);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  z-index: var(--z-modal);
+  cursor: default;
+}
+
+.menuPanel {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  width: min(620px, calc(100vw - 24px));
+  max-height: min(80dvh, 720px);
+  border-radius: 20px;
+  border: var(--surface-border);
+  background: var(--bg-surface);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow:
+    var(--brand-panel-shadow-strong),
+    0 0 0 1px color-mix(in srgb, var(--fill-accent) 6%, transparent);
+  z-index: calc(var(--z-modal) + 1);
+  padding: 22px;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: 0;
+  overflow: hidden;
+}
+
+.menuHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.menuHeaderLeft {
+  display: grid;
+  gap: 4px;
+}
+
+.menuEyebrow {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  font-weight: 600;
+}
+
+.menuTitle {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+}
+
+.menuDivider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 14px 0 12px;
+}
+
+.menuGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: auto;
+  touch-action: pan-y pinch-zoom;
+  padding: 1px 8px 2px 1px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-default) transparent;
+}
+
+.menuCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface-elevated);
+  text-align: left;
+  cursor: pointer;
+  position: relative;
+  transition: border-color 160ms, background 160ms, box-shadow 160ms, transform 160ms;
+}
+
+.menuCard:hover {
+  border-color: color-mix(in srgb, var(--fill-accent) 28%, var(--border-default));
+  background: var(--bg-hover);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+.menuCardIconWrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--fill-accent) 8%, var(--bg-surface));
+  flex-shrink: 0;
+  border: 1px solid color-mix(in srgb, var(--fill-accent) 14%, var(--border-subtle));
+}
+
+.menuCardBody {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.menuCardTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: block;
+  letter-spacing: -0.008em;
+}
+
+.menuCardDesc {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  line-height: 1.45;
+  display: block;
+}
+
+.menuCardArrow {
+  font-size: 16px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 160ms, transform 160ms;
+  transform: translateX(-4px);
+}
+
+.menuCard:hover .menuCardArrow {
+  opacity: 0.55;
+  transform: translateX(0);
+}
+
+.menuCardLocked {
+  opacity: 0.5;
+  cursor: default;
+  pointer-events: auto;
+}
+
+.menuCardLocked:hover {
+  border-color: var(--border-default);
+  background: var(--bg-surface);
+}
+
+.menuCardLockBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: var(--bg-muted);
+  border: 1px solid var(--border-default);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.menuFooterHint {
+  margin: 12px 0 0;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* ═══════════════════════════════════════════════
+   PREVIEW WIDGET INTERNALS
+   ═══════════════════════════════════════════════ */
+.previewFrame,
+.importPreview,
+.metricsPreview {
+  height: 100%;
+}
+
+.previewHeaderRow,
+.tableRow3 {
+  display: grid;
+  grid-template-columns: minmax(0,1.2fr) minmax(0,1fr) minmax(90px,0.8fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.previewHeaderRow {
+  min-height: 42px;
+  padding: 0 16px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 80%, transparent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.previewBody { display: grid; }
+
+.tableRow3 {
+  min-height: 48px;
+  padding: 0 16px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-subtle) 62%, transparent);
+}
+
+.tableRow3 strong, .metricMiniCard strong, .metricMiniWide strong {
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.tableRow3 span, .previewEmpty, .metricMiniCard span, .metricMiniWide span {
+  color: var(--text-secondary);
+  font-size: 13px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.previewEmpty {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  padding: 24px;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.6;
+}
+
+.metricsPreview {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 12px;
+  padding: 16px;
+}
+
+.metricMiniCard, .metricMiniWide {
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 88%, transparent);
+  background: color-mix(in srgb, var(--bg-surface-elevated) 74%, rgba(255,255,255,0.03));
+  padding: 14px;
+  display: grid;
+  gap: 8px;
+}
+
+.metricMiniWide { grid-column: 1/-1; }
+
+.importPreview { padding: 18px; }
+
+.importStageList { display: grid; gap: 10px; }
+
+.importStageItem {
+  min-height: 48px;
+  display: grid;
+  grid-template-columns: 40px minmax(0,1fr);
+  align-items: center;
+  gap: 12px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 86%, transparent);
+  background: color-mix(in srgb, var(--bg-surface-elevated) 74%, rgba(255,255,255,0.04));
+  padding: 0 14px;
+}
+
+.importStageItem span { color: var(--text-accent); font-size: 12px; font-weight: 700; }
+.importStageItem strong { color: var(--text-primary); font-size: 14px; }
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════ */
+@media (max-width: 980px) {
+  .sceneControlDock {
+    top: calc(var(--topbar-height) + 10px);
+    right: 10px;
+    left: 10px;
+    max-height: calc(100% - (var(--topbar-height) + 20px));
+  }
+  .sceneControlToggle,
+  .sceneControlPanel {
+    width: 100%;
+    min-width: 0;
+  }
+  .sceneControlPanel {
+    max-height: calc(100dvh - 96px);
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+  .sceneControlThemeGrid {
+    grid-template-columns: 1fr;
+  }
+  .menuGrid { grid-template-columns: 1fr; }
+  .tileModalShell {
+    align-items: stretch;
+    justify-content: stretch;
+    padding: 0;
+  }
+  .tileModalDefault, .tileModalCompact, .tileModalWide {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    margin: 0;
+  }
+  .tileModalHeader {
+    padding: calc(8px + env(safe-area-inset-top, 0px)) 10px 8px;
+    gap: 8px;
+  }
+  .tileIdentity {
+    min-width: 0;
+    overflow: hidden;
+  }
+  .tileModalTitle {
+    font-size: 14px;
+  }
+  .tileModalSubtitle {
+    display: none;
+  }
+  .tileModalActions {
+    gap: 4px;
+  }
+  .tileModalMonitor {
+    min-height: 0;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 56px);
+  }
+  .tileSettingsPopover {
+    right: 10px;
+    top: 54px;
+    width: min(300px, calc(100vw - 20px));
+  }
+}
+
+@media (max-width: 640px) {
+  .sceneControlToggle {
+    min-height: 52px;
+    padding: 0 14px 0 16px;
+    border-radius: 18px;
+  }
+  .sceneControlPanel {
+    padding: 14px;
+    border-radius: 20px;
+  }
+  .sceneControlTerrainGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .sceneControlBgGrid,
+  .sceneControlThemeGrid {
+    grid-template-columns: 1fr;
+  }
+  .spotlightPanel {
+    top: 10px;
+    width: calc(100vw - 16px);
+    max-height: calc(100dvh - 20px);
+  }
+  .spotlightInputWrap {
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 14px;
+  }
+  .spotlightInput {
+    order: 1;
+    width: 100%;
+    min-width: 0;
+    font-size: 15px;
+  }
+  .spotlightEsc {
+    margin-left: auto;
+  }
+  .spotlightFooter {
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 10px 14px 12px;
+  }
+  .ctxMenu {
+    min-width: 0;
+    width: min(260px, calc(100vw - 24px));
+  }
+}
+
+@media (max-width: 420px) {
+  .sceneControlTerrainGrid {
+    grid-template-columns: 1fr;
+  }
+  .spotlightEsc,
+  .spotlightEnterHint {
+    display: none;
+  }
+}
+
+@media (max-height: 760px) {
+  .sceneControlDock {
+    top: calc(var(--topbar-height) + 10px);
+  }
+
+  .sceneControlPanel {
+    gap: 12px;
+    padding: 14px;
+    max-height: calc(100dvh - 92px);
+  }
+
+  .sceneControlHeader,
+  .sceneControlSection {
+    gap: 8px;
+  }
+
+  .sceneControlSectionSub,
+  .sceneControlHint {
+    font-size: 11px;
+    line-height: 1.5;
+  }
+
+  .sceneControlThemeButton,
+  .sceneControlFlightButton,
+  .sceneControlTerrainButton {
+    min-height: 40px;
+    padding: 0 12px;
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   PINNED TILE
+   ═══════════════════════════════════════════════ */
+.tilePinned {
+  border-color: rgba(160, 104, 56, 0.45) !important;
+  cursor: default !important;
+}
+
+.tilePinned:hover {
+  border-color: rgba(160, 104, 56, 0.6) !important;
+}
+
+.tilePinIndicator {
+  margin-left: auto;
+  color: rgba(210, 160, 90, 0.7);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════
+   TILE CONTEXT MENU
+   ═══════════════════════════════════════════════ */
+.ctxMenu {
+  min-width: 220px;
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(158deg, rgba(26, 20, 12, 0.99) 0%, rgba(14, 10, 6, 0.99) 100%);
+  box-shadow:
+    0 0 0 1px rgba(125, 78, 37, 0.12),
+    0 24px 60px rgba(0, 0, 0, 0.65),
+    0 6px 16px rgba(0, 0, 0, 0.4);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  display: grid;
+  gap: 1px;
+}
+
+.ctxLabel {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(180, 130, 60, 0.7);
+  padding: 6px 10px 2px;
+}
+
+.ctxDivider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+  margin: 3px 0;
+}
+
+.ctxItem {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 120ms, color 120ms;
+}
+
+.ctxItem:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.ctxItem svg {
+  flex-shrink: 0;
+  color: rgba(210, 160, 90, 0.7);
+}
+
+.ctxItemDanger {
+  color: rgba(252, 165, 165, 0.7);
+}
+
+.ctxItemDanger:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #fca5a5;
+}
+
+.ctxItemDanger svg {
+  color: rgba(252, 120, 120, 0.7);
+}
+
+/* ═══════════════════════════════════════════════
+   ZOOM HUD — bottom-left
+   ═══════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════
+   MINIMAP — bottom-right
+   ═══════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════
+   SPOTLIGHT — Cmd+K quick launcher
+   ═══════════════════════════════════════════════ */
+.spotlightOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 2, 8, 0.72);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  z-index: 700;
+}
+
+.spotlightPanel {
+  position: fixed;
+  left: 50%;
+  top: 16vh;
+  translate: -50% 0;
+  width: min(640px, calc(100vw - 32px));
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(160deg, rgba(22, 16, 9, 0.98) 0%, rgba(12, 8, 4, 0.99) 100%);
+  box-shadow:
+    0 0 0 1px rgba(130, 80, 30, 0.15),
+    0 40px 100px rgba(0, 0, 0, 0.7),
+    0 8px 24px rgba(0, 0, 0, 0.4);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  z-index: 701;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.spotlightInputWrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.spotlightSearchIcon {
+  color: rgba(200, 150, 80, 0.6);
+  flex-shrink: 0;
+}
+
+.spotlightInput {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary, #fff);
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.spotlightInput::placeholder {
+  color: rgba(255, 255, 255, 0.28);
+}
+
+.spotlightEsc {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 5px;
+  padding: 3px 6px;
+  flex-shrink: 0;
+}
+
+.spotlightList {
+  max-height: 380px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: auto;
+  touch-action: pan-y pinch-zoom;
+  padding: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
+
+.spotlightItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 11px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background 100ms;
+}
+
+.spotlightItemActive {
+  background: rgba(160, 104, 56, 0.14);
+}
+
+.spotlightItemIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: rgba(160, 104, 56, 0.14);
+  border: 1px solid rgba(160, 104, 56, 0.18);
+  color: rgba(210, 160, 90, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.spotlightItemActive .spotlightItemIcon {
+  background: rgba(160, 104, 56, 0.28);
+  border-color: rgba(160, 104, 56, 0.4);
+}
+
+.spotlightItemBody {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.spotlightItemLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.88);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spotlightItemDesc {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spotlightEnterHint {
+  font-size: 10px;
+  color: rgba(210, 160, 90, 0.6);
+  background: rgba(160, 104, 56, 0.1);
+  border: 1px solid rgba(160, 104, 56, 0.2);
+  border-radius: 5px;
+  padding: 3px 6px;
+  flex-shrink: 0;
+}
+
+.spotlightEmpty {
+  padding: 32px 18px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 14px;
+}
+
+.spotlightFooter {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.spotlightFooter kbd {
+  font-size: 10px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 2px 5px;
+  margin-right: 4px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* ── New nav-shortcut tile styles ─────────────────────── */
+.tileHovered {
+  border-color: rgba(169,205,255,0.25);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    0 16px 40px rgba(0,0,0,0.45),
+    0 0 0 1px rgba(59,115,189,0.12);
+}
+
+.tileQuickDelete {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 24px;
+  height: 24px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 999px;
+  background: rgba(9, 13, 21, 0.78);
+  color: rgba(232, 238, 249, 0.78);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(-2px);
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease,
+    background 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+  z-index: 2;
+}
+
+.tile:hover .tileQuickDelete,
+.tileHovered .tileQuickDelete,
+.tileQuickDelete:focus-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.tileQuickDelete:hover,
+.tileQuickDelete:focus-visible {
+  background: rgba(136, 28, 28, 0.92);
+  border-color: rgba(252, 165, 165, 0.42);
+  color: rgba(255,255,255,0.98);
+  outline: none;
+}
+
+.tileQuickDelete:active {
+  transform: scale(0.96);
+}
+
+.tileInner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 8px;
+  gap: 6px;
+}
+
+.tileHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tileIconWrap {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--tile-color, var(--fill-accent)) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tile-color, var(--fill-accent)) 30%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tile-color, var(--fill-accent));
+  flex-shrink: 0;
+}
+
+.tileTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tilePinIcon {
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.tileSectionBadge {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--tile-color, var(--fill-accent)) 85%, var(--text-secondary));
+  background: color-mix(in srgb, var(--tile-color, var(--fill-accent)) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tile-color, var(--fill-accent)) 24%, transparent);
+  padding: 2px 5px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.tilePreviewWrap {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--tile-color, var(--fill-accent)) 4%, var(--bg-canvas, var(--bg-surface)));
+  position: relative;
+  isolation: isolate;
+}
+
+.tileDesc {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  flex: 1;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.tileArrow {
+  font-size: 10px;
+  color: color-mix(in srgb, var(--tile-color, var(--fill-accent)) 80%, transparent);
+  letter-spacing: 0.02em;
+  font-weight: 500;
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+
+.tile:hover .tileArrow,
+.tileHovered .tileArrow {
+  opacity: 1;
+}
+
+/* Legacy monitor styles — keep for backward compat canvas rendering */
+.tileMonitorLocked {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 8px;
+  padding: 16px;
+  text-align: center;
+}
+.tileMonitorLockedIcon { color: var(--text-tertiary); }
+.tileMonitorLockedTitle { font-size: 12px; font-weight: 500; color: var(--text-secondary); }
+.tileMonitorLockedText { font-size: 11px; color: var(--text-tertiary); line-height: 1.5; }

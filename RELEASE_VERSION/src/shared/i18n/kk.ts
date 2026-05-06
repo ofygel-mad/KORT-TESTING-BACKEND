@@ -1,0 +1,46 @@
+import type { TKeys } from './ru';
+
+export const kk: TKeys = {
+  nav: {
+    dashboard: 'Басты бет',
+    customers: 'Клиенттер',
+    deals: 'Мәмілелер',
+    tasks: 'Тапсырмалар',
+    reports: 'Есептер',
+    settings: 'Параметрлер',
+    automations: 'Автоматтандыру',
+    imports: 'Импорт',
+    audit: 'Аудит',
+  },
+  common: {
+    save: 'Сақтау',
+    cancel: 'Болдырмау',
+    delete: 'Жою',
+    edit: 'Өңдеу',
+    create: 'Жасау',
+    loading: 'Жүктелуде...',
+    error: 'Қате орын алды',
+    empty: 'Деректер жоқ',
+    search: 'Іздеу...',
+  },
+  customer: {
+    title: 'Клиенттер',
+    new: 'Жаңа клиент',
+    full_name: 'Аты',
+    company: 'Компания',
+    phone: 'Телефон',
+    email: 'Email',
+    status: 'Мәртебе',
+    source: 'Дереккөз',
+    bin_iin: 'БИН/ЖСН',
+  },
+  deal: {
+    title: 'Мәмілелер',
+    new: 'Жаңа мәміле',
+    amount: 'Сома',
+    stage: 'Кезең',
+    won: 'Жеңілді',
+    lost: 'Жоғалды',
+    open: 'Жұмыста',
+  },
+};

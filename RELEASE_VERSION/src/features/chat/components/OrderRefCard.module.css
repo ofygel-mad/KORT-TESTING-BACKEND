@@ -1,0 +1,84 @@
+.card {
+  background: var(--bg-surface-inset);
+  border: 1px solid var(--border-subtle);
+  border-left: 3px solid #e040fb;
+  border-radius: var(--radius-md);
+  padding: 8px 10px;
+  min-width: 180px;
+  max-width: 260px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.card:hover {
+  background: var(--bg-hover);
+}
+
+.cardError {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  cursor: default;
+}
+
+.loadingRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 3px;
+}
+
+.icon {
+  color: #e040fb;
+  flex-shrink: 0;
+}
+
+.orderNumber {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.extIcon {
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.client {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.status {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.amount {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}

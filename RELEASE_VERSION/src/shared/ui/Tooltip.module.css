@@ -1,0 +1,50 @@
+.root {
+  position: relative;
+  display: inline-flex;
+}
+
+.stretch {
+  display: flex;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.tip {
+  position: absolute;
+  z-index: 1000;
+  white-space: nowrap;
+  padding: 5px 10px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  pointer-events: none;
+}
+
+.right {
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.top {
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.bottom {
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.left {
+  right: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+}

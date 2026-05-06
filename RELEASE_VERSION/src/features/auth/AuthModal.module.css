@@ -1,0 +1,746 @@
+/* === Layout === */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #080b12;
+  padding: 24px 16px;
+  overflow-y: auto;
+  min-height: 100dvh;
+}
+
+.panel {
+  position: relative;
+  width: 100%;
+  max-width: 460px;
+  background: #131720;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 20px;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 48px 100px rgba(0, 0, 0, 0.72);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-height: calc(100dvh - 48px);
+}
+
+/* === Form Side === */
+
+.formSide {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.formHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 24px 0;
+  flex-shrink: 0;
+  min-height: 52px;
+}
+
+.headerLeft {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+}
+
+.authBrand {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(237, 237, 243, 0.38);
+  -webkit-user-select: none;
+  user-select: none;
+  padding-right: 2px;
+}
+
+.backButton,
+.closeButton,
+.pinButton {
+  transition:
+    transform var(--motion-fast) var(--motion-ease),
+    background var(--motion-fast) var(--motion-ease),
+    border-color var(--motion-fast) var(--motion-ease),
+    color var(--motion-fast) var(--motion-ease),
+    box-shadow var(--motion-fast) var(--motion-ease);
+}
+
+.backButton,
+.closeButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(237, 237, 243, 0.5);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.backButton {
+  padding: 0 14px;
+}
+
+.closeButton {
+  width: 36px;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.backButton:hover,
+.closeButton:hover,
+.pinButton:hover {
+  transform: var(--feedback-raise-hover);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #ededf3;
+}
+
+.formViewport {
+  --auth-viewport-padding-top: 28px;
+  --auth-viewport-padding-x: 40px;
+  --auth-viewport-padding-bottom: 32px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding:
+    var(--auth-viewport-padding-top)
+    var(--auth-viewport-padding-x)
+    var(--auth-viewport-padding-bottom);
+}
+
+.stepContent {
+  width: 100%;
+  max-width: 400px;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.companyStepContent {
+  min-height: 100%;
+}
+
+.stepHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.018em;
+  color: #ededf3;
+}
+
+.subtitle {
+  margin: 0;
+  max-width: 560px;
+  color: rgba(237, 237, 243, 0.48);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.formFields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.companyStepActions {
+  display: grid;
+  gap: 12px;
+  margin-top: auto;
+  padding: 12px 0 0;
+  position: sticky;
+  bottom: calc(var(--auth-viewport-padding-bottom) * -1);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(19, 23, 32, 0) 0%,
+      #131720 22px,
+      #131720 100%
+    );
+}
+
+/* === Inputs === */
+
+.input {
+  width: 100%;
+  min-height: 50px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: #ededf3;
+  font: inherit;
+  font-size: 14px;
+  box-sizing: border-box;
+  outline: none;
+  transition:
+    border-color var(--motion-fast) var(--motion-ease),
+    background var(--motion-fast) var(--motion-ease),
+    box-shadow var(--motion-fast) var(--motion-ease);
+}
+
+.input::placeholder {
+  color: rgba(237, 237, 243, 0.28);
+}
+
+.input:focus {
+  border-color: rgba(82, 102, 235, 0.45);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 0 0 3px rgba(82, 102, 235, 0.13);
+}
+
+.input:disabled {
+  opacity: 0.42;
+  cursor: default;
+}
+
+.passwordField {
+  position: relative;
+}
+
+.passwordField .input {
+  padding-right: 48px;
+}
+
+.passwordToggle {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  display: inline-grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: rgba(237, 237, 243, 0.35);
+  cursor: pointer;
+  transition: color var(--motion-fast) var(--motion-ease);
+}
+
+.passwordToggle:hover {
+  color: rgba(237, 237, 243, 0.85);
+}
+
+/* === Buttons === */
+
+.primaryButton,
+.pinButton {
+  width: 100%;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  font: inherit;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.primaryButton {
+  flex: 1;
+  margin-top: 4px;
+  border: none;
+  background: #5266eb;
+  color: #ffffff;
+  border-radius: 32px;
+  box-shadow: 0 4px 18px rgba(82, 102, 235, 0.32);
+  letter-spacing: 0.01em;
+  transition:
+    transform var(--motion-fast) var(--motion-ease),
+    box-shadow var(--motion-fast) var(--motion-ease),
+    background var(--motion-fast) var(--motion-ease);
+}
+
+.primaryButton:hover {
+  transform: var(--feedback-raise-hover);
+  background: #5f74f2;
+  box-shadow: 0 8px 28px rgba(82, 102, 235, 0.42);
+}
+
+.primaryButton:disabled {
+  opacity: 0.42;
+  cursor: default;
+  transform: none;
+  box-shadow: none;
+}
+
+.pinButton {
+  border-radius: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(237, 237, 243, 0.6);
+}
+
+.loginActionsRow {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+  align-items: stretch;
+}
+
+.loginActionsRow .primaryButton {
+  margin-top: 0;
+}
+
+.pinQuickButton {
+  flex-shrink: 0;
+  width: 48px;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(237, 237, 243, 0.4);
+  cursor: pointer;
+  transition:
+    transform var(--motion-fast) var(--motion-ease),
+    background var(--motion-fast) var(--motion-ease),
+    color var(--motion-fast) var(--motion-ease),
+    border-color var(--motion-fast) var(--motion-ease),
+    box-shadow var(--motion-fast) var(--motion-ease);
+}
+
+.pinQuickButton:hover {
+  transform: var(--feedback-raise-hover);
+  color: #ededf3;
+  background: rgba(82, 102, 235, 0.14);
+  border-color: rgba(82, 102, 235, 0.28);
+  box-shadow: 0 4px 16px rgba(82, 102, 235, 0.18);
+}
+
+/* === Alerts / notices === */
+
+.deviceWarningBox {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  background: rgba(245, 158, 11, 0.06);
+  color: rgba(252, 211, 77, 0.88);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.deviceWarningBox svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: rgba(252, 211, 77, 0.8);
+}
+
+.footerRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: rgba(237, 237, 243, 0.35);
+  font-size: 13px;
+}
+
+.linkButton {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: #7082f4;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color var(--motion-fast) var(--motion-ease);
+}
+
+.linkButton:hover {
+  color: #9aa8f8;
+}
+
+.employeeToggleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  font-size: 13px;
+  color: rgba(237, 237, 243, 0.48);
+  transition:
+    border-color var(--motion-fast) var(--motion-ease),
+    color var(--motion-fast) var(--motion-ease);
+}
+
+.employeeToggleRow:hover {
+  border-color: rgba(82, 102, 235, 0.28);
+  color: rgba(237, 237, 243, 0.75);
+}
+
+.employeeToggleRowActive {
+  border-color: rgba(82, 102, 235, 0.42);
+  color: #8a98f8;
+  background: rgba(82, 102, 235, 0.08);
+}
+
+.employeeCheckbox {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  accent-color: #5266eb;
+  cursor: pointer;
+}
+
+.employeeLookupHint {
+  font-size: 12px;
+  color: rgba(237, 237, 243, 0.35);
+  padding: 4px 2px 0;
+  line-height: 1.4;
+}
+
+.employeeNameHint {
+  font-size: 13px;
+  color: #4ade80;
+  padding: 4px 2px 0;
+  font-weight: 500;
+}
+
+.errorMessage,
+.pinInfo {
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.errorMessage {
+  border: 1px solid rgba(239, 68, 68, 0.22);
+  background: rgba(239, 68, 68, 0.07);
+  color: rgba(252, 165, 165, 0.92);
+}
+
+.pinInfo {
+  border: 1px solid rgba(82, 102, 235, 0.18);
+  background: rgba(82, 102, 235, 0.06);
+  color: rgba(237, 237, 243, 0.62);
+}
+
+/* === Type selection grid === */
+
+.typeGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.typeCard {
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.04);
+  color: #ededf3;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform var(--motion-fast) var(--motion-ease),
+    border-color var(--motion-fast) var(--motion-ease),
+    background var(--motion-fast) var(--motion-ease),
+    box-shadow var(--motion-fast) var(--motion-ease),
+    opacity var(--motion-fast) var(--motion-ease);
+}
+
+.typeCard:hover {
+  transform: var(--feedback-raise-hover);
+  border-color: rgba(82, 102, 235, 0.28);
+  background: rgba(82, 102, 235, 0.07);
+}
+
+.typeCardPrimary {
+  background: rgba(82, 102, 235, 0.1);
+  border-color: rgba(82, 102, 235, 0.22);
+}
+
+.typeCardSecondary {
+  opacity: 0.82;
+}
+
+.typeCardSecondary:hover {
+  opacity: 1;
+}
+
+.typeIcon {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: rgba(82, 102, 235, 0.14);
+  border: 1px solid rgba(82, 102, 235, 0.2);
+  color: #8a98f8;
+  flex-shrink: 0;
+}
+
+.typeCardBody {
+  display: grid;
+  gap: 8px;
+}
+
+.typeLabel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #ededf3;
+}
+
+.typeDesc {
+  color: rgba(237, 237, 243, 0.48);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+/* === PIN Step === */
+
+.pinArea {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  cursor: text;
+  position: relative;
+}
+
+.pinAreaShake {
+  animation: pin-shake 0.45s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes pin-shake {
+  0%, 100% { transform: translateX(0); }
+  10%       { transform: translateX(-8px); }
+  30%       { transform: translateX(8px); }
+  50%       { transform: translateX(-6px); }
+  70%       { transform: translateX(6px); }
+  90%       { transform: translateX(-3px); }
+}
+
+.pinDots {
+  display: flex;
+  gap: 12px;
+}
+
+.pinDot {
+  width: 52px;
+  height: 56px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition:
+    border-color var(--motion-fast) var(--motion-ease),
+    background var(--motion-fast) var(--motion-ease),
+    box-shadow var(--motion-fast) var(--motion-ease);
+}
+
+.pinDot::after {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: transparent;
+  transform: scale(0.4);
+  transition:
+    transform var(--motion-fast) var(--motion-ease),
+    background var(--motion-fast) var(--motion-ease);
+}
+
+.pinDotFilled {
+  border-color: rgba(82, 102, 235, 0.42);
+  background: rgba(82, 102, 235, 0.12);
+  box-shadow: 0 0 0 3px rgba(82, 102, 235, 0.1);
+}
+
+.pinDotFilled::after {
+  background: #5266eb;
+  transform: scale(1);
+}
+
+.pinDotError {
+  border-color: rgba(239, 68, 68, 0.42) !important;
+  background: rgba(239, 68, 68, 0.08) !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.08) !important;
+}
+
+.pinDotError::after {
+  background: #ef4444 !important;
+  transform: scale(1) !important;
+}
+
+.pinHiddenInput {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+  border: none;
+  outline: none;
+}
+
+.orDivider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(237, 237, 243, 0.25);
+  font-size: 12px;
+  font-weight: 500;
+  width: 100%;
+}
+
+.orDivider::before,
+.orDivider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+/* === Responsive === */
+
+@media (max-width: 560px) {
+  .overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .panel {
+    max-width: 100%;
+    border-radius: 20px 20px 0 0;
+    max-height: 96dvh;
+  }
+
+  .formHeader {
+    padding: 16px 20px 0;
+  }
+
+  .formViewport {
+    --auth-viewport-padding-top: 20px;
+    --auth-viewport-padding-x: 20px;
+    --auth-viewport-padding-bottom: max(24px, env(safe-area-inset-bottom, 0px));
+  }
+
+  .stepContent {
+    max-width: 100%;
+    margin: 0 auto;
+  }
+
+  .title {
+    font-size: 20px;
+  }
+
+  .input {
+    min-height: 52px;
+    font-size: 16px;
+  }
+
+  .primaryButton {
+    min-height: 52px;
+    font-size: 15px;
+  }
+
+  .pinDots {
+    gap: 8px;
+  }
+
+  .pinDot {
+    width: 50px;
+    height: 54px;
+  }
+
+  .typeGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .typeCard {
+    min-height: unset;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 16px;
+    padding: 16px;
+  }
+}
+
+@media (max-height: 700px) and (min-width: 561px) {
+  .overlay {
+    align-items: flex-start;
+    padding-top: 16px;
+    padding-bottom: 16px;
+  }
+
+  .panel {
+    max-height: calc(100dvh - 32px);
+  }
+
+  .formHeader {
+    padding: 12px 24px 0;
+    min-height: 44px;
+  }
+
+  .formViewport {
+    --auth-viewport-padding-top: 16px;
+    --auth-viewport-padding-x: 32px;
+    --auth-viewport-padding-bottom: 16px;
+  }
+
+  .stepContent {
+    gap: 14px;
+  }
+
+  .formFields {
+    gap: 8px;
+  }
+
+  .input {
+    min-height: 46px;
+  }
+}

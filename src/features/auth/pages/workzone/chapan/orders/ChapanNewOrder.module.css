@@ -1444,15 +1444,11 @@
     padding: 8px 8px;
   }
 
-  /* Sprint 12: sticky submit bar */
   .formActions {
-    position: sticky;
-    bottom: calc(var(--bottom-nav-height, 60px) + env(safe-area-inset-bottom, 0px));
     background: var(--ch-bg, var(--bg-canvas));
     border-top: 1px solid var(--border-subtle);
     padding: 10px 12px;
     margin: 0 -12px;
-    z-index: 10;
   }
 
   .submitBtn,

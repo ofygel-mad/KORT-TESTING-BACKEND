@@ -1,0 +1,77 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 16px;
+  background: var(--brand-surface-3);
+  border: 1px dashed color-mix(in srgb, var(--fill-accent) 26%, var(--border-default));
+  border-radius: var(--surface-radius);
+}
+
+.root.default { padding: clamp(40px, 7vw, 72px) 24px; }
+.root.compact { padding: 28px 16px; }
+
+.iconWrap {
+  background: var(--bg-surface-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.iconWrap.default { width: 56px; height: 56px; }
+.iconWrap.compact { width: 44px; height: 44px; }
+
+.textBlock { max-width: 380px; }
+
+.title {
+  font-weight: 650;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  margin: 0 0 6px;
+  line-height: 1.25;
+}
+.title.default { font-size: var(--text-size-lg); }
+.title.compact { font-size: var(--text-size-md); }
+
+.desc {
+  font-size: var(--text-size-base);
+  color: var(--text-tertiary);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 18px;
+  background: var(--bg-surface-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  text-align: left;
+  width: 100%;
+  max-width: 360px;
+}
+
+.stepRow { display: flex; align-items: center; gap: 10px; font-size: var(--text-size-base); color: var(--text-secondary); }
+.stepNum { width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; background: var(--fill-accent); color: var(--text-inverse); display: flex; align-items: center; justify-content: center; font-size: var(--text-size-xs); font-weight: 700; }
+
+.root {
+  box-shadow: var(--brand-panel-shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+.root::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, color-mix(in srgb, white 8%, transparent) 0%, transparent 20%);
+}

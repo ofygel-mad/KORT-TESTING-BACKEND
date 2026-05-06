@@ -1,0 +1,427 @@
+.root {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  overflow: hidden;
+}
+
+.root,
+.col,
+.statChip,
+.drawerStage {
+  --tone-fill: var(--fill-accent);
+  --tone-soft: var(--fill-accent-soft);
+  --tone-text: var(--text-accent);
+}
+
+.col[data-tone='info'],
+.statChip[data-tone='info'],
+.drawerStage[data-tone='info'] {
+  --tone-fill: var(--fill-info);
+  --tone-soft: var(--fill-info-soft);
+  --tone-text: var(--fill-info-text);
+}
+
+.col[data-tone='warning'],
+.statChip[data-tone='warning'],
+.drawerStage[data-tone='warning'] {
+  --tone-fill: var(--fill-warning);
+  --tone-soft: var(--fill-warning-soft);
+  --tone-text: var(--fill-warning-text);
+}
+
+.col[data-tone='success'],
+.statChip[data-tone='success'],
+.drawerStage[data-tone='success'] {
+  --tone-fill: var(--fill-positive);
+  --tone-soft: var(--fill-positive-soft);
+  --tone-text: var(--fill-positive-text);
+}
+
+.col[data-tone='danger'],
+.statChip[data-tone='danger'],
+.drawerStage[data-tone='danger'] {
+  --tone-fill: var(--fill-negative);
+  --tone-soft: var(--fill-negative-soft);
+  --tone-text: var(--fill-negative-text);
+}
+
+.col[data-tone='muted'],
+.statChip[data-tone='muted'],
+.drawerStage[data-tone='muted'] {
+  --tone-fill: var(--text-tertiary);
+  --tone-soft: var(--bg-surface-inset);
+  --tone-text: var(--text-secondary);
+}
+
+.tabBar,
+.statsBar,
+.screenBadge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.tabBar {
+  flex-wrap: wrap;
+}
+
+.tabPill {
+  min-height: 20px;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: color-mix(in srgb, var(--bg-surface) 56%, transparent);
+  color: var(--text-tertiary);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tabPillActive {
+  background: color-mix(in srgb, var(--fill-accent-soft) 58%, var(--bg-surface));
+  border-color: color-mix(in srgb, var(--fill-accent) 24%, transparent);
+  color: var(--text-primary);
+}
+
+.statsBar {
+  flex-wrap: wrap;
+}
+
+.statChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--tone-fill) 18%, var(--border-subtle));
+  background: color-mix(in srgb, var(--tone-soft) 62%, var(--bg-surface));
+}
+
+.statDot,
+.colDot,
+.screenDot,
+.drawerEventDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.statDot,
+.colDot {
+  background: var(--tone-fill);
+}
+
+.statNum {
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.statLabel {
+  color: var(--text-tertiary);
+  font-size: 10px;
+}
+
+.board,
+.shimmer {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.col,
+.shimmerCol {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 6px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--tone-fill) 16%, var(--border-subtle));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--bg-surface) 78%, var(--tone-soft)) 0%,
+    color-mix(in srgb, var(--bg-surface-inset) 46%, transparent) 100%
+  );
+  box-shadow: var(--surface-shadow-rest);
+  overflow: hidden;
+}
+
+.col {
+  border-top: 2px solid color-mix(in srgb, var(--tone-fill) 62%, transparent);
+}
+
+.colHead {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.colLabel {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.colCount {
+  min-width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tone-soft) 58%, var(--bg-surface));
+  color: var(--tone-text);
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.colCards {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.colEmpty {
+  height: 22px;
+  border: 1px dashed color-mix(in srgb, var(--tone-fill) 20%, var(--border-subtle));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--bg-surface-inset) 36%, transparent);
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 5px 6px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--card-border) 88%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 82%, transparent);
+}
+
+.cardActive {
+  border-color: color-mix(in srgb, var(--fill-accent) 28%, transparent);
+  background: color-mix(in srgb, var(--fill-accent-soft) 48%, var(--card-bg));
+}
+
+.cardAvatar,
+.drawerAvatar,
+.feedAvatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--fill-accent-soft) 78%, transparent);
+  color: var(--text-accent);
+  font-weight: 800;
+}
+
+.cardAvatar {
+  width: 18px;
+  height: 18px;
+  font-size: 8px;
+}
+
+.cardInfo,
+.drawerMeta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.cardName {
+  color: var(--text-primary);
+  font-size: 9px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardSrc {
+  color: var(--text-tertiary);
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.cardBudget,
+.drawerBudget {
+  color: var(--fill-positive-text);
+  font-weight: 800;
+}
+
+.cardBudget {
+  flex-shrink: 0;
+  font-size: 8px;
+}
+
+.moreChip {
+  padding: 2px 0 0;
+  color: var(--text-tertiary);
+  font-size: 8px;
+  text-align: center;
+}
+
+.screenDot {
+  background: var(--fill-accent);
+}
+
+.screenLabel {
+  color: var(--text-tertiary);
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.drawerPreview {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--fill-accent) 16%, var(--border-subtle));
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--brand-surface-2) 84%, transparent) 0%,
+    color-mix(in srgb, var(--bg-surface) 86%, transparent) 100%
+  );
+  box-shadow: var(--brand-panel-shadow);
+  overflow: hidden;
+}
+
+.drawerHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.drawerAvatar {
+  width: 24px;
+  height: 24px;
+  font-size: 10px;
+}
+
+.drawerName {
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.drawerStage {
+  width: fit-content;
+  min-height: 16px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 6px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--tone-fill) 24%, transparent);
+  background: color-mix(in srgb, var(--tone-soft) 72%, transparent);
+  color: var(--tone-text);
+  font-size: 7px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.drawerRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.drawerRowLabel {
+  min-width: 42px;
+  color: var(--text-tertiary);
+  font-size: 8px;
+}
+
+.drawerRowValue {
+  color: var(--text-secondary);
+  font-size: 9px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.drawerEvent {
+  margin-top: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid color-mix(in srgb, var(--fill-accent) 12%, var(--border-subtle));
+}
+
+.drawerEventDot {
+  margin-top: 3px;
+  background: var(--fill-accent);
+}
+
+.drawerEventText {
+  color: var(--text-tertiary);
+  font-size: 8px;
+  line-height: 1.45;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.shimmerCol {
+  --tone-fill: var(--fill-accent);
+}
+
+.shimmerHdr,
+.shimmerCard {
+  border-radius: 8px;
+  background: var(--brand-skeleton-shimmer), color-mix(in srgb, var(--bg-surface-inset) 72%, transparent);
+  background-size: 180% 100%;
+  animation: shimmerAnim 1.5s ease-in-out infinite;
+}
+
+.shimmerHdr {
+  height: 10px;
+}
+
+.shimmerCard {
+  height: 24px;
+}
+
+@keyframes shimmerAnim {
+  0% { background-position: 140% 0; }
+  100% { background-position: -40% 0; }
+}

@@ -4,7 +4,7 @@
   min-height: 100vh;
   min-height: 100svh;
   min-height: 100dvh;
-  overflow: hidden;
+  overflow-x: clip;
   background:
     radial-gradient(circle at top left, color-mix(in srgb, var(--fill-accent) 8%, transparent) 0%, transparent 28%),
     radial-gradient(circle at bottom right, color-mix(in srgb, var(--fill-info) 7%, transparent) 0%, transparent 30%),
