@@ -21,6 +21,7 @@ import type {
   WarehouseLayoutPublishAuditResponse, WarehouseLayoutRollbackResult,
   WarehouseRouteHistoryResponse, WarehouseSlaEscalationResult, WarehousePoolPolicyDto,
   TransitZonesResponse, TransitEntriesResponse,
+  WarehouseProductPhoto,
 } from './types';
 
 export const warehouseApi = {
@@ -339,4 +340,27 @@ export const warehouseCatalogApi = {
       })
       .then((r) => r.data);
   },
+};
+
+// ── Product Photos API ─────────────────────────────────────────────────────────
+
+export const productPhotosApi = {
+  list: (productId: string) =>
+    api.get<WarehouseProductPhoto[]>(`/warehouse/catalog/products/${productId}/photos`),
+
+  upload: (productId: string, file: File) => {
+    const form = new FormData();
+    form.append('file', file, file.name);
+    return apiClient
+      .post<WarehouseProductPhoto>(`/warehouse/catalog/products/${productId}/photos`, form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      .then((r) => r.data);
+  },
+
+  fileUrl: (productId: string, photoId: string) =>
+    `/api/v1/warehouse/catalog/products/${productId}/photos/${photoId}/file`,
+
+  delete: (productId: string, photoId: string) =>
+    api.delete<{ ok: boolean }>(`/warehouse/catalog/products/${productId}/photos/${photoId}`),
 };

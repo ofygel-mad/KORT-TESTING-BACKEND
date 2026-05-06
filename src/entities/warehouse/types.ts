@@ -1194,6 +1194,19 @@ export interface WarehouseProductCatalog {
   fieldLinks: WarehouseProductField[];
 }
 
+export interface WarehouseProductPhoto {
+  id: string;
+  productId: string;
+  orgId: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  storagePath: string;
+  sortOrder: number;
+  createdAt: string;
+  fileUrl?: string;
+}
+
 export interface OrderFormField {
   code: string;
   label: string;

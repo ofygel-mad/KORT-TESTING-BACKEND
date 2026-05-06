@@ -31,7 +31,7 @@ export function initLandingAnimation(root: HTMLElement): () => void {
   let introPlayed = false;
 
   function playVideo() {
-    if (!introVideo) return;
+    if (!introVideo || window.innerWidth <= 640) return;
     void introVideo.play().catch(() => undefined);
   }
 
@@ -47,6 +47,7 @@ export function initLandingAnimation(root: HTMLElement): () => void {
   }
 
   function updatePhotoLayout() {
+    if (window.innerWidth <= 640) return;
     const { left, top, width, height } = getCoverBounds();
     photoCanvas.style.left   = `${left}px`;
     photoCanvas.style.top    = `${top}px`;
@@ -55,6 +56,7 @@ export function initLandingAnimation(root: HTMLElement): () => void {
   }
 
   function applyPhotoScreenRect() {
+    if (window.innerWidth <= 640) return;
     photoScreen.style.setProperty('--screen-left',   `${PHOTO_SCREEN.left}%`);
     photoScreen.style.setProperty('--screen-top',    `${PHOTO_SCREEN.top}%`);
     photoScreen.style.setProperty('--screen-width',  `${PHOTO_SCREEN.width}%`);
@@ -99,25 +101,39 @@ export function initLandingAnimation(root: HTMLElement): () => void {
     });
   }
 
+  function revealAll() {
+    gsap.set(landingRoot,  { opacity: 1, y: 0, pointerEvents: 'auto' });
+    gsap.set(siteHeader,   { opacity: 1, y: 0 });
+    gsap.set(heroCopy,     { opacity: 1, y: 0 });
+    gsap.set(revealBlocks, { clearProps: 'opacity,transform' });
+    revealBlocks.forEach((el) => el.classList.add('visible'));
+    body.classList.remove('intro-locked');
+    revealVisibleBlocks();
+    triggerHeroSub();
+  }
+
   function runIntro() {
     if (introPlayed) return;
     introPlayed = true;
 
-    const { x, y, scale, originX, originY } = getPhotoZoomMetrics();
-    photoCanvas.style.transformOrigin = `${originX}px ${originY}px`;
-
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      gsap.set(landingRoot,  { opacity: 1, y: 0, pointerEvents: 'auto' });
-      gsap.set(siteHeader,   { opacity: 1, y: 0 });
-      gsap.set(heroCopy,     { opacity: 1, y: 0 });
-      gsap.set(revealBlocks, { clearProps: 'opacity,transform' });
-      revealBlocks.forEach((el) => el.classList.add('visible'));
       gsap.set(intro, { autoAlpha: 0, pointerEvents: 'none' });
-      body.classList.remove('intro-locked');
-      revealVisibleBlocks();
-      triggerHeroSub();
+      revealAll();
       return;
     }
+
+    if (window.innerWidth <= 640) {
+      gsap.to(intro, {
+        autoAlpha: 0,
+        duration: 0.65,
+        ease: 'power2.inOut',
+        onComplete: revealAll,
+      });
+      return;
+    }
+
+    const { x, y, scale, originX, originY } = getPhotoZoomMetrics();
+    photoCanvas.style.transformOrigin = `${originX}px ${originY}px`;
 
     const ZOOM_END      = 0.05 + 1.18;
     const HOLD_DURATION = 0.6;
@@ -228,7 +244,11 @@ export function initLandingAnimation(root: HTMLElement): () => void {
   if (!photo.complete) {
     photo.addEventListener('load', updatePhotoLayout, { once: true });
   }
-  photoScreen.addEventListener('click', runIntro, { once: true });
+  if (window.innerWidth <= 640) {
+    setTimeout(runIntro, 1500);
+  } else {
+    photoScreen.addEventListener('click', runIntro, { once: true });
+  }
 
   const resizeHandler = () => { updatePhotoLayout(); applyPhotoScreenRect(); };
   window.addEventListener('resize', resizeHandler);

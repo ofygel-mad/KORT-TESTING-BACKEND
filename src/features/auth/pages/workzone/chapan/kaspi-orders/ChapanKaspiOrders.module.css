@@ -1,0 +1,408 @@
+.page {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 100%;
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.titleWrap { display: flex; flex-direction: column; gap: 4px; }
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ch-text);
+}
+
+.subtitle {
+  font-size: 12px;
+  color: var(--ch-text-muted);
+  padding-left: 28px;
+}
+
+.headerActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ── Panel ── */
+.panel {
+  background: var(--ch-surface);
+  border: 1px solid var(--ch-border);
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.panelHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.panelTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ch-text);
+}
+
+.panelSub {
+  font-size: 12px;
+  color: var(--ch-text-muted);
+  margin-top: 2px;
+}
+
+/* ── Connection meta grid ── */
+.metaGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px;
+}
+
+.metaCard {
+  background: var(--ch-card);
+  border: 1px solid var(--ch-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.metaLabel {
+  font-size: 11px;
+  color: var(--ch-text-muted);
+}
+
+.metaValue {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ch-text);
+  word-break: break-word;
+}
+
+/* ── Summary stat row ── */
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.summaryCard {
+  background: var(--ch-card);
+  border: 1px solid var(--ch-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.summaryValue {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ch-text);
+  line-height: 1.1;
+}
+
+.summaryLabel {
+  font-size: 11px;
+  color: var(--ch-text-muted);
+}
+
+/* ── Toolbar ── */
+.toolbar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.search {
+  flex: 1 1 240px;
+  min-width: 200px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--ch-border);
+  background: var(--ch-surface);
+  color: var(--ch-text);
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 160ms;
+}
+.search:focus { border-color: var(--ch-plat-border); }
+.search::placeholder { color: var(--ch-text-muted); }
+
+.presetRow {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  border: 1px solid var(--ch-border);
+  background: transparent;
+  color: var(--ch-text-muted);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 140ms, color 140ms, background 140ms;
+}
+.chip:hover { border-color: var(--ch-border-plat); color: var(--ch-text); background: var(--ch-card); }
+
+.chipActive {
+  color: var(--ch-plat-bright);
+  border-color: var(--ch-plat-border);
+  background: var(--ch-plat-soft);
+}
+
+/* ── Table ── */
+.tableWrap {
+  overflow: auto;
+  border: 1px solid var(--ch-border);
+  border-radius: 10px;
+  background: var(--ch-surface);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
+}
+
+.table th,
+.table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--ch-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.table tbody tr:last-child td { border-bottom: none; }
+
+.table th {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--ch-text-muted);
+  background: var(--ch-card);
+}
+
+.rowButton {
+  cursor: pointer;
+  transition: background 120ms;
+}
+.rowButton:hover { background: var(--ch-card); }
+
+/* ── Cell helpers ── */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.mono {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 11px;
+}
+
+.badgeRow {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+/* ── Status badges ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.statusDefault {
+  background: color-mix(in srgb, var(--ch-text-muted) 12%, transparent);
+  color: var(--ch-text-dim);
+  border-color: color-mix(in srgb, var(--ch-text-muted) 22%, transparent);
+}
+
+.statusWarn {
+  background: color-mix(in srgb, var(--ch-amber) 14%, transparent);
+  color: var(--ch-amber);
+  border-color: color-mix(in srgb, var(--ch-amber) 28%, transparent);
+}
+
+.statusGood {
+  background: color-mix(in srgb, var(--ch-green) 14%, transparent);
+  color: var(--ch-green);
+  border-color: color-mix(in srgb, var(--ch-green) 28%, transparent);
+}
+
+.statusBad {
+  background: color-mix(in srgb, var(--ch-red) 14%, transparent);
+  color: var(--ch-red);
+  border-color: color-mix(in srgb, var(--ch-red) 28%, transparent);
+}
+
+.statusInfo {
+  background: color-mix(in srgb, var(--ch-blue) 14%, transparent);
+  color: var(--ch-blue);
+  border-color: color-mix(in srgb, var(--ch-blue) 28%, transparent);
+}
+
+/* ── Buttons ── */
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 13px;
+  border: 1px solid var(--ch-border);
+  background: var(--ch-surface);
+  color: var(--ch-text-dim);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 140ms, color 140ms, background 140ms;
+}
+.button:hover { border-color: var(--ch-border-plat); color: var(--ch-text); background: var(--ch-card); }
+
+.buttonPrimary {
+  background: var(--ch-plat-soft);
+  border-color: var(--ch-plat-border);
+  color: var(--ch-plat-bright);
+}
+.buttonPrimary:hover { background: color-mix(in srgb, var(--ch-plat) 18%, var(--ch-surface)); }
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* ── Empty state ── */
+.empty {
+  border: 1px dashed var(--ch-border);
+  border-radius: 10px;
+  padding: 36px 20px;
+  text-align: center;
+  color: var(--ch-text-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  font-size: 13px;
+}
+
+/* ── Connection form ── */
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  color: var(--ch-text-muted);
+}
+
+.field input {
+  border: 1px solid var(--ch-border);
+  background: var(--ch-card);
+  color: var(--ch-text);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 160ms;
+}
+.field input:focus { border-color: var(--ch-plat-border); }
+.field input::placeholder { color: var(--ch-text-muted); }
+
+/* ── Detail page layout ── */
+.detailGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);
+  gap: 16px;
+}
+
+.detailColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sectionTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ch-text);
+}
+
+.simpleList {
+  display: grid;
+  gap: 8px;
+}
+
+.listRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--ch-border);
+  padding-bottom: 8px;
+}
+
+.listRow:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.jsonBox {
+  background: var(--ch-card);
+  color: var(--ch-text-dim);
+  border-radius: 8px;
+  border: 1px solid var(--ch-border);
+  padding: 10px 12px;
+  overflow: auto;
+  font-size: 11px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+@media (max-width: 900px) {
+  .page { padding: 16px; }
+  .detailGrid { grid-template-columns: 1fr; }
+}

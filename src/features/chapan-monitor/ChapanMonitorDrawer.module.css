@@ -1,5 +1,17 @@
 /* ── Backdrop ── */
+/* Define --ch-* tokens here because this drawer renders via portal (document.body),
+   outside .root where ChapanShell normally sets them. */
 .backdrop {
+  --ch-surface:       var(--bg-surface);
+  --ch-card:          var(--bg-surface-elevated);
+  --ch-border:        var(--border-subtle);
+  --ch-text:          var(--text-primary);
+  --ch-text-dim:      var(--text-secondary);
+  --ch-text-muted:    var(--text-tertiary);
+  --ch-accent:        var(--fill-accent);
+  --ch-accent-soft:   var(--fill-accent-subtle);
+  --ch-accent-border: color-mix(in srgb, var(--fill-accent) 28%, var(--border-default));
+
   position: fixed;
   inset: 0;
   z-index: var(--z-modal-overlay, 8999);

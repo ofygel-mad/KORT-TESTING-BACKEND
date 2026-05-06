@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { warehouseApi, warehouseCatalogApi } from './api';
+import { warehouseApi, warehouseCatalogApi, productPhotosApi } from './api';
 import type {
   CreateItemDto, AddMovementDto, CreateWarehouseSiteDto,
   CreateWarehouseZoneDto, CreateWarehouseBinDto, UpsertWarehouseVariantDto,
@@ -970,5 +970,33 @@ export const useDispatchTransitEntry = () => {
       toast.success('Отгрузка подтверждена');
     },
     onError: () => toast.error('Не удалось подтвердить отгрузку'),
+  });
+};
+
+// ── Product Photo hooks ────────────────────────────────────────────────────────
+
+export const useProductPhotos = (productId: string) =>
+  useQuery({
+    queryKey: ['warehouse', 'catalog', 'product-photos', productId] as const,
+    queryFn: () => productPhotosApi.list(productId),
+    staleTime: 5 * 60_000,
+    enabled: !!productId,
+  });
+
+export const useUploadProductPhoto = (productId: string) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => productPhotosApi.upload(productId, file),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['warehouse', 'catalog', 'product-photos', productId] }),
+    onError: () => toast.error('Не удалось загрузить фото'),
+  });
+};
+
+export const useDeleteProductPhoto = (productId: string) => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (photoId: string) => productPhotosApi.delete(productId, photoId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['warehouse', 'catalog', 'product-photos', productId] }),
+    onError: () => toast.error('Не удалось удалить фото'),
   });
 };

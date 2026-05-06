@@ -282,7 +282,9 @@ async function upsertRow(
     await sheets.spreadsheets.values.update({
       spreadsheetId,
       range: toSheetRange(sheetName, `A${rowNumber}`),
-      valueInputOption: 'USER_ENTERED',
+      // Use RAW so phone numbers like +7... are stored as literal text
+      // instead of being re-interpreted by Google Sheets as formulas.
+      valueInputOption: 'RAW',
       requestBody: { values: [values] },
     });
     return { ok: true, rowIndex: rowNumber };
@@ -291,7 +293,8 @@ async function upsertRow(
     const result = await sheets.spreadsheets.values.append({
       spreadsheetId,
       range: appendRange,
-      valueInputOption: 'USER_ENTERED',
+      // Same reason as above: preserve literal order data exactly as sent.
+      valueInputOption: 'RAW',
       insertDataOption: 'INSERT_ROWS',
       requestBody: { values: [values] },
     });
@@ -319,7 +322,8 @@ async function ensureHeaderRow(): Promise<void> {
     await sheets.spreadsheets.values.update({
       spreadsheetId,
       range: toSheetRange(sheetName, 'A1'),
-      valueInputOption: 'USER_ENTERED',
+      // Header cells are plain text too, so RAW keeps them stable.
+      valueInputOption: 'RAW',
       requestBody: { values: [[...SHEET_HEADER]] },
     });
   }

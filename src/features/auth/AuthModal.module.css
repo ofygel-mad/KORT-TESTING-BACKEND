@@ -695,6 +695,19 @@
     width: 50px;
     height: 54px;
   }
+
+  .typeGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .typeCard {
+    min-height: unset;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 16px;
+    padding: 16px;
+  }
 }
 
 @media (max-height: 700px) and (min-width: 561px) {

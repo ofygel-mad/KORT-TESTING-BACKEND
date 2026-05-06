@@ -63,23 +63,25 @@ const AcceptInvitePage  = makePage(() => import('../../pages/auth/accept-invite'
 const ResetPasswordPage = makePage(() => import('../../pages/auth/reset-password'));
 
 // Chapan Workzone — own layout
-const ChapanShell           = makePage(() => import('../../pages/workzone/chapan/ChapanShell'));
-const ChapanWarehousePage   = makePage(() => import('../../pages/workzone/chapan/warehouse/WarehousePage'));
-const ChapanCatalogPage     = makePage(() => import('../../pages/workzone/chapan/catalog/ChapanCatalog'));
-const ChapanOrdersPage   = makePage(() => import('../../pages/workzone/chapan/orders/ChapanOrders'));
-const ChapanNewOrderPage = makePage(() => import('../../pages/workzone/chapan/orders/ChapanNewOrder'));
-const ChapanOrderDetailPage = makePage(() => import('../../pages/workzone/chapan/orders/ChapanOrderDetail'));
-const ChapanEditOrderPage   = makePage(() => import('../../pages/workzone/chapan/orders/ChapanEditOrder'));
-const ChapanProductionPage  = makePage(() => import('../../pages/workzone/chapan/production/ChapanProduction'));
-const ChapanReadyPage       = makePage(() => import('../../pages/workzone/chapan/ready/ChapanReady'));
-const ChapanInvoicesPage    = makePage(() => import('../../pages/workzone/chapan/invoices/ChapanInvoices'));
-const ChapanReturnsPage     = makePage(() => import('../../pages/workzone/chapan/returns/ChapanReturns'));
-const ChapanArchivePage     = makePage(() => import('../../pages/workzone/chapan/archive/ChapanArchive'));
-const ChapanShippingPage    = makePage(() => import('../../pages/workzone/chapan/shipping/ChapanShipping'));
-const ChapanAnalyticsPage   = makePage(() => import('../../pages/workzone/chapan/analytics/ChapanAnalytics'));
-const ChapanPurchasePage    = makePage(() => import('../../pages/workzone/chapan/purchase/ChapanPurchase'));
-const ChapanClientsPage     = makePage(() => import('../../pages/workzone/chapan/clients/ChapanClients'));
-const ChapanClientDetailPage = makePage(() => import('../../pages/workzone/chapan/clients/ChapanClientDetail'));
+const ChapanShell             = makePage(() => import('../../features/auth/pages/workzone/chapan/ChapanShell'));
+const ChapanWarehousePage     = makePage(() => import('../../features/auth/pages/workzone/chapan/warehouse/WarehousePage'));
+const ChapanCatalogPage       = makePage(() => import('../../features/auth/pages/workzone/chapan/catalog/ChapanCatalog'));
+const ChapanOrdersPage        = makePage(() => import('../../features/auth/pages/workzone/chapan/orders/ChapanOrders'));
+const ChapanKaspiOrdersPage   = makePage(() => import('../../features/auth/pages/workzone/chapan/kaspi-orders/ChapanKaspiOrders'));
+const ChapanKaspiOrderPage    = makePage(() => import('../../features/auth/pages/workzone/chapan/kaspi-orders/ChapanKaspiOrderDetail'));
+const ChapanNewOrderPage      = makePage(() => import('../../features/auth/pages/workzone/chapan/orders/ChapanNewOrder'));
+const ChapanOrderDetailPage   = makePage(() => import('../../features/auth/pages/workzone/chapan/orders/ChapanOrderDetail'));
+const ChapanEditOrderPage     = makePage(() => import('../../features/auth/pages/workzone/chapan/orders/ChapanEditOrder'));
+const ChapanProductionPage    = makePage(() => import('../../features/auth/pages/workzone/chapan/production/ChapanProduction'));
+const ChapanReadyPage         = makePage(() => import('../../features/auth/pages/workzone/chapan/ready/ChapanReady'));
+const ChapanInvoicesPage      = makePage(() => import('../../features/auth/pages/workzone/chapan/invoices/ChapanInvoices'));
+const ChapanReturnsPage       = makePage(() => import('../../features/auth/pages/workzone/chapan/returns/ChapanReturns'));
+const ChapanArchivePage       = makePage(() => import('../../features/auth/pages/workzone/chapan/archive/ChapanArchive'));
+const ChapanShippingPage      = makePage(() => import('../../features/auth/pages/workzone/chapan/shipping/ChapanShipping'));
+const ChapanAnalyticsPage     = makePage(() => import('../../features/auth/pages/workzone/chapan/analytics/ChapanAnalytics'));
+const ChapanPurchasePage      = makePage(() => import('../../features/auth/pages/workzone/chapan/purchase/ChapanPurchase'));
+const ChapanClientsPage       = makePage(() => import('../../features/auth/pages/workzone/chapan/clients/ChapanClients'));
+const ChapanClientDetailPage  = makePage(() => import('../../features/auth/pages/workzone/chapan/clients/ChapanClientDetail'));
 
 function RootIndex() {
   const user = useAuthStore((s) => s.user);
@@ -381,6 +383,14 @@ export const appRouter = createBrowserRouter([
       {
         path: 'orders',
         element: <RequirePermission check="chapan_orders"><ChapanOrdersPage /></RequirePermission>,
+      },
+      {
+        path: 'kaspi-orders',
+        element: <RequirePermission check="chapan_orders"><ChapanKaspiOrdersPage /></RequirePermission>,
+      },
+      {
+        path: 'kaspi-orders/:externalOrderId',
+        element: <RequirePermission check="chapan_orders"><ChapanKaspiOrderPage /></RequirePermission>,
       },
       {
         path: 'orders/new',
