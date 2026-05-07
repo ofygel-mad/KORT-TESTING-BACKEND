@@ -132,6 +132,14 @@
   border-color: transparent;
 }
 
+/* ── Toolbar spacer + search ── */
+.toolbarSpacer { flex: 1; }
+
+.searchWrap {
+  width: 280px;
+  flex-shrink: 0;
+}
+
 /* ── Content ── */
 .content {
   flex: 1;
@@ -139,11 +147,35 @@
   padding: 24px 32px 48px;
 }
 
+.sectionTitle {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: 12px;
+}
+
 .addRow {
   display: flex;
   gap: 8px;
   margin-bottom: 16px;
 }
+
+.typeSelect {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+  min-width: 160px;
+  transition: border-color 140ms;
+}
+.typeSelect:focus { border-color: var(--fill-accent); }
 
 .addInput {
   flex: 1;

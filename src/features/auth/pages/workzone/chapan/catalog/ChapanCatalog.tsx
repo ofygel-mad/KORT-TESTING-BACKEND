@@ -7,17 +7,19 @@ import {
 import {
   useSmartImportProducts, useSmartImportColors,
   useCatalogDefinitions, useCatalogProducts,
-  useUpdateDefinition, useDeleteDefinition,
+  useCreateDefinition, useUpdateDefinition, useDeleteDefinition,
   useAddFieldOption, useUpdateFieldOption, useDeleteFieldOption,
   useCreateProduct, useUpdateProduct, useDeleteProduct, useSetProductFields,
   useProductPhotos, useUploadProductPhoto, useDeleteProductPhoto,
 } from '../../../../entities/warehouse/queries';
 import { productPhotosApi } from '../../../../entities/warehouse/api';
 import type { WarehouseFieldDefinition, WarehouseProductCatalog } from '../../../../entities/warehouse/types';
+import { SearchInput } from '../../../../shared/ui/SearchInput';
 import styles from './ChapanCatalog.module.css';
 import s from '../../../warehouse/WarehouseCatalog.module.css';
 
-type Tab = 'catalog' | 'colors';
+type Tab = 'catalog' | 'fields';
+type DefType = 'select' | 'text' | 'number' | 'boolean';
 
 // ── InlineEdit ─────────────────────────────────────────────────────────────────
 
@@ -257,6 +259,9 @@ export default function ChapanCatalogPage() {
   const [productsDone, setProductsDone] = useState<string | null>(null);
   const [colorsDone, setColorsDone] = useState<string | null>(null);
   const [newProdName, setNewProdName] = useState('');
+  const [newDefLabel, setNewDefLabel] = useState('');
+  const [newDefType, setNewDefType] = useState<DefType>('select');
+  const [search, setSearch] = useState('');
   const productsRef = useRef<HTMLInputElement>(null);
   const colorsRef = useRef<HTMLInputElement>(null);
 
@@ -265,9 +270,25 @@ export default function ChapanCatalogPage() {
   const { data: definitions = [] } = useCatalogDefinitions();
   const { data: products = [] } = useCatalogProducts();
   const createProduct = useCreateProduct();
+  const createDef = useCreateDefinition();
 
-  const colorDef = definitions.find((d) => d.code === 'color');
-  const colorCount = colorDef?.options.length ?? 0;
+  const colorCount = definitions.find((d) => d.code === 'color')?.options.length ?? 0;
+
+  const q = search.trim().toLowerCase();
+  const filteredProducts = q
+    ? products.filter((p) => p.name.toLowerCase().includes(q))
+    : products;
+  const filteredDefinitions = q
+    ? definitions.filter((d) => d.label.toLowerCase().includes(q) || d.code.toLowerCase().includes(q))
+    : definitions;
+
+  const submitNewDef = () => {
+    const label = newDefLabel.trim();
+    if (!label) return;
+    const code = label.toLowerCase().replace(/[^a-zа-я0-9]/gi, '_').replace(/__+/g, '_');
+    createDef.mutate({ code, label, inputType: newDefType });
+    setNewDefLabel('');
+  };
 
   return (
     <div className={styles.root}>
@@ -346,14 +367,24 @@ export default function ChapanCatalogPage() {
           </button>
           <button
             type="button"
-            className={`${styles.tab} ${activeTab === 'colors' ? styles.tabActive : ''}`}
-            onClick={() => setActiveTab('colors')}
+            className={`${styles.tab} ${activeTab === 'fields' ? styles.tabActive : ''}`}
+            onClick={() => setActiveTab('fields')}
           >
-            Цвет товаров
-            {colorCount > 0 && (
-              <span className={styles.tabBadge}>{colorCount}</span>
+            Поля товара
+            {definitions.length > 0 && (
+              <span className={styles.tabBadge}>{definitions.length}</span>
             )}
           </button>
+        </div>
+
+        <div className={styles.toolbarSpacer} />
+
+        <div className={styles.searchWrap}>
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder={activeTab === 'catalog' ? 'Поиск товара...' : 'Поиск поля...'}
+          />
         </div>
       </div>
 
@@ -361,6 +392,7 @@ export default function ChapanCatalogPage() {
       <div className={styles.content}>
         {activeTab === 'catalog' && (
           <>
+            <div className={styles.sectionTitle}>Каталог товаров</div>
             <div className={styles.addRow}>
               <input
                 className={styles.addInput}
@@ -384,24 +416,62 @@ export default function ChapanCatalogPage() {
               </button>
             </div>
             <div className={styles.list}>
-              {products.map((p) => (
+              {filteredProducts.map((p) => (
                 <ProductRow key={p.id} product={p} definitions={definitions} />
               ))}
               {products.length === 0 && (
                 <div className={styles.empty}>Загрузите таблицу товаров или добавьте вручную</div>
               )}
+              {products.length > 0 && filteredProducts.length === 0 && (
+                <div className={styles.empty}>По запросу «{search}» ничего не найдено</div>
+              )}
             </div>
           </>
         )}
 
-        {activeTab === 'colors' && (
-          colorDef ? (
-            <div className={styles.list}>
-              <FieldDefinitionRow def={colorDef} />
+        {activeTab === 'fields' && (
+          <>
+            <div className={styles.sectionTitle}>Поля товара</div>
+            <div className={styles.addRow}>
+              <input
+                className={styles.addInput}
+                placeholder="Название поля (напр. Сезон)"
+                value={newDefLabel}
+                onChange={(e) => setNewDefLabel(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); submitNewDef(); } }}
+              />
+              <select
+                className={styles.typeSelect}
+                value={newDefType}
+                onChange={(e) => setNewDefType(e.target.value as DefType)}
+                aria-label="Тип поля"
+              >
+                <option value="select">Список (выбор)</option>
+                <option value="text">Текст</option>
+                <option value="number">Число</option>
+                <option value="boolean">Да / Нет</option>
+              </select>
+              <button
+                type="button"
+                className={styles.addBtn}
+                onClick={submitNewDef}
+                disabled={!newDefLabel.trim() || createDef.isPending}
+              >
+                <Plus size={13} /> Добавить поле
+              </button>
             </div>
-          ) : (
-            <div className={styles.empty}>Загрузите таблицу цветов через кнопку выше</div>
-          )
+            <div className={styles.list}>
+              {filteredDefinitions.map((def) => (
+                <FieldDefinitionRow key={def.id} def={def} />
+              ))}
+              {definitions.length === 0 && (
+                <div className={styles.empty}>Загрузите таблицу цветов или добавьте поле вручную</div>
+              )}
+              {definitions.length > 0 && filteredDefinitions.length === 0 && (
+                <div className={styles.empty}>По запросу «{search}» ничего не найдено</div>
+              )}
+            </div>
+          </>
         )}
       </div>
 
