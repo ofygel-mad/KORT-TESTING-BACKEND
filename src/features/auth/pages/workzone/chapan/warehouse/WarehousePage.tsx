@@ -24,13 +24,17 @@ export const WarehousePage: React.FC = () => {
   const [viewOpen, setViewOpen] = useState(false);
   const [itemDrawerOpen, setItemDrawerOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [verificationView, setVerificationView] = useState(false);
 
   const { data: summary } = useWarehouseSummary();
   const { data: alerts } = useWarehouseAlerts();
 
   const deferredSearch = useDeferredValue(search);
 
-  const { data: itemsData } = useWarehouseItems({ search: deferredSearch || undefined });
+  const { data: itemsData } = useWarehouseItems({
+    search: deferredSearch || undefined,
+    verificationRequired: verificationView,
+  });
 
   const selectedItem = selectedItemId && itemsData?.results?.find(item => item.id === selectedItemId);
 
@@ -85,7 +89,16 @@ export const WarehousePage: React.FC = () => {
         onAddClick={handleAddItem}
         onExportClick={handleExport}
         exporting={exporting}
+        verificationView={verificationView}
+        onVerificationViewChange={setVerificationView}
       />
+
+      {verificationView && (
+        <div className={styles.verificationBanner}>
+          Это карточки товаров, автоматически созданные при оформлении заказов.
+          У них нет фактического остатка (qty=0) — нужно проверить и привязать к реальным позициям склада.
+        </div>
+      )}
 
       {statsOpen && <WarehouseStats summary={statsSummary} />}
 
@@ -95,12 +108,14 @@ export const WarehousePage: React.FC = () => {
             search={deferredSearch}
             statusFilter={statusFilter}
             onSelectItem={handleSelectItem}
+            verificationRequired={verificationView}
           />
         ) : (
           <WarehouseSkuTable
             search={deferredSearch}
             statusFilter={statusFilter}
             onSelectItem={handleSelectItem}
+            verificationRequired={verificationView}
           />
         )}
       </div>

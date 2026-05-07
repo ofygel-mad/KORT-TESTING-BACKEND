@@ -14,6 +14,7 @@ interface WarehouseSkuTableProps {
   search: string;
   statusFilter: StatusFilter;
   onSelectItem: (itemId: string) => void;
+  verificationRequired?: boolean;
 }
 
 interface SkuStatusPresentation {
@@ -94,9 +95,11 @@ export const WarehouseSkuTable: React.FC<WarehouseSkuTableProps> = ({
   search,
   statusFilter,
   onSelectItem,
+  verificationRequired,
 }) => {
   const { data: items, isLoading } = useWarehouseItems({
     search: search || undefined,
+    verificationRequired,
   });
 
   const [page, setPage] = useState(0);

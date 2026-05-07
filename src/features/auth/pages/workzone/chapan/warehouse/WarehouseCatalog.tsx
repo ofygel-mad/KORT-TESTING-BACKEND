@@ -21,15 +21,18 @@ interface WarehouseCatalogProps {
   search: string;
   statusFilter: StatusFilter;
   onSelectItem: (itemId: string) => void;
+  verificationRequired?: boolean;
 }
 
 export const WarehouseCatalog: React.FC<WarehouseCatalogProps> = ({
   search,
   statusFilter,
   onSelectItem,
+  verificationRequired,
 }) => {
   const { data: items, isLoading } = useWarehouseItems({
     search: search || undefined,
+    verificationRequired,
   });
 
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());

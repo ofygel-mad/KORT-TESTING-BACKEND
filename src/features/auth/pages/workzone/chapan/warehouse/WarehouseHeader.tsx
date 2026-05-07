@@ -25,6 +25,8 @@ interface WarehouseHeaderProps {
   onAddClick: () => void;
   onExportClick: () => void;
   exporting?: boolean;
+  verificationView: boolean;
+  onVerificationViewChange: (value: boolean) => void;
 }
 
 const STATUS_FILTER_OPTIONS: Array<{ value: StatusFilter; label: string }> = [
@@ -51,6 +53,8 @@ export const WarehouseHeader: React.FC<WarehouseHeaderProps> = ({
   onAddClick,
   onExportClick,
   exporting = false,
+  verificationView,
+  onVerificationViewChange,
 }) => {
   const filterRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<HTMLDivElement>(null);
@@ -93,11 +97,21 @@ export const WarehouseHeader: React.FC<WarehouseHeaderProps> = ({
             <Warehouse size={20} />
             Склад
           </h1>
-          {alertCount > 0 && (
-            <Badge variant="danger">
+          {(alertCount > 0 || verificationView) && (
+            <button
+              type="button"
+              className={`${styles.verificationToggle} ${verificationView ? styles.verificationToggleActive : ''}`}
+              onClick={() => onVerificationViewChange(!verificationView)}
+              title={verificationView ? 'Вернуться к фактическим остаткам' : 'Показать карточки, требующие проверки'}
+            >
               <AlertCircle size={14} />
-              {alertCount}
-            </Badge>
+              <span className={styles.verificationToggleLabel}>
+                {verificationView ? 'Все остатки' : 'Требуют проверки'}
+              </span>
+              {alertCount > 0 && !verificationView && (
+                <Badge variant="danger">{alertCount}</Badge>
+              )}
+            </button>
           )}
         </div>
 

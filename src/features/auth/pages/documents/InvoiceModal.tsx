@@ -5,6 +5,7 @@ import { useOrders } from '../../entities/order/queries';
 import type { ChapanOrder } from '../../entities/order/types';
 import { apiClient } from '../../shared/api/client';
 import { useAuthStore } from '../../shared/stores/auth';
+import { calculateChapanOrderFinancials } from '@/shared/lib/chapanFinancials';
 import styles from './InvoiceModal.module.css';
 import { buildItemLine } from '../../shared/utils/itemLine';
 
@@ -249,7 +250,13 @@ function OrderListStep({ style, onClose }: { style: InvoiceStyle; onClose: () =>
 
           {/* Total + download indicator */}
           <div className={styles.orderCardBottom}>
-            <span className={styles.orderTotal}>{fmtMoney(order.totalAmount)}</span>
+            <span className={styles.orderTotal}>{fmtMoney(calculateChapanOrderFinancials({
+              itemsSubtotal: order.totalAmount,
+              orderDiscount: order.orderDiscount,
+              deliveryFee: order.deliveryFee,
+              bankCommissionPercent: order.bankCommissionPercent,
+              bankCommissionAmount: order.bankCommissionAmount,
+            }).totalDue)}</span>
             <div className={styles.downloadBtn}>
               {downloading === order.id ? (
                 <Loader2 size={14} className={styles.spin} />

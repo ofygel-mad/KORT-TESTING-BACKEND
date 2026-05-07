@@ -5,6 +5,17 @@ import { useDeals } from '../../entities/deal/queries';
 import { useOrders } from '../../entities/order/queries';
 import { Skeleton } from '../../shared/ui/Skeleton';
 import { exportToCSV } from '../../shared/lib/export';
+import { calculateChapanOrderFinancials } from '@/shared/lib/chapanFinancials';
+
+function orderTotalDue(o: { totalAmount?: number; orderDiscount?: number; deliveryFee?: number; bankCommissionPercent?: number; bankCommissionAmount?: number }) {
+  return calculateChapanOrderFinancials({
+    itemsSubtotal: o.totalAmount ?? 0,
+    orderDiscount: o.orderDiscount,
+    deliveryFee: o.deliveryFee,
+    bankCommissionPercent: o.bankCommissionPercent,
+    bankCommissionAmount: o.bankCommissionAmount,
+  }).totalDue;
+}
 import styles from './Reports.module.css';
 import AdsReport from './AdsReport';
 
@@ -56,7 +67,7 @@ function SalesReport() {
 
   // Orders by manager (Chapan)
   const completedOrders = orders.filter((o: any) => o.status === 'completed' || o.status === 'transferred');
-  const totalRevenue = completedOrders.reduce((s: number, o: any) => s + (o.totalAmount ?? 0), 0);
+  const totalRevenue = completedOrders.reduce((s: number, o: any) => s + orderTotalDue(o), 0);
   const totalPaid = completedOrders.reduce((s: number, o: any) => s + (o.paidAmount ?? 0), 0);
 
   function handleExport() {
@@ -233,10 +244,10 @@ function ProductionReport() {
   orders.forEach((o: any) => {
     if (!byStatus[o.status]) byStatus[o.status] = { count: 0, total: 0 };
     byStatus[o.status].count++;
-    byStatus[o.status].total += o.totalAmount ?? 0;
+    byStatus[o.status].total += orderTotalDue(o);
   });
 
-  const total = orders.reduce((s: number, o: any) => s + (o.totalAmount ?? 0), 0);
+  const total = orders.reduce((s: number, o: any) => s + orderTotalDue(o), 0);
   const paid = orders.reduce((s: number, o: any) => s + (o.paidAmount ?? 0), 0);
 
   function handleExport() {

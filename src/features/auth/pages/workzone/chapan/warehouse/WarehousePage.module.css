@@ -12,8 +12,24 @@
   padding: var(--space-4);
 }
 
+.verificationBanner {
+  margin: var(--space-3) var(--space-4) 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: 8px;
+  background: rgba(234, 179, 8, 0.1);
+  border: 1px solid rgba(234, 179, 8, 0.25);
+  color: var(--wh-text);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 @media (max-width: 640px) {
   .content {
     padding: var(--space-3);
+  }
+  .verificationBanner {
+    margin: var(--space-2) var(--space-3) 0;
+    padding: var(--space-2) var(--space-3);
+    font-size: 12px;
   }
 }
