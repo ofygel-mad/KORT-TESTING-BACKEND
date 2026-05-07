@@ -1670,15 +1670,12 @@ export async function checkVariantAvailability(
     const hasAttributes = Object.keys(attrs).some((code) => allowedAxes.has(code));
     const normalizedName = normalizeWarehouseName(name);
 
-    // 1. New catalog system: WarehouseProductCatalog → WarehouseVariant → WarehouseStockBalance
+    // 1. New catalog system: WarehouseProductCatalog → WarehouseVariant → WarehouseStockBalance.
+    // Match only by normalizedName (exact) — `contains: name` previously caused false
+    // matches like "Абай бомбер" → catalog row "Бомбер Амир", which then poisoned the
+    // availability lookup with the wrong product's variants.
     const catalogProduct = await prisma.warehouseProductCatalog.findFirst({
-      where: {
-        orgId,
-        OR: [
-          { normalizedName },
-          { name: { contains: name, mode: 'insensitive' } },
-        ],
-      },
+      where: { orgId, normalizedName },
       select: { id: true, name: true },
     });
 
@@ -1713,30 +1710,41 @@ export async function checkVariantAvailability(
       }
     }
 
-    // 2. Fall back to legacy WarehouseItem
-    let item = await prisma.warehouseItem.findFirst({
+    // 2. Fall back to legacy WarehouseItem.
+    // Sum across all rows that share the same variantKey — historically the table
+    // accumulated duplicate rows (separate batches, manual receipts), and findFirst
+    // would non-deterministically pick one of them. The accounting truth is the sum.
+    const rows = await prisma.warehouseItem.findMany({
       where: { orgId, variantKey },
       select: { name: true, qty: true, qtyReserved: true, qtyMin: true },
     });
 
-    if (!item && !hasAttributes) {
-      item = await prisma.warehouseItem.findFirst({
+    let workingRows = rows;
+    if (workingRows.length === 0 && !hasAttributes) {
+      workingRows = await prisma.warehouseItem.findMany({
         where: { orgId, name: { contains: name, mode: 'insensitive' } },
         select: { name: true, qty: true, qtyReserved: true, qtyMin: true },
       });
     }
 
-    if (!item) {
+    if (workingRows.length === 0) {
       result[variantKey] = { qty: 0, available: 0, status: 'none', itemName: null };
       continue;
     }
 
-    const available = Math.max(0, item.qty - item.qtyReserved);
-    const qtyMin = item.qtyMin ?? 0;
+    const totalQty = workingRows.reduce((sum, r) => sum + r.qty, 0);
+    const totalReserved = workingRows.reduce((sum, r) => sum + r.qtyReserved, 0);
+    const available = Math.max(0, totalQty - totalReserved);
+    const qtyMin = workingRows[0]?.qtyMin ?? 0;
     const status: VariantAvailabilityStatus =
       available === 0 ? 'none' : available <= qtyMin ? 'low' : 'ok';
 
-    result[variantKey] = { qty: item.qty, available, status, itemName: item.name };
+    result[variantKey] = {
+      qty: totalQty,
+      available,
+      status,
+      itemName: workingRows[0]?.name ?? null,
+    };
   }
 
   return result;

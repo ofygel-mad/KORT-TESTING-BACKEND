@@ -115,6 +115,8 @@ type BuiltKaspiOrderView = {
 
 const KASPI_RELEASE_STATUSES = new Set(['CANCELLED', 'RETURNED']);
 const KASPI_RESERVATION_STATUSES = new Set(['ACCEPTED_BY_MERCHANT', 'COMPLETED']);
+const KASPI_SYNC_LOOKBACK_DAYS = 90;
+const KASPI_SYNC_WINDOW_DAYS = 14;
 
 function maskToken(tokenLast4: string) {
   return `**** **** **** ${tokenLast4}`;
@@ -629,6 +631,28 @@ function buildStatusHistory(row: KaspiOrderLinkRecord, payload: StoredKaspiPaylo
   ];
 }
 
+function buildKaspiSyncWindows(lastSyncAt: Date | null) {
+  const now = Date.now();
+  const lookbackStart = now - (KASPI_SYNC_LOOKBACK_DAYS * 24 * 60 * 60 * 1000);
+  const resumedStart = lastSyncAt
+    ? Math.max(lookbackStart, lastSyncAt.getTime() - (24 * 60 * 60 * 1000))
+    : lookbackStart;
+
+  const windows: Array<{ fromMs: number; toMs: number }> = [];
+  let cursor = resumedStart;
+
+  while (cursor <= now) {
+    const end = Math.min(
+      now,
+      cursor + (KASPI_SYNC_WINDOW_DAYS * 24 * 60 * 60 * 1000) - 1,
+    );
+    windows.push({ fromMs: cursor, toMs: end });
+    cursor = end + 1;
+  }
+
+  return windows;
+}
+
 function buildOrderView(
   row: KaspiOrderLinkRecord,
   payload: StoredKaspiPayload,
@@ -992,12 +1016,28 @@ export async function syncOrders(orgId: string): Promise<SyncKaspiOrdersResult> 
   const pageSize = 100;
   const maxPages = 10;
   const summaries: KaspiOrderSummary[] = [];
+  const summaryById = new Map<string, KaspiOrderSummary>();
+  const windows = buildKaspiSyncWindows(connection.lastSyncAt);
 
-  for (let pageNumber = 0; pageNumber < maxPages; pageNumber += 1) {
-    const page = await listKaspiOrders(connection.apiToken, { pageNumber, pageSize });
-    summaries.push(...page);
-    if (page.length < pageSize) {
-      break;
+  for (const window of windows) {
+    for (let pageNumber = 0; pageNumber < maxPages; pageNumber += 1) {
+      const page = await listKaspiOrders(connection.apiToken, {
+        pageNumber,
+        pageSize,
+        creationDateFromMs: window.fromMs,
+        creationDateToMs: window.toMs,
+      });
+
+      for (const order of page) {
+        if (!summaryById.has(order.id)) {
+          summaryById.set(order.id, order);
+          summaries.push(order);
+        }
+      }
+
+      if (page.length < pageSize) {
+        break;
+      }
     }
   }
 
