@@ -1,3 +1,4 @@
+import ExcelJS from 'exceljs';
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../../lib/prisma.js';
 import { NotFoundError, ValidationError } from '../../../lib/errors.js';
@@ -19,6 +20,8 @@ import type {
   ConfirmCompletionCodeInput,
   ConfirmCompletionCodeResult,
   KaspiConnectionView,
+  KaspiConnectionHistoryItemView,
+  KaspiExportResult,
   KaspiOrderDetailView,
   KaspiOrderItemView,
   KaspiOrdersSummaryView,
@@ -114,9 +117,12 @@ type BuiltKaspiOrderView = {
 };
 
 const KASPI_RELEASE_STATUSES = new Set(['CANCELLED', 'RETURNED']);
+const KASPI_CANCELLATION_STATUSES = new Set(['CANCELLED', 'CANCELLING', 'RETURNED']);
 const KASPI_RESERVATION_STATUSES = new Set(['ACCEPTED_BY_MERCHANT', 'COMPLETED']);
 const KASPI_SYNC_LOOKBACK_DAYS = 90;
 const KASPI_SYNC_WINDOW_DAYS = 14;
+const KASPI_SYNC_MAX_PAGES_PER_WINDOW = 100;
+const KASPI_COMPLETION_WRITE_ENABLED = false;
 
 function maskToken(tokenLast4: string) {
   return `**** **** **** ${tokenLast4}`;
@@ -183,12 +189,18 @@ function readTimestampIso(value: unknown): string | null {
   return readTimestamp(value)?.toISOString() ?? null;
 }
 
+function coerceExternalTimestamp(value: string | null) {
+  const parsed = readTimestamp(value);
+  return parsed ?? new Date();
+}
+
 function mapConnection(record: {
   id: string;
   orgId: string;
   sellerName: string | null;
   tokenLast4: string;
   isActive: boolean;
+  archivedAt: Date | null;
   lastCheckedAt: Date | null;
   lastSyncAt: Date | null;
   lastSyncError: string | null;
@@ -201,6 +213,7 @@ function mapConnection(record: {
     sellerName: record.sellerName,
     tokenMasked: maskToken(record.tokenLast4),
     isActive: record.isActive,
+    archivedAt: toIso(record.archivedAt),
     lastCheckedAt: toIso(record.lastCheckedAt),
     lastSyncAt: toIso(record.lastSyncAt),
     lastSyncError: record.lastSyncError,
@@ -316,8 +329,12 @@ function extractCustomerPhone(payload: StoredKaspiPayload): string | null {
 }
 
 async function requireConnection(orgId: string) {
-  const connection = await prisma.kaspiConnection.findUnique({
-    where: { orgId },
+  const connection = await prisma.kaspiConnection.findFirst({
+    where: { orgId, isActive: true },
+    orderBy: [
+      { updatedAt: 'desc' },
+      { createdAt: 'desc' },
+    ],
   });
 
   if (!connection) {
@@ -326,6 +343,28 @@ async function requireConnection(orgId: string) {
 
   if (!connection.isActive) {
     throw new ValidationError('Kaspi connection is disabled');
+  }
+
+  return connection;
+}
+
+async function findCurrentConnection(orgId: string) {
+  return prisma.kaspiConnection.findFirst({
+    where: { orgId, isActive: true },
+    orderBy: [
+      { updatedAt: 'desc' },
+      { createdAt: 'desc' },
+    ],
+  });
+}
+
+async function requireConnectionById(orgId: string, connectionId: string) {
+  const connection = await prisma.kaspiConnection.findFirst({
+    where: { orgId, id: connectionId },
+  });
+
+  if (!connection) {
+    throw new NotFoundError('KaspiConnection', connectionId);
   }
 
   return connection;
@@ -736,12 +775,13 @@ function summarizeOrderView(view: KaspiOrderView, summary: KaspiOrdersSummaryVie
     }
   } else if (view.externalStatus === 'COMPLETED') {
     summary.completed += 1;
-  } else if (view.externalStatus && KASPI_RELEASE_STATUSES.has(view.externalStatus)) {
+  } else if (view.externalStatus && KASPI_CANCELLATION_STATUSES.has(view.externalStatus)) {
     summary.cancelledOrReturned += 1;
   }
 
   const hasIssues =
-    view.matchState !== 'matched'
+    !!view.syncError
+    || view.matchState !== 'matched'
     || !['pending_acceptance', 'reserved', 'released'].includes(view.stockImpactState);
   if (hasIssues) {
     summary.unmatchedOrStockIssues += 1;
@@ -754,11 +794,11 @@ async function upsertOrderLink(
   order: KaspiHydratedOrder,
   syncError?: string | null,
 ) {
-  const externalTimestamp = order.summary.updatedAt ? new Date(order.summary.updatedAt) : new Date();
+  const externalTimestamp = coerceExternalTimestamp(order.summary.updatedAt);
   const existing = await prisma.kaspiOrderLink.findUnique({
     where: {
-      orgId_externalOrderId: {
-        orgId,
+      connectionId_externalOrderId: {
+        connectionId,
         externalOrderId: order.summary.id,
       },
     },
@@ -778,8 +818,8 @@ async function upsertOrderLink(
 
   return prisma.kaspiOrderLink.upsert({
     where: {
-      orgId_externalOrderId: {
-        orgId,
+      connectionId_externalOrderId: {
+        connectionId,
         externalOrderId: order.summary.id,
       },
     },
@@ -814,6 +854,65 @@ async function upsertOrderLink(
       syncError: syncError ?? null,
     },
   });
+}
+
+async function listOrdersForKaspiWindow(
+  apiToken: string,
+  params: {
+    pageSize: number;
+    creationDateFromMs: number;
+    creationDateToMs: number;
+  },
+) {
+  const summaries: KaspiOrderSummary[] = [];
+  let fetchedPages = 0;
+
+  for (let pageNumber = 0; pageNumber < KASPI_SYNC_MAX_PAGES_PER_WINDOW; pageNumber += 1) {
+    const page = await listKaspiOrders(apiToken, {
+      pageNumber,
+      pageSize: params.pageSize,
+      creationDateFromMs: params.creationDateFromMs,
+      creationDateToMs: params.creationDateToMs,
+    });
+
+    fetchedPages += 1;
+    summaries.push(...page);
+
+    if (page.length < params.pageSize) {
+      return { summaries, fetchedPages };
+    }
+  }
+
+  throw new ValidationError(
+    `Kaspi sync window exceeded ${KASPI_SYNC_MAX_PAGES_PER_WINDOW} pages. Narrow the sync range or raise the cap.`,
+  );
+}
+
+function assertKaspiCompletionWriteEnabled() {
+  if (!KASPI_COMPLETION_WRITE_ENABLED) {
+    throw new ValidationError('Kaspi completion control is disabled in read-only mode');
+  }
+}
+
+function createEmptyKaspiSummary(): KaspiOrdersSummaryView {
+  return {
+    total: 0,
+    newOrNeedsAcceptance: 0,
+    accepted: 0,
+    handoffOrDeliveryInProgress: 0,
+    completed: 0,
+    cancelledOrReturned: 0,
+    unmatchedOrStockIssues: 0,
+  };
+}
+
+function safeWorksheetName(input: string) {
+  const cleaned = input.replace(/[\\/*?:[\]]/g, ' ').trim();
+  return (cleaned || 'Kaspi Orders').slice(0, 31);
+}
+
+function safeFilePart(input: string) {
+  return input.replace(/[^\p{L}\p{N}_-]+/gu, '_').replace(/_+/g, '_').replace(/^_|_$/g, '') || 'kaspi';
 }
 
 async function syncKaspiOrderStock(orgId: string, row: KaspiOrderLinkRecord) {
@@ -916,10 +1015,15 @@ async function syncKaspiOrderStock(orgId: string, row: KaspiOrderLinkRecord) {
 }
 
 async function requireOrderLink(orgId: string, externalOrderId: string) {
+  const currentConnection = await findCurrentConnection(orgId);
+  if (!currentConnection) {
+    throw new NotFoundError('KaspiConnection');
+  }
+
   const link = await prisma.kaspiOrderLink.findUnique({
     where: {
-      orgId_externalOrderId: {
-        orgId,
+      connectionId_externalOrderId: {
+        connectionId: currentConnection.id,
         externalOrderId,
       },
     },
@@ -944,36 +1048,142 @@ async function requireOrderLink(orgId: string, externalOrderId: string) {
 }
 
 export async function getConnection(orgId: string): Promise<KaspiConnectionView | null> {
-  const record = await prisma.kaspiConnection.findUnique({
-    where: { orgId },
-  });
+  const record = await findCurrentConnection(orgId);
 
   return record ? mapConnection(record) : null;
 }
 
+export async function listConnections(orgId: string): Promise<KaspiConnectionHistoryItemView[]> {
+  const [connections, stats] = await Promise.all([
+    prisma.kaspiConnection.findMany({
+      where: { orgId },
+      orderBy: [
+        { isActive: 'desc' },
+        { updatedAt: 'desc' },
+        { createdAt: 'desc' },
+      ],
+    }),
+    prisma.kaspiOrderLink.groupBy({
+      by: ['connectionId', 'externalStatus'],
+      where: { orgId },
+      _count: { _all: true },
+      _max: { lastExternalUpdateAt: true },
+    }),
+  ]);
+
+  const bucket = new Map<string, {
+    ordersCount: number;
+    completedOrdersCount: number;
+    cancelledOrdersCount: number;
+    lastOrderUpdateAt: Date | null;
+  }>();
+
+  for (const row of stats) {
+    const current = bucket.get(row.connectionId) ?? {
+      ordersCount: 0,
+      completedOrdersCount: 0,
+      cancelledOrdersCount: 0,
+      lastOrderUpdateAt: null,
+    };
+    current.ordersCount += row._count._all;
+    if (row.externalStatus === 'COMPLETED') {
+      current.completedOrdersCount += row._count._all;
+    }
+    if (row.externalStatus && KASPI_CANCELLATION_STATUSES.has(row.externalStatus)) {
+      current.cancelledOrdersCount += row._count._all;
+    }
+    if (!current.lastOrderUpdateAt || (row._max.lastExternalUpdateAt && row._max.lastExternalUpdateAt > current.lastOrderUpdateAt)) {
+      current.lastOrderUpdateAt = row._max.lastExternalUpdateAt ?? current.lastOrderUpdateAt;
+    }
+    bucket.set(row.connectionId, current);
+  }
+
+  return connections.map((connection) => {
+    const item = bucket.get(connection.id);
+    return {
+      ...mapConnection(connection),
+      ordersCount: item?.ordersCount ?? 0,
+      completedOrdersCount: item?.completedOrdersCount ?? 0,
+      cancelledOrdersCount: item?.cancelledOrdersCount ?? 0,
+      lastOrderUpdateAt: toIso(item?.lastOrderUpdateAt ?? null),
+    };
+  });
+}
+
+export async function disconnectConnection(orgId: string): Promise<KaspiConnectionView | null> {
+  const current = await findCurrentConnection(orgId);
+  if (!current) {
+    return null;
+  }
+
+  const record = await prisma.kaspiConnection.update({
+    where: { id: current.id },
+    data: {
+      isActive: false,
+      archivedAt: new Date(),
+    },
+  });
+
+  return mapConnection(record);
+}
+
 export async function saveConnection(orgId: string, input: SaveKaspiConnectionInput): Promise<KaspiConnectionView> {
-  const trimmedToken = input.apiToken.trim();
-  if (!trimmedToken) {
+  const existing = await findCurrentConnection(orgId);
+  const trimmedToken = input.apiToken?.trim();
+
+  if (!existing && !trimmedToken) {
     throw new ValidationError('Kaspi API token is required');
   }
 
-  const tokenLast4 = trimmedToken.slice(-4).padStart(4, '*');
-  const record = await prisma.kaspiConnection.upsert({
-    where: { orgId },
-    create: {
-      orgId,
-      sellerName: input.sellerName?.trim() || null,
-      apiToken: trimmedToken,
-      tokenLast4,
-      isActive: input.isActive ?? true,
-    },
-    update: {
-      sellerName: input.sellerName?.trim() || null,
-      apiToken: trimmedToken,
-      tokenLast4,
-      isActive: input.isActive ?? true,
-      lastSyncError: null,
-    },
+  const sellerName =
+    input.sellerName !== undefined
+      ? (input.sellerName.trim() || null)
+      : (existing?.sellerName ?? null);
+
+  if (!existing) {
+    const apiToken = trimmedToken!;
+    const record = await prisma.kaspiConnection.create({
+      data: {
+        orgId,
+        sellerName,
+        apiToken,
+        tokenLast4: apiToken.slice(-4).padStart(4, '*'),
+        isActive: input.isActive ?? true,
+      },
+    });
+    return mapConnection(record);
+  }
+
+  if (!trimmedToken || trimmedToken === existing.apiToken) {
+    const record = await prisma.kaspiConnection.update({
+      where: { id: existing.id },
+      data: {
+        sellerName,
+        isActive: input.isActive ?? true,
+        lastSyncError: null,
+      },
+    });
+    return mapConnection(record);
+  }
+
+  const record = await prisma.$transaction(async (tx) => {
+    await tx.kaspiConnection.update({
+      where: { id: existing.id },
+      data: {
+        isActive: false,
+        archivedAt: new Date(),
+      },
+    });
+
+    return tx.kaspiConnection.create({
+      data: {
+        orgId,
+        sellerName,
+        apiToken: trimmedToken,
+        tokenLast4: trimmedToken.slice(-4).padStart(4, '*'),
+        isActive: true,
+      },
+    });
   });
 
   return mapConnection(record);
@@ -1014,29 +1224,23 @@ export async function testConnection(orgId: string) {
 export async function syncOrders(orgId: string): Promise<SyncKaspiOrdersResult> {
   const connection = await requireConnection(orgId);
   const pageSize = 100;
-  const maxPages = 10;
   const summaries: KaspiOrderSummary[] = [];
   const summaryById = new Map<string, KaspiOrderSummary>();
   const windows = buildKaspiSyncWindows(connection.lastSyncAt);
+  let fetchedPages = 0;
 
   for (const window of windows) {
-    for (let pageNumber = 0; pageNumber < maxPages; pageNumber += 1) {
-      const page = await listKaspiOrders(connection.apiToken, {
-        pageNumber,
-        pageSize,
-        creationDateFromMs: window.fromMs,
-        creationDateToMs: window.toMs,
-      });
+    const result = await listOrdersForKaspiWindow(connection.apiToken, {
+      pageSize,
+      creationDateFromMs: window.fromMs,
+      creationDateToMs: window.toMs,
+    });
+    fetchedPages += result.fetchedPages;
 
-      for (const order of page) {
-        if (!summaryById.has(order.id)) {
-          summaryById.set(order.id, order);
-          summaries.push(order);
-        }
-      }
-
-      if (page.length < pageSize) {
-        break;
+    for (const order of result.summaries) {
+      if (!summaryById.has(order.id)) {
+        summaryById.set(order.id, order);
+        summaries.push(order);
       }
     }
   }
@@ -1081,60 +1285,78 @@ export async function syncOrders(orgId: string): Promise<SyncKaspiOrdersResult> 
   return {
     fetched: summaries.length,
     upserted,
-    fetchedPages: Math.max(1, Math.ceil(summaries.length / pageSize)),
+    fetchedPages,
     syncedAt: syncedAt.toISOString(),
   };
 }
 
 export async function listOrders(orgId: string, filters: ListKaspiOrdersInput = {}) {
-  const rows = await prisma.kaspiOrderLink.findMany({
-    where: {
-      orgId,
-      ...(filters.state ? { externalState: filters.state } : {}),
-      ...(filters.status ? { externalStatus: filters.status } : {}),
-    },
-    orderBy: [
-      { lastExternalUpdateAt: 'desc' },
-      { updatedAt: 'desc' },
-    ],
-    skip: filters.offset ?? 0,
-    take: filters.limit ?? 50,
-    select: {
-      id: true,
-      orgId: true,
-      connectionId: true,
-      externalOrderId: true,
-      externalOrderCode: true,
-      externalState: true,
-      externalStatus: true,
-      externalDeliveryMode: true,
-      internalOrderId: true,
-      internalOrderType: true,
-      rawPayload: true,
-      lastExternalUpdateAt: true,
-      acceptedAt: true,
-      completedAt: true,
-      cancelledAt: true,
-      lastSyncedAt: true,
-      syncError: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
+  const currentConnection = await findCurrentConnection(orgId);
+  if (!currentConnection) {
+    return {
+      count: 0,
+      results: [],
+    };
+  }
+
+  const where = {
+    orgId,
+    connectionId: currentConnection.id,
+    ...(filters.state ? { externalState: filters.state } : {}),
+    ...(filters.status ? { externalStatus: filters.status } : {}),
+  };
+  const [rows, totalCount] = await Promise.all([
+    prisma.kaspiOrderLink.findMany({
+      where,
+      orderBy: [
+        { lastExternalUpdateAt: 'desc' },
+        { updatedAt: 'desc' },
+      ],
+      skip: filters.offset ?? 0,
+      take: filters.limit ?? 50,
+      select: {
+        id: true,
+        orgId: true,
+        connectionId: true,
+        externalOrderId: true,
+        externalOrderCode: true,
+        externalState: true,
+        externalStatus: true,
+        externalDeliveryMode: true,
+        internalOrderId: true,
+        internalOrderType: true,
+        rawPayload: true,
+        lastExternalUpdateAt: true,
+        acceptedAt: true,
+        completedAt: true,
+        cancelledAt: true,
+        lastSyncedAt: true,
+        syncError: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    }),
+    prisma.kaspiOrderLink.count({ where }),
+  ]);
 
   const built = await buildKaspiOrderViews(rows);
 
   return {
-    count: built.length,
+    count: totalCount,
     results: built.map((item) => item.view),
   };
 }
 
 export async function getOrderDetail(orgId: string, externalOrderId: string): Promise<KaspiOrderDetailView> {
+  const currentConnection = await findCurrentConnection(orgId);
+  if (!currentConnection) {
+    throw new NotFoundError('KaspiConnection');
+  }
+
   const row = await prisma.kaspiOrderLink.findUnique({
     where: {
-      orgId_externalOrderId: {
-        orgId,
+      connectionId_externalOrderId: {
+        connectionId: currentConnection.id,
         externalOrderId,
       },
     },
@@ -1183,8 +1405,13 @@ export async function getOrderDetail(orgId: string, externalOrderId: string): Pr
 }
 
 export async function getOrdersSummary(orgId: string): Promise<KaspiOrdersSummaryView> {
+  const currentConnection = await findCurrentConnection(orgId);
+  if (!currentConnection) {
+    return createEmptyKaspiSummary();
+  }
+
   const rows = await prisma.kaspiOrderLink.findMany({
-    where: { orgId },
+    where: { orgId, connectionId: currentConnection.id },
     orderBy: [
       { lastExternalUpdateAt: 'desc' },
       { updatedAt: 'desc' },
@@ -1213,15 +1440,7 @@ export async function getOrdersSummary(orgId: string): Promise<KaspiOrdersSummar
   });
 
   const built = await buildKaspiOrderViews(rows);
-  const summary: KaspiOrdersSummaryView = {
-    total: 0,
-    newOrNeedsAcceptance: 0,
-    accepted: 0,
-    handoffOrDeliveryInProgress: 0,
-    completed: 0,
-    cancelledOrReturned: 0,
-    unmatchedOrStockIssues: 0,
-  };
+  const summary: KaspiOrdersSummaryView = createEmptyKaspiSummary();
 
   for (const item of built) {
     summarizeOrderView(item.view, summary);
@@ -1230,7 +1449,224 @@ export async function getOrdersSummary(orgId: string): Promise<KaspiOrdersSummar
   return summary;
 }
 
+export async function exportConnectionOrders(orgId: string, connectionId: string): Promise<KaspiExportResult> {
+  const connection = await requireConnectionById(orgId, connectionId);
+  const rows = await prisma.kaspiOrderLink.findMany({
+    where: { orgId, connectionId },
+    orderBy: [
+      { lastExternalUpdateAt: 'desc' },
+      { updatedAt: 'desc' },
+    ],
+    select: {
+      id: true,
+      orgId: true,
+      connectionId: true,
+      externalOrderId: true,
+      externalOrderCode: true,
+      externalState: true,
+      externalStatus: true,
+      externalDeliveryMode: true,
+      internalOrderId: true,
+      internalOrderType: true,
+      rawPayload: true,
+      lastExternalUpdateAt: true,
+      acceptedAt: true,
+      completedAt: true,
+      cancelledAt: true,
+      lastSyncedAt: true,
+      syncError: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  const built = await buildKaspiOrderViews(rows);
+  const workbook = new ExcelJS.Workbook();
+  const now = new Date();
+  workbook.creator = 'KORT';
+  workbook.lastModifiedBy = 'KORT';
+  workbook.created = now;
+  workbook.modified = now;
+  workbook.title = 'Kaspi Orders Export';
+  workbook.subject = 'Kaspi order archive';
+
+  const ordersSheet = workbook.addWorksheet(safeWorksheetName('\u0417\u0430\u043a\u0430\u0437\u044b Kaspi'));
+  ordersSheet.views = [{ state: 'frozen', ySplit: 4 }];
+  ordersSheet.columns = [
+    { key: 'code', width: 18 },
+    { key: 'externalId', width: 24 },
+    { key: 'status', width: 20 },
+    { key: 'state', width: 18 },
+    { key: 'customer', width: 26 },
+    { key: 'phone', width: 18 },
+    { key: 'total', width: 14 },
+    { key: 'matchState', width: 14 },
+    { key: 'stockImpact', width: 18 },
+    { key: 'updatedAt', width: 22 },
+    { key: 'syncError', width: 36 },
+  ];
+
+  ordersSheet.mergeCells('A1:K1');
+  ordersSheet.getCell('A1').value = '\u0410\u0440\u0445\u0438\u0432 \u0437\u0430\u043a\u0430\u0437\u043e\u0432 Kaspi';
+  ordersSheet.getCell('A1').font = { bold: true, size: 15 };
+  ordersSheet.getCell('A1').alignment = { horizontal: 'center' };
+
+  ordersSheet.mergeCells('A2:K2');
+  ordersSheet.getCell('A2').value = [
+    connection.sellerName || 'Kaspi store',
+    connection.isActive ? '\u0442\u0435\u043a\u0443\u0449\u0438\u0439' : '\u0430\u0440\u0445\u0438\u0432',
+    now.toLocaleDateString('ru-KZ'),
+  ].join(' - ');
+  ordersSheet.getCell('A2').alignment = { horizontal: 'center' };
+  ordersSheet.getCell('A2').font = { color: { argb: 'FF666666' } };
+
+  ordersSheet.addRow([]);
+  const ordersHeader = ordersSheet.addRow([
+    '\u041a\u043e\u0434',
+    'External ID',
+    'Status',
+    'State',
+    '\u041a\u043b\u0438\u0435\u043d\u0442',
+    '\u0422\u0435\u043b\u0435\u0444\u043e\u043d',
+    '\u0421\u0443\u043c\u043c\u0430',
+    'Match',
+    'Stock',
+    '\u041e\u0431\u043d\u043e\u0432\u043b\u0435\u043d\u043e',
+    'Sync error',
+  ]);
+  ordersHeader.font = { bold: true };
+  ordersHeader.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F0F0' } };
+  ordersHeader.eachCell((cell) => {
+    cell.border = {
+      top: { style: 'thin' },
+      bottom: { style: 'thin' },
+      left: { style: 'thin' },
+      right: { style: 'thin' },
+    };
+    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+  });
+  ordersSheet.autoFilter = {
+    from: 'A4',
+    to: 'K4',
+  };
+
+  for (const item of built) {
+    const row = ordersSheet.addRow([
+      item.view.externalOrderCode || '',
+      item.view.externalOrderId,
+      item.view.externalStatus || '',
+      item.view.externalState || '',
+      item.view.customerName || '',
+      item.view.customerPhone || '',
+      item.view.totalPrice ?? null,
+      item.view.matchState,
+      item.view.stockImpactState,
+      item.view.lastExternalUpdateAt ? new Date(item.view.lastExternalUpdateAt).toLocaleString('ru-KZ') : '',
+      item.view.syncError || '',
+    ]);
+    row.eachCell((cell) => {
+      cell.border = {
+        top: { style: 'thin' },
+        bottom: { style: 'thin' },
+        left: { style: 'thin' },
+        right: { style: 'thin' },
+      };
+      cell.alignment = { vertical: 'middle' };
+    });
+    ordersSheet.getCell(`G${row.number}`).numFmt = '#,##0 "\u20B8"';
+  }
+
+  const itemsSheet = workbook.addWorksheet(safeWorksheetName('\u041f\u043e\u0437\u0438\u0446\u0438\u0438 Kaspi'));
+  itemsSheet.views = [{ state: 'frozen', ySplit: 1 }];
+  itemsSheet.columns = [
+    { key: 'orderCode', width: 18 },
+    { key: 'externalId', width: 24 },
+    { key: 'entry', width: 10 },
+    { key: 'product', width: 34 },
+    { key: 'merchantSku', width: 18 },
+    { key: 'warehouseSku', width: 18 },
+    { key: 'quantity', width: 12 },
+    { key: 'total', width: 14 },
+    { key: 'matchState', width: 14 },
+    { key: 'matchReason', width: 24 },
+    { key: 'stockImpact', width: 18 },
+    { key: 'reservation', width: 16 },
+  ];
+
+  const itemsHeader = itemsSheet.addRow([
+    '\u0417\u0430\u043a\u0430\u0437',
+    'External ID',
+    '\u041f\u043e\u0437.',
+    '\u0422\u043e\u0432\u0430\u0440',
+    'Kaspi SKU',
+    'Warehouse SKU',
+    '\u041a\u043e\u043b-\u0432\u043e',
+    '\u0421\u0443\u043c\u043c\u0430',
+    'Match',
+    '\u041f\u0440\u0438\u0447\u0438\u043d\u0430',
+    'Stock',
+    'Reservation',
+  ]);
+  itemsHeader.font = { bold: true };
+  itemsHeader.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F0F0' } };
+  itemsHeader.eachCell((cell) => {
+    cell.border = {
+      top: { style: 'thin' },
+      bottom: { style: 'thin' },
+      left: { style: 'thin' },
+      right: { style: 'thin' },
+    };
+    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+  });
+  itemsSheet.autoFilter = {
+    from: 'A1',
+    to: 'L1',
+  };
+
+  for (const item of built) {
+    for (const line of [...item.view.matchedItems, ...item.view.unmatchedItems]) {
+      const row = itemsSheet.addRow([
+        item.view.externalOrderCode || '',
+        item.view.externalOrderId,
+        line.entryNumber ?? null,
+        line.productName || '',
+        line.merchantSku || '',
+        line.warehouseSku || '',
+        line.quantity ?? null,
+        line.totalPrice ?? null,
+        line.matchState,
+        line.matchReason || '',
+        line.stockImpactState,
+        line.reservationStatus || '',
+      ]);
+      row.eachCell((cell) => {
+        cell.border = {
+          top: { style: 'thin' },
+          bottom: { style: 'thin' },
+          left: { style: 'thin' },
+          right: { style: 'thin' },
+        };
+        cell.alignment = { vertical: 'middle' };
+      });
+      itemsSheet.getCell(`H${row.number}`).numFmt = '#,##0 "\u20B8"';
+    }
+  }
+
+  const buffer = Buffer.from(await workbook.xlsx.writeBuffer());
+  const storePart = safeFilePart(connection.sellerName || 'kaspi_store');
+  const tokenPart = safeFilePart(connection.tokenLast4 || 'token');
+  const datePart = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+  const statusPart = connection.isActive ? 'current' : 'archive';
+
+  return {
+    buffer,
+    filename: `kaspi_orders_${storePart}_${statusPart}_${tokenPart}_${datePart}.xlsx`,
+    contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  };
+}
+
 export async function sendCompletionCode(orgId: string, externalOrderId: string): Promise<SendCompletionCodeResult> {
+  assertKaspiCompletionWriteEnabled();
   const link = await requireOrderLink(orgId, externalOrderId);
   const result = await sendKaspiCompletionCode(link.connection.apiToken, link.externalOrderId, link.externalOrderCode!);
   await upsertOrderLink(orgId, link.connectionId, {
@@ -1255,6 +1691,7 @@ export async function confirmCompletionCode(
   externalOrderId: string,
   input: ConfirmCompletionCodeInput,
 ): Promise<ConfirmCompletionCodeResult> {
+  assertKaspiCompletionWriteEnabled();
   const securityCode = input.securityCode.trim();
   if (!securityCode) {
     throw new ValidationError('Security code is required');

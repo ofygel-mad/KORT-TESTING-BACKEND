@@ -10,18 +10,29 @@ export async function kaspiIntegrationRoutes(app: FastifyInstance) {
     return service.getConnection(request.orgId);
   });
 
+  app.get('/connections', orgManagerPlus, async (request) => {
+    return service.listConnections(request.orgId);
+  });
+
   app.put('/connection', orgAdminOnly, async (request) => {
     const body = z.object({
-      apiToken: z.string().min(1),
+      apiToken: z.string().min(1).optional(),
       sellerName: z.string().optional(),
       isActive: z.boolean().optional(),
-    }).parse(request.body);
+    }).refine(
+      (value) => value.apiToken !== undefined || value.sellerName !== undefined || value.isActive !== undefined,
+      { message: 'At least one Kaspi connection field must be provided' },
+    ).parse(request.body);
 
     return service.saveConnection(request.orgId, body);
   });
 
   app.post('/connection/test', orgAdminOnly, async (request) => {
     return service.testConnection(request.orgId);
+  });
+
+  app.post('/connection/disconnect', orgAdminOnly, async (request) => {
+    return service.disconnectConnection(request.orgId);
   });
 
   app.post('/sync', orgAdminOnly, async (request) => {
@@ -49,6 +60,17 @@ export async function kaspiIntegrationRoutes(app: FastifyInstance) {
     }).parse(request.params);
 
     return service.getOrderDetail(request.orgId, externalOrderId);
+  });
+
+  app.get('/connections/:connectionId/export', orgManagerPlus, async (request, reply) => {
+    const { connectionId } = z.object({
+      connectionId: z.string().min(1),
+    }).parse(request.params);
+
+    const file = await service.exportConnectionOrders(request.orgId, connectionId);
+    reply.header('Content-Type', file.contentType);
+    reply.header('Content-Disposition', `attachment; filename="${file.filename}"`);
+    return reply.send(file.buffer);
   });
 
   app.post('/orders/:externalOrderId/complete/send-code', orgManagerPlus, async (request) => {

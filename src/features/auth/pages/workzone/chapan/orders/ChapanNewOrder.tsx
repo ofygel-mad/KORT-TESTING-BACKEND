@@ -61,8 +61,11 @@ const itemSchema = z.object({
   length:       z.string().optional(),
   color:        z.string().optional(),
   size:         z.string().min(1, 'Укажите размер'),
-  quantity:     z.coerce.number().int().min(1),
-  unitPrice:    z.coerce.number().min(0).optional().default(0),
+  quantity:     z.coerce.number().int().min(1).max(10000, 'Подозрительно большое количество'),
+  // Hard cap on unit price catches typo'd extra zeros (50000 → 5000000 → 50000000).
+  // 5М ₸/ед is well above any plausible chapan price; if a real product needs
+  // more, raise the cap deliberately.
+  unitPrice:    z.coerce.number().min(0).max(5_000_000, 'Цена слишком большая — проверьте, нет ли лишних нулей').optional().default(0),
   itemDiscount: z.coerce.number().min(0).optional().default(0),
   workshopNotes: z.string().optional(),
 });
@@ -86,7 +89,22 @@ const schema = z
     bankCommissionPercent: z.coerce.number().min(0).max(100).optional(),
     prepayment:   z.coerce.number().min(0).optional(),
     paymentMethod: z.enum(['cash', 'kaspi_terminal', 'transfer', 'halyk', 'mixed']).optional(),
-    paymentBreakdown: z.record(z.string(), z.coerce.number().min(0)).optional(),
+    // Tolerate empty inputs / partial typing: drop blank keys before coercion so
+    // RHF-registered Controllers that hold "" don't blow up zod with "received nan".
+    paymentBreakdown: z
+      .record(z.string(), z.union([z.string(), z.number(), z.null(), z.undefined()]))
+      .optional()
+      .transform((raw) => {
+        if (!raw) return undefined;
+        const cleaned: Record<string, number> = {};
+        for (const [key, value] of Object.entries(raw)) {
+          if (value === undefined || value === null || value === '') continue;
+          const n = Number(value);
+          if (!Number.isFinite(n) || n < 0) continue;
+          cleaned[key] = n;
+        }
+        return Object.keys(cleaned).length > 0 ? cleaned : undefined;
+      }),
     expectedPaymentMethod: z.string().optional(),
     items:        z.array(itemSchema).min(1, 'Добавьте хотя бы одну позицию'),
     managerNote:  z.string().optional(),
@@ -876,6 +894,11 @@ export default function ChapanNewOrderPage() {
                             onBlur={f.onBlur}
                           />
                         )} />
+                        {Number(_item?.unitPrice) > 1_000_000 && (
+                          <span className={styles.fieldError} title="Сумма больше миллиона — проверьте, нет ли лишних нулей">
+                            ⚠ Лишние нули?
+                          </span>
+                        )}
                       </div>
                       <div className={styles.wtableCell}>
                         <Controller control={control} name={`items.${idx}.itemDiscount`} render={({ field: f }) => (
@@ -1059,6 +1082,11 @@ export default function ChapanNewOrderPage() {
                             value={f.value ?? ''} onChange={e => f.onChange(parseOptionalAmount(e.target.value))}
                             onWheel={e => e.currentTarget.blur()} onFocus={e => e.target.select()} />
                         )} />
+                        {Number(_item?.unitPrice) > 1_000_000 && (
+                          <span className={styles.fieldError} title="Сумма больше миллиона — проверьте, нет ли лишних нулей">
+                            ⚠ Проверьте сумму — возможно, лишние нули
+                          </span>
+                        )}
                       </div>
                       <div className={styles.field}>
                         <label className={styles.label}>Скидка (₸)</label>
@@ -1375,6 +1403,11 @@ export default function ChapanNewOrderPage() {
                   />
                 )} />
                 {errors.prepayment && <span className={styles.fieldError}>{errors.prepayment.message}</span>}
+                {!errors.prepayment && finalTotal > 0 && (Number(prepaymentRaw) || 0) > finalTotal && (
+                  <span className={styles.fieldError}>
+                    ⚠ Предоплата ({fmt(Number(prepaymentRaw) || 0)}) больше итога ({fmt(finalTotal)}) — проверьте лишние нули
+                  </span>
+                )}
               </div>
               <div className={`${styles.finRow} ${styles.finRowBalance}`}>
                 <span className={styles.finLabel}>Остаток</span>
@@ -1437,7 +1470,16 @@ export default function ChapanNewOrderPage() {
                         className={styles.mixedInput}
                         placeholder="0 ₸"
                         value={field.value ?? ''}
-                        onChange={(e) => field.onChange(parseOptionalAmount(e.target.value))}
+                        onChange={(e) => {
+                          const parsed = parseOptionalAmount(e.target.value);
+                          // Soft cap at prepayment so a stray extra zero in one row can't
+                          // silently exceed the prepayment that the order is splitting.
+                          if (parsed !== undefined && prepayment > 0 && parsed > prepayment) {
+                            field.onChange(prepayment);
+                          } else {
+                            field.onChange(parsed);
+                          }
+                        }}
                         onWheel={(e) => e.currentTarget.blur()}
                         onFocus={(e) => e.target.select()}
                       />

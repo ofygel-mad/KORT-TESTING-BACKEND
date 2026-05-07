@@ -420,13 +420,6 @@ const setViewMode = (mode: ViewMode) => {
         </button>
         <button
           type="button"
-          className={styles.tab}
-          onClick={() => navigate('/workzone/chapan/kaspi-orders')}
-        >
-          Kaspi {'\u0437\u0430\u043a\u0430\u0437\u044b'}
-        </button>
-        <button
-          type="button"
           className={`${styles.tab} ${activeTab === 'wholesale' ? styles.tabActive : ''}`}
           onClick={() => setActiveTab('wholesale')}
         >

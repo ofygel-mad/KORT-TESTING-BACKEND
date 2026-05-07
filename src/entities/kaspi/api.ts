@@ -1,6 +1,7 @@
-import { api } from '../../shared/api/client';
+import { api, apiClient } from '../../shared/api/client';
 import type {
   KaspiConnection,
+  KaspiConnectionHistoryItem,
   KaspiOrderDetail,
   KaspiOrdersSummary,
   KaspiOrdersListResponse,
@@ -13,8 +14,14 @@ export const kaspiApi = {
   getConnection: () =>
     api.get<KaspiConnection | null>('/integrations/kaspi/connection'),
 
+  listConnections: () =>
+    api.get<KaspiConnectionHistoryItem[]>('/integrations/kaspi/connections'),
+
   saveConnection: (dto: SaveKaspiConnectionDto) =>
     api.put<KaspiConnection>('/integrations/kaspi/connection', dto),
+
+  disconnectConnection: () =>
+    api.post<KaspiConnection | null>('/integrations/kaspi/connection/disconnect', {}),
 
   testConnection: () =>
     api.post<{ ok: true; checkedAt: string; sampleOrders: number }>('/integrations/kaspi/connection/test', {}),
@@ -30,4 +37,20 @@ export const kaspiApi = {
 
   getSummary: () =>
     api.get<KaspiOrdersSummary>('/integrations/kaspi/orders/summary'),
+
+  exportConnection: async (connectionId: string) => {
+    const response = await apiClient.get<ArrayBuffer>(`/integrations/kaspi/connections/${connectionId}/export`, {
+      responseType: 'arraybuffer',
+    });
+
+    const contentDisposition = String(response.headers['content-disposition'] ?? '');
+    const match = /filename=\"?([^\";]+)\"?/i.exec(contentDisposition);
+    const fileName = match?.[1] ?? `kaspi_orders_${connectionId}.xlsx`;
+
+    return {
+      buffer: response.data,
+      fileName,
+      contentType: String(response.headers['content-type'] ?? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),
+    };
+  },
 };

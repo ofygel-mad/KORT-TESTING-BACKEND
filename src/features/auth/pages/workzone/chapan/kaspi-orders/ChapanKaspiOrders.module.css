@@ -16,14 +16,7 @@
 
 .titleWrap { display: flex; flex-direction: column; gap: 4px; }
 
-.title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--ch-text);
-}
+.title { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 700; color: var(--ch-text); }
 
 .subtitle {
   font-size: 12px;
@@ -67,6 +60,37 @@
   margin-top: 2px;
 }
 
+.toolbarNote {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 8px 12px;
+  border: 1px solid var(--ch-border);
+  border-radius: 8px;
+  color: var(--ch-text-muted);
+  background: var(--ch-card);
+  font-size: 12px;
+}
+
+.inlineStats {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--ch-border);
+  border-radius: 8px;
+  background: var(--ch-card);
+  color: var(--ch-text);
+}
+
+.inlineStatLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--ch-text-muted);
+}
+
 /* ── Connection meta grid ── */
 .metaGrid {
   display: grid;
@@ -96,33 +120,104 @@
   word-break: break-word;
 }
 
-/* ── Summary stat row ── */
-.summaryGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 8px;
-}
-
-.summaryCard {
-  background: var(--ch-card);
+/* ── Registry records ── */
+.recordTableWrap {
+  overflow: auto;
   border: 1px solid var(--ch-border);
-  border-radius: 8px;
+  border-radius: 10px;
+  background: var(--ch-surface);
+}
+
+.compactTable {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 640px;
+}
+
+.compactTable th,
+.compactTable td {
   padding: 10px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.summaryValue {
-  font-size: 20px;
-  font-weight: 700;
+  border-bottom: 1px solid var(--ch-border);
+  text-align: left;
+  vertical-align: top;
+  font-size: 12px;
   color: var(--ch-text);
-  line-height: 1.1;
 }
 
-.summaryLabel {
+.compactTable thead th {
   font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
   color: var(--ch-text-muted);
+  background: var(--ch-card);
+}
+
+.compactTable tbody th {
+  width: 18%;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--ch-text-muted);
+  background: var(--ch-card);
+}
+
+.compactTable tbody tr:last-child th,
+.compactTable tbody tr:last-child td,
+.compactTable thead + tbody tr:last-child th,
+.compactTable thead + tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.sectionNav {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sectionPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--ch-border);
+  background: transparent;
+  color: var(--ch-text-muted);
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.sectionPill strong {
+  color: var(--ch-text);
+  font-size: 12px;
+}
+
+.sectionPill:hover {
+  border-color: var(--ch-border-plat);
+  background: var(--ch-card);
+  color: var(--ch-text);
+}
+
+.sectionPillActive {
+  color: var(--ch-plat-bright);
+  border-color: var(--ch-plat-border);
+  background: var(--ch-plat-soft);
+}
+
+.sectionLink {
+  color: var(--ch-text);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.sectionLink:hover {
+  color: var(--ch-plat-bright);
+}
+
+.sectionLinkActive {
+  color: var(--ch-plat-bright);
 }
 
 /* ── Toolbar ── */
@@ -405,4 +500,5 @@
 @media (max-width: 900px) {
   .page { padding: 16px; }
   .detailGrid { grid-template-columns: 1fr; }
+  .compactTable { min-width: 0; }
 }

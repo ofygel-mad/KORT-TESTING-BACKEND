@@ -9,6 +9,8 @@ import { usePlan, planIncludes, PLAN_LABELS, type OrgMode } from '../../shared/h
 import { useRole } from '../../shared/hooks/useRole';
 import { useEmployeePermissions } from '../../shared/hooks/useEmployeePermissions';
 import { useChapanPermissions } from '../../shared/hooks/useChapanPermissions';
+import ChapanKaspiStagePage from '../../features/auth/pages/workzone/chapan/kaspi-orders/ChapanKaspiStagePage';
+import ChapanKaspiStockPage from '../../features/auth/pages/workzone/chapan/kaspi-orders/ChapanKaspiStockPage';
 
 import { Settings } from 'lucide-react';
 
@@ -388,10 +390,40 @@ export const appRouter = createBrowserRouter([
       {
         path: 'kaspi-orders',
         element: <RequirePermission check="chapan_orders"><ChapanKaspiOrdersPage /></RequirePermission>,
-      },
-      {
-        path: 'kaspi-orders/:externalOrderId',
-        element: <RequirePermission check="chapan_orders"><ChapanKaspiOrderPage /></RequirePermission>,
+        children: [
+          {
+            index: true,
+            element: <Navigate to="new" replace />,
+          },
+          {
+            path: 'new',
+            element: <ChapanKaspiStagePage stage="new" />,
+          },
+          {
+            path: 'in-progress',
+            element: <ChapanKaspiStagePage stage="in_progress" />,
+          },
+          {
+            path: 'completed',
+            element: <ChapanKaspiStagePage stage="completed" />,
+          },
+          {
+            path: 'cancelled',
+            element: <ChapanKaspiStagePage stage="cancelled" />,
+          },
+          {
+            path: 'issues',
+            element: <ChapanKaspiStagePage stage="issues" />,
+          },
+          {
+            path: 'stock',
+            element: <ChapanKaspiStockPage />,
+          },
+          {
+            path: ':externalOrderId',
+            element: <ChapanKaspiOrderPage />,
+          },
+        ],
       },
       {
         path: 'orders/new',
