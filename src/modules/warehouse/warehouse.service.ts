@@ -13,6 +13,7 @@
 import { prisma } from '../../lib/prisma.js';
 import { AppError } from '../../lib/errors.js';
 import { nanoid } from 'nanoid';
+import { buildCanonicalVariantKey } from '../../shared/variant-key.js';
 import { Prisma } from '@prisma/client';
 import {
   createStockReservation as createCanonicalStockReservation,
@@ -144,13 +145,12 @@ function normalizeWarehouseName(value: string): string {
   return value.trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
+// Thin shim over the canonical variant-key builder for legacy call-sites that
+// have already pre-filtered attributes by affectsAvailability before reaching us.
+// New code paths should call buildCanonicalVariantKey directly with field defs.
 function buildWarehouseVariantKey(productName: string, attributes: Record<string, string>) {
-  const base = normalizeWarehouseName(productName);
-  const parts = Object.entries(attributes)
-    .filter(([, value]) => value.trim())
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([key, value]) => `${key}:${normalizeWarehouseName(value)}`);
-  return [base, ...parts].join('|');
+  const fields = Object.keys(attributes).map((code) => ({ code, affectsAvailability: true }));
+  return buildCanonicalVariantKey(productName, attributes, fields);
 }
 
 function readStringMapFromJson(value?: Prisma.JsonValue | null): Record<string, string> {
@@ -1639,6 +1639,22 @@ export async function checkVariantAvailability(
 ): Promise<Record<string, VariantAvailabilityResult>> {
   const result: Record<string, VariantAvailabilityResult> = {};
 
+  // Load org-level field definitions once. Variant-key construction must use
+  // affectsAvailability filtering so the response key matches what the FE built
+  // when issuing the request — see buildCanonicalVariantKey contract.
+  const orgFieldDefs = await prisma.warehouseFieldDefinition.findMany({
+    where: { orgId },
+    select: { code: true, affectsAvailability: true },
+  });
+  const fieldsForKey = orgFieldDefs.length > 0
+    ? orgFieldDefs
+    : [
+        { code: 'color',  affectsAvailability: true },
+        { code: 'gender', affectsAvailability: true },
+        { code: 'length', affectsAvailability: true },
+        { code: 'size',   affectsAvailability: true },
+      ];
+
   for (const v of variants) {
     const name = v.name?.trim();
     if (!name) continue;
@@ -1649,8 +1665,9 @@ export async function checkVariantAvailability(
     if (v.size?.trim()) attrs.size = v.size.trim();
     if (v.length?.trim()) attrs.length = v.length.trim();
 
-    const variantKey = buildWarehouseVariantKey(name, attrs);
-    const hasAttributes = Object.keys(attrs).length > 0;
+    const variantKey = buildCanonicalVariantKey(name, attrs, fieldsForKey);
+    const allowedAxes = new Set(fieldsForKey.filter((f) => f.affectsAvailability).map((f) => f.code));
+    const hasAttributes = Object.keys(attrs).some((code) => allowedAxes.has(code));
     const normalizedName = normalizeWarehouseName(name);
 
     // 1. New catalog system: WarehouseProductCatalog → WarehouseVariant → WarehouseStockBalance

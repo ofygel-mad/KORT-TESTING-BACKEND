@@ -1,6 +1,7 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
 import { NotFoundError, ValidationError } from '../../lib/errors.js';
+import { buildCanonicalVariantKey } from '../../shared/variant-key.js';
 import { normalizeProductionStatus } from './workflow.js';
 import { syncOrderToSheets } from './sheets.sync.js';
 import { syncOrderStatus } from './production.service.js';
@@ -132,15 +133,6 @@ function normalizeWarehouseName(value: string) {
   return value.trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
-function buildWarehouseVariantKey(productName: string, attributes: Record<string, string>) {
-  const base = normalizeWarehouseName(productName);
-  const parts = Object.entries(attributes)
-    .filter(([, value]) => value.trim())
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([key, value]) => `${key}:${normalizeWarehouseName(value)}`);
-  return [base, ...parts].join('|');
-}
-
 async function buildOrderItemVariantSnapshot(
   tx: Prisma.TransactionClient,
   orgId: string,
@@ -178,16 +170,13 @@ async function buildOrderItemVariantSnapshot(
     }).filter(([, value]) => value),
   );
 
-  const availabilityFields = new Set(
-    product?.fieldLinks
-      .filter((link) => link.definition.affectsAvailability)
-      .map((link) => link.definition.code) ?? [],
-  );
-
-  const attributesForKey =
-    availabilityFields.size > 0
-      ? Object.fromEntries(Object.entries(rawAttributes).filter(([key]) => availabilityFields.has(key)))
-      : rawAttributes;
+  // Use product field links if available; legacy fallback treats all attrs as axes.
+  const fieldsForKey = product && product.fieldLinks.length > 0
+    ? product.fieldLinks.map((link) => ({
+        code: link.definition.code,
+        affectsAvailability: link.definition.affectsAvailability,
+      }))
+    : Object.keys(rawAttributes).map((code) => ({ code, affectsAvailability: true }));
 
   const attributesSummary = Object.entries(rawAttributes)
     .sort(([a], [b]) => a.localeCompare(b))
@@ -195,7 +184,7 @@ async function buildOrderItemVariantSnapshot(
     .join(', ');
 
   return {
-    variantKey: buildWarehouseVariantKey(product?.name ?? item.productName, attributesForKey),
+    variantKey: buildCanonicalVariantKey(product?.name ?? item.productName, rawAttributes, fieldsForKey),
     attributesJson: Object.keys(rawAttributes).length > 0 ? rawAttributes : undefined,
     attributesSummary: attributesSummary || undefined,
   };
