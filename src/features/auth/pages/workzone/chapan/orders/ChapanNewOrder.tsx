@@ -19,6 +19,7 @@ import {
   buildPaymentMethodOptions,
   buildSizeCatalog,
 } from '../../../../shared/lib/chapanCatalogDefaults';
+import { calculateChapanOrderFinancials } from '@/shared/lib/chapanFinancials';
 import { SearchableSelect, type SearchableSelectOption } from '../../../../shared/ui/SearchableSelect';
 import { formatPersonNameInput } from '../../../../shared/utils/person';
 import { formatKazakhPhoneInput, isKazakhPhoneComplete } from '../../../../shared/utils/kz';
@@ -123,11 +124,13 @@ const schema = z
         (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0) - (Number(item.itemDiscount) || 0),
       );
     }, 0);
-    const subtotalAfterDiscount = Math.max(0, itemsSubtotal - (data.orderDiscount ?? 0));
-    const bankCommissionPct = data.bankCommissionPercent ?? 0;
-    const bankCommissionAmount = Math.round(subtotalAfterDiscount * bankCommissionPct / 100);
-    const deliveryFee = data.deliveryFee ?? 0;
-    const finalTotal = Math.max(0, subtotalAfterDiscount + deliveryFee + bankCommissionAmount);
+    const financials = calculateChapanOrderFinancials({
+      itemsSubtotal,
+      orderDiscount: data.orderDiscount,
+      deliveryFee: data.deliveryFee,
+      bankCommissionPercent: data.bankCommissionPercent,
+    });
+    const finalTotal = financials.totalDue;
 
     if ((data.prepayment ?? 0) > 0 && !data.paymentMethod) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Укажите способ оплаты', path: ['paymentMethod'] });
@@ -432,9 +435,14 @@ export default function ChapanNewOrderPage() {
   const bankCommissionPct   = Number.isFinite(bankCommissionPctRaw)   ? (bankCommissionPctRaw   ?? 0) : 0;
 
   // F1: правильный порядок вычислений
-  const subtotalAfterDiscount = Math.max(0, itemsTotal - orderDiscount);
-  const bankCommissionAmount  = Math.round(subtotalAfterDiscount * bankCommissionPct / 100);
-  const finalTotal            = Math.max(0, subtotalAfterDiscount + deliveryFee + bankCommissionAmount);
+  const financials = calculateChapanOrderFinancials({
+    itemsSubtotal: itemsTotal,
+    orderDiscount,
+    deliveryFee,
+    bankCommissionPercent: bankCommissionPct,
+  });
+  const bankCommissionAmount  = financials.bankCommissionAmount;
+  const finalTotal            = financials.totalDue;
   const debt                  = Math.max(0, finalTotal - prepayment);
   const mixedSum = Object.values(paymentBreakdownWatch ?? {}).reduce((s, v) => s + (Number(v) || 0), 0);
 

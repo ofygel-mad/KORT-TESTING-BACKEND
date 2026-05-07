@@ -46,6 +46,10 @@ export interface ChapanClientDetail extends ChapanClientAggregated {
     orderNumber: string;
     status: OrderStatus;
     totalAmount: number;
+    orderDiscount: number;
+    deliveryFee: number;
+    bankCommissionPercent: number;
+    bankCommissionAmount: number;
     paidAmount: number;
     customerType: 'retail' | 'wholesale';
     createdAt: string;

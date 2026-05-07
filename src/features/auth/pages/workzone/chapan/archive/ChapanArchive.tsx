@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search, CircleCheck, Check, X, AlertCircle, ExternalLink } from 'lucide-react';
 import { useOrders } from '../../../../entities/order/queries';
 import type { ChapanOrder, OrderStatus } from '../../../../entities/order/types';
+import { calculateChapanOrderFinancials } from '@/shared/lib/chapanFinancials';
 import styles from './ChapanArchive.module.css';
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
@@ -283,7 +284,13 @@ function ArchiveRow({ order, onClick }: { order: ChapanOrder; onClick: () => voi
       </div>
 
       <div className={styles.rowFin}>
-        <span className={styles.amount}>{fmt(order.totalAmount)}</span>
+        <span className={styles.amount}>{fmt(calculateChapanOrderFinancials({
+          itemsSubtotal: order.totalAmount,
+          orderDiscount: order.orderDiscount,
+          deliveryFee: order.deliveryFee,
+          bankCommissionPercent: order.bankCommissionPercent,
+          bankCommissionAmount: order.bankCommissionAmount,
+        }).totalDue)}</span>
         <span className={styles.payStatus} style={{ color: PAY_COLOR[order.paymentStatus] }}>
           {PAY_LABEL[order.paymentStatus]}
         </span>

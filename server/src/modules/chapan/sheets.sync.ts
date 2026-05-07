@@ -21,6 +21,7 @@
 
 import { prisma } from '../../lib/prisma.js';
 import { buildSheetRow, SHEET_HEADER } from './sheets/row-builder.js';
+import { calculateChapanOrderFinancials } from './financials.js';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -108,7 +109,13 @@ export async function syncOrderToSheets(
       source:                (order as any).source                ?? null,
       dueDate:       order.dueDate ?? null,
       expectedPaymentMethod: (order as any).expectedPaymentMethod ?? null,
-      totalAmount:   order.totalAmount,
+      totalAmount:   calculateChapanOrderFinancials({
+        itemsSubtotal: order.totalAmount,
+        orderDiscount: (order as any).orderDiscount ?? 0,
+        deliveryFee: (order as any).deliveryFee ?? 0,
+        bankCommissionPercent: (order as any).bankCommissionPercent ?? 0,
+        bankCommissionAmount: (order as any).bankCommissionAmount ?? 0,
+      }).totalDue,
       paidAmount:    order.paidAmount,
       orderDiscount:         (order as any).orderDiscount         ?? 0,
       deliveryFee:           (order as any).deliveryFee           ?? 0,

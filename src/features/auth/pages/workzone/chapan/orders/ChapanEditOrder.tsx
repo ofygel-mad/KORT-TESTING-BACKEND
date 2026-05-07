@@ -17,6 +17,7 @@ import {
   buildPaymentMethodOptions,
   buildSizeCatalog,
 } from '../../../../shared/lib/chapanCatalogDefaults';
+import { calculateChapanOrderFinancials } from '@/shared/lib/chapanFinancials';
 import { useAuthStore } from '../../../../shared/stores/auth';
 import styles from './ChapanNewOrder.module.css';
 
@@ -163,9 +164,13 @@ const schema = z.object({
   const orderDiscount = Number(data.orderDiscount) || 0;
   const deliveryFee   = Number(data.deliveryFee)   || 0;
   const bankCommPct   = Number(data.bankCommissionPercent) || 0;
-  const subtotal      = Math.max(0, itemsTotal - orderDiscount);
-  const bankComm      = Math.round(subtotal * bankCommPct / 100);
-  const finalTotal    = Math.max(0, subtotal + deliveryFee + bankComm);
+    const financials = calculateChapanOrderFinancials({
+      itemsSubtotal: itemsTotal,
+      orderDiscount,
+      deliveryFee,
+      bankCommissionPercent: bankCommPct,
+    });
+    const finalTotal = financials.totalDue;
 
   if ((data.prepayment ?? 0) > 0 && !data.paymentMethod) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Укажите способ оплаты', path: ['paymentMethod'] });
@@ -261,9 +266,14 @@ export default function ChapanEditOrderPage() {
   const orderDiscount         = Number.isFinite(orderDiscountRaw)  ? (orderDiscountRaw  ?? 0) : 0;
   const deliveryFee           = Number.isFinite(deliveryFeeRaw)    ? (deliveryFeeRaw    ?? 0) : 0;
   const bankCommPct           = Number.isFinite(bankCommPctRaw)    ? (bankCommPctRaw    ?? 0) : 0;
-  const subtotalAfterDiscount = Math.max(0, itemsTotal - orderDiscount);
-  const bankCommAmount        = Math.round(subtotalAfterDiscount * bankCommPct / 100);
-  const finalTotal            = Math.max(0, subtotalAfterDiscount + deliveryFee + bankCommAmount);
+  const financials = calculateChapanOrderFinancials({
+    itemsSubtotal: itemsTotal,
+    orderDiscount,
+    deliveryFee,
+    bankCommissionPercent: bankCommPct,
+  });
+  const bankCommAmount        = financials.bankCommissionAmount;
+  const finalTotal            = financials.totalDue;
   const prepayment            = Number.isFinite(prepaymentRaw) ? (prepaymentRaw ?? 0) : 0;
   const debt                  = Math.max(0, finalTotal - prepayment);
   const mixedSum = Object.values(paymentBreakdownWatch ?? {}).reduce((s, v) => s + (Number(v) || 0), 0);

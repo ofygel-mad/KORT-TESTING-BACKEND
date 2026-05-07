@@ -29,6 +29,7 @@ export interface ChapanOrder {
   priority: Priority;          // legacy field, still returned by backend
   urgency: Urgency;            // new: 'normal' | 'urgent'
   isDemandingClient: boolean;  // new: independent demanding-client flag
+  // Base subtotal for items before order-level discount, delivery, and bank commission.
   totalAmount: number;
   paidAmount: number;
   dueDate: string | null;          // was: deadline

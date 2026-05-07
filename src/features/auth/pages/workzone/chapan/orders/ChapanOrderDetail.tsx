@@ -17,6 +17,7 @@ import { apiClient } from '../../../../shared/api/client';
 import { useAuthStore } from '../../../../shared/stores/auth';
 import { useChapanUiStore } from '../../../../features/workzone/chapan/store';
 import { buildItemLine } from '../../../../shared/utils/itemLine';
+import { calculateChapanOrderFinancials, getChapanOrderBalance } from '@/shared/lib/chapanFinancials';
 import { formatOrderItemNumber } from '../../../../../../shared/utils/orderItemNumber';
 import styles from './ChapanOrderDetail.module.css';
 
@@ -361,7 +362,14 @@ export default function ChapanOrderDetailPage() {
       </div>
     );
   }
-  const balance = order.totalAmount - order.paidAmount;
+  const totalDue = calculateChapanOrderFinancials({
+    itemsSubtotal: order.totalAmount,
+    orderDiscount: order.orderDiscount,
+    deliveryFee: order.deliveryFee,
+    bankCommissionPercent: order.bankCommissionPercent,
+    bankCommissionAmount: order.bankCommissionAmount,
+  }).totalDue;
+  const balance = getChapanOrderBalance(totalDue, order.paidAmount);
   const isOverdue = order.dueDate && new Date(order.dueDate) < new Date() && order.status !== 'completed';
   const orderItems = order.items ?? [];
   const productionTaskByItemId = new Map((order.productionTasks ?? []).map((task) => [task.orderItemId, task]));
@@ -679,7 +687,7 @@ export default function ChapanOrderDetailPage() {
                   {orderItems.reduce((s, i) => s + (i.quantity ?? 1), 0)} шт.
                 </span>
               </span>
-              <strong>{fmt(order.totalAmount)}</strong>
+              <strong>{fmt(totalDue)}</strong>
             </div>
           </div>
 
@@ -695,7 +703,7 @@ export default function ChapanOrderDetailPage() {
               {order.orderDiscount > 0 && (
                 <div className={styles.finRow}><span>Скидка</span><strong style={{ color: '#4FC999' }}>−{fmt(order.orderDiscount)}</strong></div>
               )}
-              <div className={styles.finRow}><span>Итого к оплате</span><strong>{fmt(order.totalAmount)}</strong></div>
+              <div className={styles.finRow}><span>Итого к оплате</span><strong>{fmt(totalDue)}</strong></div>
               <div className={styles.finRow}><span>Оплачено</span><strong style={{ color: '#4FC999' }}>{fmt(order.paidAmount)}</strong></div>
               <div className={`${styles.finRow} ${styles.finRowBalance}`}><span>Остаток</span><strong style={{ color: balance > 0 ? '#E8C97A' : '#4FC999' }}>{fmt(balance)}</strong></div>
               <div className={styles.finRow}><span>Статус оплаты</span><span style={{ color: PAY_COLOR[order.paymentStatus], fontWeight: 500, fontSize: 12 }}>{PAY_LABEL[order.paymentStatus]}</span></div>

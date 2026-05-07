@@ -15,6 +15,10 @@ export interface UnpaidAlert {
     orderNumber: string;
     totalAmount: number;
     paidAmount: number;
+    orderDiscount?: number;
+    deliveryFee?: number;
+    bankCommissionPercent?: number;
+    bankCommissionAmount?: number;
     clientName: string;
     paymentStatus: string;
   };

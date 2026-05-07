@@ -10,6 +10,7 @@ import { useAuthStore } from '../../../../../../shared/stores/auth';
 import { useEmployeePermissions } from '../../../../../../shared/hooks/useEmployeePermissions';
 import { useRole } from '../../../../../../shared/hooks/useRole';
 import { buildItemLine } from '../../../../../../shared/utils/itemLine';
+import { calculateChapanOrderFinancials, getChapanOrderBalance } from '@/shared/lib/chapanFinancials';
 import { buildVariantAvailabilityInput, buildVariantLookupKey, type VariantAvailabilityInput } from '../../../../../../shared/utils/variantAvailability';
 import { useChapanUiStore } from '../../../../../workzone/chapan/store';
 import { useUnpaidAlerts } from '../../../../../../entities/alert/queries';
@@ -711,7 +712,16 @@ const setViewMode = (mode: ViewMode) => {
                       {alert.order.clientName}
                     </div>
                     <div style={{ fontSize: '12px', color: '#D94F4F', fontWeight: 500 }}>
-                      Остаток: {(alert.order.totalAmount - alert.order.paidAmount).toLocaleString('ru-KZ')} ₸
+                      Остаток: {getChapanOrderBalance(
+                        calculateChapanOrderFinancials({
+                          itemsSubtotal: alert.order.totalAmount,
+                          orderDiscount: alert.order.orderDiscount,
+                          deliveryFee: alert.order.deliveryFee,
+                          bankCommissionPercent: alert.order.bankCommissionPercent,
+                          bankCommissionAmount: alert.order.bankCommissionAmount,
+                        }).totalDue,
+                        alert.order.paidAmount,
+                      ).toLocaleString('ru-KZ')} ₸
                     </div>
                   </div>
                 ))
@@ -916,7 +926,13 @@ const OrderCard = memo(function OrderCard({ order, onSelectOrder, hasAlert, stoc
       )}
       <div className={styles.cardDivider} />
       <div className={styles.cardFoot}>
-        <span className={styles.cardAmount}>{fmt(order.totalAmount)}</span>
+        <span className={styles.cardAmount}>{fmt(calculateChapanOrderFinancials({
+          itemsSubtotal: order.totalAmount,
+          orderDiscount: order.orderDiscount,
+          deliveryFee: order.deliveryFee,
+          bankCommissionPercent: order.bankCommissionPercent,
+          bankCommissionAmount: order.bankCommissionAmount,
+        }).totalDue)}</span>
         <span className={styles.cardPay} style={{ color: PAY_COLOR[order.paymentStatus] }}>{PAY_LABEL[order.paymentStatus]}</span>
       </div>
       <div className={styles.cardDates}>
@@ -1037,7 +1053,13 @@ const BatchCard = memo(function BatchCard({ group, onSelectOrder }: { group: { o
                   </div>
                   <div className={styles.batchMiniBot}>
                     <span className={styles.cardItemMeta}>{o.items?.[0]?.quantity ?? 1} шт.</span>
-                    <span className={styles.cardAmount}>{fmt(o.totalAmount)}</span>
+                    <span className={styles.cardAmount}>{fmt(calculateChapanOrderFinancials({
+                      itemsSubtotal: o.totalAmount,
+                      orderDiscount: o.orderDiscount,
+                      deliveryFee: o.deliveryFee,
+                      bankCommissionPercent: o.bankCommissionPercent,
+                      bankCommissionAmount: o.bankCommissionAmount,
+                    }).totalDue)}</span>
                     <span className={styles.cardPay} style={{ color: PAY_COLOR[o.paymentStatus] }}>{PAY_LABEL[o.paymentStatus]}</span>
                     {o.dueDate && (
                       <span className={styles.cardDate} style={{ color: overdue ? '#EF4444' : '#6B7280', marginLeft: 'auto' }}>
@@ -1124,7 +1146,13 @@ const OrderRow = memo(function OrderRow({ order, onSelectOrder, hasAlert, stockM
         )}
       </div>
       <div className={styles.rowFin}>
-        <span className={styles.cardAmount}>{fmt(order.totalAmount)}</span>
+        <span className={styles.cardAmount}>{fmt(calculateChapanOrderFinancials({
+          itemsSubtotal: order.totalAmount,
+          orderDiscount: order.orderDiscount,
+          deliveryFee: order.deliveryFee,
+          bankCommissionPercent: order.bankCommissionPercent,
+          bankCommissionAmount: order.bankCommissionAmount,
+        }).totalDue)}</span>
         <span className={styles.cardPay} style={{ color: PAY_COLOR[order.paymentStatus] }}>
           {PAY_LABEL[order.paymentStatus]}
         </span>

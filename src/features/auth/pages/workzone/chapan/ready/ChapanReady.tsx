@@ -5,6 +5,7 @@ import { useArchiveOrder, useChangeOrderStatus, useConfirmSeamstress, useCreateI
 import type { ChapanOrder, InvoiceDocumentPayload, OrderStatus, Priority, Urgency } from '../../../../entities/order/types';
 import { useAuthStore } from '@/shared/stores/auth';
 import { buildItemLine } from '../../../../shared/utils/itemLine';
+import { calculateChapanOrderFinancials } from '@/shared/lib/chapanFinancials';
 import { formatOrderItemNumber } from '../../../../../../shared/utils/orderItemNumber';
 import { useChapanUiStore } from '../../../../features/workzone/chapan/store';
 import ChapanInvoicePreviewModal from '../invoices/ChapanInvoicePreviewModal';
@@ -67,10 +68,6 @@ function formatMoney(value: number) {
 function formatDate(value: string | null) {
   if (!value) return 'Без даты';
   return new Date(value).toLocaleDateString('ru-KZ', { day: '2-digit', month: 'short' });
-}
-
-function getOrderBalance(order: Pick<ChapanOrder, 'totalAmount' | 'paidAmount'>) {
-  return Math.max(0, order.totalAmount - order.paidAmount);
 }
 
 function isOverdue(date: string | null) {
@@ -841,7 +838,13 @@ function ReadyCard({
 
       {/* Col 6: total amount */}
       <div className={`${styles.readyCell} ${styles.cellAmount}`}>
-        <span className={styles.amount}>{formatMoney(order.totalAmount)}</span>
+        <span className={styles.amount}>{formatMoney(calculateChapanOrderFinancials({
+          itemsSubtotal: order.totalAmount,
+          orderDiscount: order.orderDiscount,
+          deliveryFee: order.deliveryFee,
+          bankCommissionPercent: order.bankCommissionPercent,
+          bankCommissionAmount: order.bankCommissionAmount,
+        }).totalDue)}</span>
       </div>
 
       {/* Col 7: deadline */}
@@ -1044,7 +1047,13 @@ function ReadyRow({
         <div className={styles.rowClient}>{order.clientName}</div>
         <div className={styles.rowMeta}>
           <span className={styles.orderNumberSecondary}>#{order.orderNumber}</span>
-          <span>{formatMoney(order.totalAmount)}</span>
+          <span>{formatMoney(calculateChapanOrderFinancials({
+            itemsSubtotal: order.totalAmount,
+            orderDiscount: order.orderDiscount,
+            deliveryFee: order.deliveryFee,
+            bankCommissionPercent: order.bankCommissionPercent,
+            bankCommissionAmount: order.bankCommissionAmount,
+          }).totalDue)}</span>
           <span>{formatDate(order.dueDate)}</span>
           {order.productionTasks && order.productionTasks.length > 0 && (() => {
             const done = order.productionTasks.filter(t => t.status === 'done').length;

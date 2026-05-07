@@ -2,6 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Mail, Phone, Building2 } from 'lucide-react';
 import { useChapanClientDetail } from '../../../../entities/order/queries';
 import { formatPhoneNumber, formatDistanceToNow } from '../../../../shared/lib/formatting';
+import { calculateChapanOrderFinancials } from '@/shared/lib/chapanFinancials';
 import styles from './ChapanClientDetail.module.css';
 
 export default function ChapanClientDetail() {
@@ -138,7 +139,13 @@ export default function ChapanClientDetail() {
                   )}
                 </div>
                 <div className={styles.orderAmount}>
-                  {formatAmount(order.totalAmount)} ₸
+                  {formatAmount(calculateChapanOrderFinancials({
+                    itemsSubtotal: order.totalAmount,
+                    orderDiscount: order.orderDiscount,
+                    deliveryFee: order.deliveryFee,
+                    bankCommissionPercent: order.bankCommissionPercent,
+                    bankCommissionAmount: order.bankCommissionAmount,
+                  }).totalDue)} ₸
                 </div>
                 <div className={styles.orderDate}>
                   {formatDistanceToNow(new Date(order.createdAt))}

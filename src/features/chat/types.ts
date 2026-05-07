@@ -54,5 +54,6 @@ export interface OrderPreview {
   status: string;
   client_name: string;
   total_amount: number;
+  due_amount?: number;
   created_at: string;
 }

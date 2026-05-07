@@ -5,6 +5,7 @@ import { useOrders } from '../../../../entities/order/queries';
 import { useTransitEntries } from '../../../../entities/warehouse/queries';
 import type { ChapanOrder, OrderStatus } from '../../../../entities/order/types';
 import type { WarehouseTransitEntry } from '../../../../entities/warehouse/types';
+import { calculateChapanOrderFinancials } from '@/shared/lib/chapanFinancials';
 import styles from './ChapanShipping.module.css';
 
 type ShippingTab = 'pending' | 'shipped' | 'transit';
@@ -226,7 +227,13 @@ function ShippingRow({ order, onClick }: { order: ChapanOrder; onClick: () => vo
       </div>
 
       <div className={styles.rowFin}>
-        <span className={styles.amount}>{fmt(order.totalAmount)}</span>
+        <span className={styles.amount}>{fmt(calculateChapanOrderFinancials({
+          itemsSubtotal: order.totalAmount,
+          orderDiscount: order.orderDiscount,
+          deliveryFee: order.deliveryFee,
+          bankCommissionPercent: order.bankCommissionPercent,
+          bankCommissionAmount: order.bankCommissionAmount,
+        }).totalDue)}</span>
         <span className={styles.payStatus} style={{ color: PAY_COLOR[order.paymentStatus] }}>
           {PAY_LABEL[order.paymentStatus]}
         </span>

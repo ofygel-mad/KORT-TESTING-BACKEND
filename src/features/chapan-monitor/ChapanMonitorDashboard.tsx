@@ -1,6 +1,7 @@
 import type { ManagerActivity, StatusBucket } from './chapanMonitor.utils';
 import { sectionLabel, nextStepLabel } from './chapanMonitor.utils';
 import type { ChapanOrder } from '@/entities/order/types';
+import { calculateChapanOrderFinancials } from '@/shared/lib/chapanFinancials';
 import styles from './ChapanMonitorDrawer.module.css';
 
 const BUCKET_LABELS: Record<StatusBucket, string> = {
@@ -18,7 +19,15 @@ interface Props {
 
 function OrderMiniCard({ order }: { order: ChapanOrder }) {
   const items = order.items?.length ?? 0;
-  const total = new Intl.NumberFormat('ru-KZ', { maximumFractionDigits: 0 }).format(order.totalAmount);
+  const total = new Intl.NumberFormat('ru-KZ', { maximumFractionDigits: 0 }).format(
+    calculateChapanOrderFinancials({
+      itemsSubtotal: order.totalAmount,
+      orderDiscount: order.orderDiscount,
+      deliveryFee: order.deliveryFee,
+      bankCommissionPercent: order.bankCommissionPercent,
+      bankCommissionAmount: order.bankCommissionAmount,
+    }).totalDue,
+  );
   return (
     <div className={styles.miniCard}>
       <span className={styles.miniCardNum}>#{order.orderNumber}</span>

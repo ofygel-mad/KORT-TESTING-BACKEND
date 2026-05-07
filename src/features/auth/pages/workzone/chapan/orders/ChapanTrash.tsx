@@ -4,6 +4,7 @@ import { ChevronLeft, Trash2, RotateCcw, AlertTriangle } from 'lucide-react';
 import { useTrashedOrders, useRestoreFromTrash, usePermanentDelete } from '../../../../entities/order/queries';
 import { useEmployeePermissions } from '../../../../shared/hooks/useEmployeePermissions';
 import type { ChapanOrder } from '../../../../entities/order/types';
+import { calculateChapanOrderFinancials } from '@/shared/lib/chapanFinancials';
 import styles from './ChapanTrash.module.css';
 
 function fmt(n: number) {
@@ -94,7 +95,13 @@ export default function ChapanTrashPage() {
                       {order.items.length > 1 && ` +${order.items.length - 1}`}
                     </span>
                   )}
-                  <span className={styles.amount}>{fmt(order.totalAmount)}</span>
+                  <span className={styles.amount}>{fmt(calculateChapanOrderFinancials({
+                    itemsSubtotal: order.totalAmount,
+                    orderDiscount: order.orderDiscount,
+                    deliveryFee: order.deliveryFee,
+                    bankCommissionPercent: order.bankCommissionPercent,
+                    bankCommissionAmount: order.bankCommissionAmount,
+                  }).totalDue)}</span>
                 </div>
               </div>
               <div className={styles.rowActions}>

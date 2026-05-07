@@ -15,6 +15,7 @@ import {
   usePostWarehouseFoundationReceipt,
   usePostWarehouseFoundationTransfer,
   useReleaseWarehouseFoundationReservation,
+  useSyncFromOrders,
   useWarehouseFoundationBalances,
   useWarehouseFoundationDocuments,
   useWarehouseFoundationReservations,
@@ -147,6 +148,7 @@ export default function WarehouseOperationsPage() {
   const createReservation = useCreateWarehouseFoundationReservation();
   const consumeReservation = useConsumeWarehouseFoundationReservation();
   const releaseReservation = useReleaseWarehouseFoundationReservation();
+  const syncFromOrders = useSyncFromOrders();
 
   useEffect(() => {
     if (!selectedSiteId && sites?.results?.length) {
@@ -282,6 +284,15 @@ export default function WarehouseOperationsPage() {
         </div>
         <div className={styles.headerRight} style={{ flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           <WarehouseModeNav />
+          <button
+            type="button"
+            className={styles.exportBtn}
+            onClick={() => void syncFromOrders.mutateAsync()}
+            disabled={syncFromOrders.isPending}
+          >
+            {syncFromOrders.isPending ? <RefreshCw size={13} /> : <ScrollText size={13} />}
+            Sync from orders
+          </button>
           <div className={styles.tabs}>
             {(sites?.results ?? []).map((site) => (
               <button

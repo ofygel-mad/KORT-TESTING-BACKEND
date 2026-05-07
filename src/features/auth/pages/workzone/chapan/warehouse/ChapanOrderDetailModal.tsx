@@ -8,6 +8,7 @@ import {
 } from '../../../../entities/order/queries';
 import type { ChapanOrder } from '../../../../entities/order/types';
 import { useChapanPermissions } from '../../../../shared/hooks/useChapanPermissions';
+import { calculateChapanOrderFinancials, getChapanOrderBalance } from '@/shared/lib/chapanFinancials';
 import { formatOrderItemNumber } from '../../../../../../shared/utils/orderItemNumber';
 import modalStyles from '../invoices/ChapanInvoicePreviewModal.module.css';
 
@@ -54,7 +55,15 @@ export default function ChapanOrderDetailModal({ orderId, open, onClose }: Props
   const clientPhone = order?.clientPhone ?? '';
   const dueDate = order?.dueDate ? fmtDate(order.dueDate) : '';
   const items = order?.items ?? [];
-  const totalAmount = order?.totalAmount ?? 0;
+  const totalAmount = order
+    ? calculateChapanOrderFinancials({
+        itemsSubtotal: order.totalAmount,
+        orderDiscount: order.orderDiscount,
+        deliveryFee: order.deliveryFee,
+        bankCommissionPercent: order.bankCommissionPercent,
+        bankCommissionAmount: order.bankCommissionAmount,
+      }).totalDue
+    : 0;
   const paidAmount = order?.paidAmount ?? 0;
   const paymentStatus = order?.paymentStatus ?? 'not_paid';
   const status = order?.status ?? '';
@@ -153,7 +162,7 @@ export default function ChapanOrderDetailModal({ orderId, open, onClose }: Props
                   </div>
                   {paidAmount < totalAmount && (
                     <div style={{ fontSize: 12, color: 'var(--fill-negative)' }}>
-                      Остаток: {fmtMoney(totalAmount - paidAmount)}
+                      Остаток: {fmtMoney(getChapanOrderBalance(totalAmount, paidAmount))}
                     </div>
                   )}
                 </div>
@@ -278,7 +287,7 @@ export default function ChapanOrderDetailModal({ orderId, open, onClose }: Props
                           Остаток
                         </div>
                         <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--fill-negative)' }}>
-                          {fmtMoney(totalAmount - paidAmount)}
+                          {fmtMoney(getChapanOrderBalance(totalAmount, paidAmount))}
                         </div>
                       </div>
                     )}
@@ -409,7 +418,7 @@ export default function ChapanOrderDetailModal({ orderId, open, onClose }: Props
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
                       <AlertTriangle size={15} style={{ color: paymentStatus !== 'paid' ? 'var(--fill-negative)' : 'var(--fill-positive)', flexShrink: 0 }} />
                       {paymentStatus !== 'paid'
-                        ? <strong style={{ color: 'var(--fill-negative)' }}>Заказ не оплачен — остаток: {fmtMoney(totalAmount - paidAmount)}</strong>
+                        ? <strong style={{ color: 'var(--fill-negative)' }}>Заказ не оплачен — остаток: {fmtMoney(getChapanOrderBalance(totalAmount, paidAmount))}</strong>
                         : <strong style={{ color: '#1A6B3C' }}>Подтвердите завершение заказа #{orderNumber}</strong>
                       }
                     </div>
@@ -455,7 +464,7 @@ export default function ChapanOrderDetailModal({ orderId, open, onClose }: Props
                   }}>
                     <AlertTriangle size={15} style={{ color: 'var(--fill-warning)', flexShrink: 0 }} />
                     <span style={{ color: 'var(--fill-warning)', fontWeight: 600 }}>
-                      Заказ не оплачен — остаток: {fmtMoney(totalAmount - paidAmount)}. Отправка производится вручную.
+                      Заказ не оплачен — остаток: {fmtMoney(getChapanOrderBalance(totalAmount, paidAmount))}. Отправка производится вручную.
                     </span>
                   </div>
                 )}
@@ -579,7 +588,7 @@ export default function ChapanOrderDetailModal({ orderId, open, onClose }: Props
                     <strong style={{ color: 'var(--fill-negative)' }}>Заказ не оплачен</strong>
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--text-secondary)', paddingLeft: 23 }}>
-                    Остаток: {fmtMoney(totalAmount - paidAmount)} — свяжитесь с менеджером
+                    Остаток: {fmtMoney(getChapanOrderBalance(totalAmount, paidAmount))} — свяжитесь с менеджером
                   </div>
                 </div>
                 {status === 'on_warehouse' && (

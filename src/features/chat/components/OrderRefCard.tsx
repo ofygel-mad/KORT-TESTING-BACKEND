@@ -65,6 +65,7 @@ export function OrderRefCard({ orderId }: Props) {
 
   const statusLabel = STATUS_LABELS[order.status] ?? order.status;
   const statusColor = STATUS_COLORS[order.status] ?? '#9e9e9e';
+  const amount = order.due_amount ?? order.total_amount;
 
   return (
     <div
@@ -84,7 +85,7 @@ export function OrderRefCard({ orderId }: Props) {
         <span className={styles.status} style={{ color: statusColor }}>
           {statusLabel}
         </span>
-        <span className={styles.amount}>{formatAmount(order.total_amount)}</span>
+        <span className={styles.amount}>{formatAmount(amount)}</span>
       </div>
     </div>
   );
