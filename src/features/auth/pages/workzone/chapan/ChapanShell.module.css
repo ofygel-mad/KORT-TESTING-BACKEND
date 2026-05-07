@@ -287,11 +287,10 @@
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y pinch-zoom;
-  background: transparent;
+  background-color: var(--ch-bg);
   background-image:
-    linear-gradient(rgba(16,24,40,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(16,24,40,0.03) 1px, transparent 1px);
-  background-size: 44px 44px;
+    radial-gradient(ellipse 70% 50% at 15% -5%, rgba(154,74,27,0.06) 0%, transparent 55%),
+    radial-gradient(ellipse 55% 45% at 85% 105%, rgba(59,130,246,0.05) 0%, transparent 55%);
   overscroll-behavior: auto;
 }
 
