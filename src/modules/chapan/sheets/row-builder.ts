@@ -9,6 +9,7 @@
  */
 
 import { formatOrderItemNumber } from '../order-item-number.js';
+import { calculateChapanOrderFinancials } from '../financials.js';
 
 export const SHEET_HEADER = [
   'ID заказа',            // A — idempotency key
@@ -226,6 +227,13 @@ export function buildSheetRow(order: SheetOrderPayload): string[] {
     (sum, i) => sum + (i.quantity ?? 0) * (i.unitPrice ?? 0),
     0,
   );
+  const financials = calculateChapanOrderFinancials({
+    itemsSubtotal,
+    orderDiscount: order.orderDiscount,
+    deliveryFee: order.deliveryFee,
+    bankCommissionPercent: order.bankCommissionPercent,
+    bankCommissionAmount: order.bankCommissionAmount,
+  });
   const itemCount = order.items.length;
   const unitCount = order.items.reduce((sum, i) => sum + (i.quantity ?? 0), 0);
 
@@ -256,9 +264,9 @@ export function buildSheetRow(order: SheetOrderPayload): string[] {
     fmtMoney(order.deliveryFee ?? 0),
     order.bankCommissionPercent ? String(order.bankCommissionPercent) : '',
     fmtMoney(order.bankCommissionAmount ?? 0),
-    fmtMoney(order.totalAmount),
+    fmtMoney(financials.totalDue),
     fmtMoney(order.paidAmount),
-    fmtMoney(order.totalAmount - order.paidAmount),
+    fmtMoney(Math.max(0, financials.totalDue - order.paidAmount)),
     buildPaymentMethods(order.payments),
     buildMixedBreakdown(order.payments),
     compact(order.internalNote),

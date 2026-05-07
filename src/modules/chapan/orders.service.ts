@@ -14,6 +14,7 @@ import {
   getNextOrderItemPosition,
   sortOrderItemsByPosition,
 } from './order-item-number.js';
+import { calculateChapanOrderFinancials } from './financials.js';
 
 // Async fire-and-forget helper: never throws, never blocks the main flow.
 function fireSheetSync(orgId: string, orderId: string) {
@@ -255,6 +256,22 @@ function computePaymentStatus(paidAmount: number, totalAmount: number): string {
   return 'not_paid';
 }
 
+function calculateOrderDueAmount(input: {
+  totalAmount: number;
+  orderDiscount?: number | null;
+  deliveryFee?: number | null;
+  bankCommissionPercent?: number | null;
+  bankCommissionAmount?: number | null;
+}) {
+  return calculateChapanOrderFinancials({
+    itemsSubtotal: input.totalAmount,
+    orderDiscount: input.orderDiscount,
+    deliveryFee: input.deliveryFee,
+    bankCommissionPercent: input.bankCommissionPercent,
+    bankCommissionAmount: input.bankCommissionAmount,
+  }).totalDue;
+}
+
 function getOrderStatusLabel(status: string) {
   if (status === 'new') return 'Новый';
   if (status === 'confirmed') return 'Подтвержден';
@@ -336,9 +353,11 @@ function inferFulfillmentMode(params: {
 function mapOrder(order: OrderRecord) {
   const productionItemIds = new Set(order.productionTasks.map((task) => task.orderItemId));
   const items = sortOrderItemsByPosition(order.items);
+  const dueAmount = calculateOrderDueAmount(order);
 
   return {
     ...order,
+    paymentStatus: computePaymentStatus(order.paidAmount, dueAmount),
     items: items.map((item) => ({
       ...item,
       fulfillmentMode: inferFulfillmentMode({
@@ -619,6 +638,13 @@ export async function returnToReady(
 
 export async function create(orgId: string, authorId: string, authorName: string, data: CreateOrderInput) {
   const totalAmount = data.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+  const dueAmount = calculateOrderDueAmount({
+    totalAmount,
+    orderDiscount: data.orderDiscount,
+    deliveryFee: data.deliveryFee,
+    bankCommissionPercent: data.bankCommissionPercent,
+    bankCommissionAmount: data.bankCommissionAmount,
+  });
   const prepayment = Math.max(0, data.prepayment ?? 0);
   const paymentMethod = data.paymentMethod?.trim() || 'cash';
   const paymentNote = buildInitialPaymentNote(data);
@@ -688,7 +714,7 @@ export async function create(orgId: string, authorId: string, authorName: string
         isDemandingClient: data.isDemandingClient ?? (data.priority === 'vip'),
         totalAmount,
         paidAmount: prepayment,
-        paymentStatus: computePaymentStatus(prepayment, totalAmount),
+        paymentStatus: computePaymentStatus(prepayment, dueAmount),
         streetAddress: data.streetAddress?.trim() || undefined,
         city: data.city?.trim() || undefined,
         postalCode: data.postalCode?.trim() || undefined,
@@ -1031,7 +1057,7 @@ export async function updateStatus(orgId: string, id: string, status: string, au
   // Note: Additional validation logic below provides domain-specific checks
 
   if (status === 'shipped' && order.paymentStatus !== 'paid') {
-    const balance = order.totalAmount - order.paidAmount;
+    const balance = calculateOrderDueAmount(order) - order.paidAmount;
 
     await prisma.chapanActivity.create({
       data: {
@@ -1145,7 +1171,7 @@ export async function addPayment(orgId: string, orderId: string, authorId: strin
   if (!order) throw new NotFoundError('ChapanOrder', orderId);
 
   const newPaidAmount = order.paidAmount + data.amount;
-  const newPaymentStatus = computePaymentStatus(newPaidAmount, order.totalAmount);
+  const newPaymentStatus = computePaymentStatus(newPaidAmount, calculateOrderDueAmount(order));
 
   const payment = await prisma.$transaction(async (tx) => {
     const created = await tx.chapanPayment.create({
@@ -1339,9 +1365,13 @@ export async function update(orgId: string, id: string, authorId: string, author
       const newPaid = Math.max(0, data.prepayment);
       updateData.paidAmount = newPaid;
       // Recalculate paymentStatus against current or incoming totalAmount
-      const totalAmount = typeof updateData.totalAmount === 'number'
-        ? updateData.totalAmount
-        : order.totalAmount;
+      const totalAmount = calculateOrderDueAmount({
+        totalAmount: typeof updateData.totalAmount === 'number' ? updateData.totalAmount : order.totalAmount,
+        orderDiscount: typeof updateData.orderDiscount === 'number' ? updateData.orderDiscount : order.orderDiscount,
+        deliveryFee: typeof updateData.deliveryFee === 'number' ? updateData.deliveryFee : order.deliveryFee,
+        bankCommissionPercent: typeof updateData.bankCommissionPercent === 'number' ? updateData.bankCommissionPercent : order.bankCommissionPercent,
+        bankCommissionAmount: typeof updateData.bankCommissionAmount === 'number' ? updateData.bankCommissionAmount : order.bankCommissionAmount,
+      });
       updateData.paymentStatus = computePaymentStatus(newPaid, totalAmount);
     }
     if (data.expectedPaymentMethod !== undefined) updateData.expectedPaymentMethod = data.expectedPaymentMethod || null;
@@ -1353,8 +1383,15 @@ export async function update(orgId: string, id: string, authorId: string, author
 
     if (data.items) {
       const totalAmount = data.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
+      const dueAmount = calculateOrderDueAmount({
+        totalAmount,
+        orderDiscount: typeof updateData.orderDiscount === 'number' ? updateData.orderDiscount : order.orderDiscount,
+        deliveryFee: typeof updateData.deliveryFee === 'number' ? updateData.deliveryFee : order.deliveryFee,
+        bankCommissionPercent: typeof updateData.bankCommissionPercent === 'number' ? updateData.bankCommissionPercent : order.bankCommissionPercent,
+        bankCommissionAmount: typeof updateData.bankCommissionAmount === 'number' ? updateData.bankCommissionAmount : order.bankCommissionAmount,
+      });
       updateData.totalAmount = totalAmount;
-      updateData.paymentStatus = computePaymentStatus(order.paidAmount, totalAmount);
+      updateData.paymentStatus = computePaymentStatus(order.paidAmount, dueAmount);
 
       // If order was already routed (confirmed), clear routing and reset to new
       // so the manager can re-assign items to warehouse/production.
@@ -1549,7 +1586,7 @@ export async function close(orgId: string, id: string, authorId: string, authorN
     });
 
     if (order.paymentStatus !== 'paid') {
-      const balance = order.totalAmount - order.paidAmount;
+      const balance = calculateOrderDueAmount(order) - order.paidAmount;
       await tx.chapanActivity.create({
         data: {
           orderId: id,
@@ -1600,7 +1637,7 @@ export async function shipOrder(
     throw new ValidationError('Отгружать можно только заказ в статусе «на складе»');
   }
   if (order.paymentStatus !== 'paid') {
-    const balance = order.totalAmount - order.paidAmount;
+    const balance = calculateOrderDueAmount(order) - order.paidAmount;
     // Log an alert activity visible to managers
     await prisma.chapanActivity.create({
       data: {
@@ -1857,12 +1894,19 @@ export async function approveChangeRequest(
     // Recalculate total from all current items (existing updated + new)
     const allItems = await tx.chapanOrderItem.findMany({ where: { orderId: order.id } });
     const totalAmount = allItems.reduce((sum, i) => sum + i.quantity * i.unitPrice, 0);
+    const dueAmount = calculateOrderDueAmount({
+      totalAmount,
+      orderDiscount: order.orderDiscount,
+      deliveryFee: order.deliveryFee,
+      bankCommissionPercent: order.bankCommissionPercent,
+      bankCommissionAmount: order.bankCommissionAmount,
+    });
 
     await tx.chapanOrder.update({
       where: { id: order.id },
       data: {
         totalAmount,
-        paymentStatus: computePaymentStatus(order.paidAmount, totalAmount),
+        paymentStatus: computePaymentStatus(order.paidAmount, dueAmount),
         // Status stays in_production ? seamstress keeps her existing tasks
       },
     });
