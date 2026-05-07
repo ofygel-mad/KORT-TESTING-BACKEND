@@ -1179,6 +1179,21 @@
   border: 1px solid rgba(245, 158, 11, 0.25);
 }
 
+.stockBadgeHint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  background: rgba(148, 163, 184, 0.12);
+  color: var(--ch-text-muted);
+  border: 1px dashed rgba(148, 163, 184, 0.4);
+  cursor: help;
+}
+
 .variantStockHint {
   display: flex;
   align-items: center;

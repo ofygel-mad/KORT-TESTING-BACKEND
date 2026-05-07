@@ -206,6 +206,7 @@ const SkuTableSection: React.FC<SkuTableSectionProps> = ({ items, onSelectItem }
             <thead>
               <tr>
                 <th className={styles.thLeft}>Цвет</th>
+                <th className={styles.thLeft}>Пол</th>
                 <th className={styles.thLeft}>Размер</th>
                 <th className={styles.thDim}>Длина</th>
                 <th className={styles.thRight}>В наличии</th>
@@ -217,6 +218,15 @@ const SkuTableSection: React.FC<SkuTableSectionProps> = ({ items, onSelectItem }
             <tbody>
               {items.map(item => {
                 const color = item.attributesJson?.['color'] || '—';
+                const genderRaw = item.attributesJson?.['gender'];
+                const gender = genderRaw
+                  ? (() => {
+                      const v = genderRaw.trim().toLowerCase();
+                      if (v === 'male' || v === 'муж' || v === 'мужской') return 'Мужской';
+                      if (v === 'female' || v === 'жен' || v === 'женский') return 'Женский';
+                      return genderRaw;
+                    })()
+                  : '—';
                 const size = item.attributesJson?.['size'] || '—';
                 const length = item.attributesJson?.['length'] || null;
                 const available = item.qty - item.qtyReserved;
@@ -235,6 +245,7 @@ const SkuTableSection: React.FC<SkuTableSectionProps> = ({ items, onSelectItem }
                     }}
                   >
                     <td className={styles.tdBold}>{color}</td>
+                    <td className={styles.tdMono}>{gender}</td>
                     <td className={styles.tdMono}>{size}</td>
                     <td className={styles.tdDim}>{length ?? '—'}</td>
                     <td className={styles.tdNum}>{item.qty}</td>

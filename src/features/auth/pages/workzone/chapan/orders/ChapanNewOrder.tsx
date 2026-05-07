@@ -1,6 +1,7 @@
 import type { InputHTMLAttributes } from 'react';
 import { forwardRef, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -378,6 +379,25 @@ export default function ChapanNewOrderPage() {
     .filter((variant): variant is VariantAvailabilityInput => Boolean(variant));
   const { data: stockMap } = useProductsAvailability(deferredProductNames);
   const { data: variantMap } = useVariantAvailability(availabilityVariants);
+
+  // True if any catalog-registered item with variant axes hasn't filled them all —
+  // submit must wait. Free-text product names (not in warehouseProductMap) are skipped:
+  // the warehouse can't validate them, so the manager keeps full agency.
+  const hasIncompleteVariantLines = useMemo(() => {
+    for (const item of items) {
+      if (!item?.productName?.trim()) continue;
+      const fields = warehouseProductMap[item.productName.trim()];
+      if (!fields) continue;
+      const required = fields.filter((f) => f.affectsAvailability);
+      if (required.length === 0) continue;
+      const incomplete = required.some((f) => {
+        const value = (item as Record<string, unknown>)[f.code];
+        return !value || (typeof value === 'string' && !value.trim());
+      });
+      if (incomplete) return true;
+    }
+    return false;
+  }, [items, warehouseProductMap]);
   const paymentMethod    = watch('paymentMethod');
   const orderDiscountRaw = watch('orderDiscount');
   const prepaymentRaw    = watch('prepayment');
@@ -421,6 +441,9 @@ export default function ChapanNewOrderPage() {
     clearDraft(userId);
     savedDraft.current = null;
     reset(createEmptyFormDefaults());
+    // Explicitly clear nested paymentBreakdown subkeys: reset() with paymentBreakdown=undefined
+    // does NOT walk into already-registered child fields like paymentBreakdown.cash.
+    setValue('paymentBreakdown', {} as FormData['paymentBreakdown']);
     setDiscountPercent('');
     setEditingRate(false);
     setRateInput('');
@@ -430,11 +453,36 @@ export default function ChapanNewOrderPage() {
       receiptInputRef.current.value = '';
     }
     setDraftRestored(false);
-    setBankCommissionPrefilled(false);
+    // Keep prefill flag TRUE so the bankCommissionPercent autoeffect doesn't
+    // immediately repopulate the field from profile after the user explicitly
+    // asked to clear the draft. Same goes for the deliveryFee autoeffect —
+    // it depends on deliveryType which is now '' so it's already inert.
+    setBankCommissionPrefilled(true);
     autosaveEnabledRef.current = true;
   }
 
   async function onSubmit(data: FormData) {
+    // Block creation only when a CATALOG-REGISTERED variant-bearing line has incomplete axes.
+    // Free-text product names are not validated here — warehouse has no SKU to match against.
+    const incompleteLines: number[] = [];
+    for (let i = 0; i < data.items.length; i += 1) {
+      const item = data.items[i];
+      if (!item?.productName?.trim()) continue;
+      const fields = warehouseProductMap[item.productName.trim()];
+      if (!fields) continue;
+      const required = fields.filter((f) => f.affectsAvailability);
+      if (required.length === 0) continue;
+      const missing = required.filter((f) => {
+        const value = (item as Record<string, unknown>)[f.code];
+        return !value || (typeof value === 'string' && !value.trim());
+      });
+      if (missing.length > 0) incompleteLines.push(i + 1);
+    }
+    if (incompleteLines.length > 0) {
+      toast.error(`Заполните параметры (цвет, размер, длина, пол) для позиций: ${incompleteLines.join(', ')}`);
+      return;
+    }
+
     const hasPrepayment = (data.prepayment ?? 0) > 0;
     const isMixed = data.paymentMethod === 'mixed';
     const payloadItems = buildPayloadItems(data.items, orderDiscount);
@@ -540,6 +588,20 @@ export default function ChapanNewOrderPage() {
       item,
       getEffectiveFields(item.productName.trim()),
     );
+  }
+
+  function getMissingAxes(item?: FormData['items'][number]): OrderFormField[] {
+    if (!item?.productName?.trim()) return [];
+    // Submit-gate only applies to products registered in the warehouse catalog.
+    // Free-text product names (not in warehouseProductMap) skip variant validation —
+    // there's nothing to look up against, so the manager owns the choice.
+    const fields = warehouseProductMap[item.productName.trim()];
+    if (!fields) return [];
+    const required = fields.filter((f) => f.affectsAvailability);
+    return required.filter((f) => {
+      const value = (item as Record<string, unknown>)[f.code];
+      return !value || (typeof value === 'string' && !value.trim());
+    });
   }
   // Helper: get catalog options for a field code given current productName
   function getCatalogOptions(productName: string, code: string): string[] {
@@ -708,17 +770,22 @@ export default function ChapanNewOrderPage() {
                   const lineDisc = Number(_item?.itemDiscount) || 0;
                   const lineTotal = Math.max(0, linePrice - lineDisc);
                   const availabilityInput = getAvailabilityInput(_item);
-                  const variantStock = availabilityInput && variantMap
-                    ? variantMap[buildVariantLookupKey(availabilityInput.name, availabilityInput)]
+                  const productFields = getEffectiveFields(_item?.productName?.trim() ?? '');
+                  const requiredAxes = (productFields ?? []).filter(f => f.affectsAvailability);
+                  const missingAxes = getMissingAxes(_item);
+                  const allAxesFilled = requiredAxes.length > 0 && missingAxes.length === 0;
+                  const isCommodity = requiredAxes.length === 0;
+                  const variantStock = availabilityInput && variantMap && allAxesFilled
+                    ? variantMap[buildVariantLookupKey(availabilityInput.name, availabilityInput, productFields)]
                     : undefined;
                   const productStock = _item?.productName && stockMap ? stockMap[_item.productName] : undefined;
-                  const productFields = warehouseProductMap[_item?.productName?.trim() ?? ''];
-                  const productHasVariantDimensions = !!(productFields?.some(f => f.affectsAvailability));
                   const itemStock = variantStock
-                    ? { available: variantStock.available > 0, qty: variantStock.available, status: variantStock.status }
-                    : !availabilityInput && !productHasVariantDimensions && productStock
-                      ? { available: productStock.available, qty: productStock.qty, status: undefined as undefined }
-                      : undefined;
+                    ? { available: variantStock.available > 0, qty: variantStock.available, status: variantStock.status, missing: false as const }
+                    : isCommodity && productStock
+                      ? { available: productStock.available, qty: productStock.qty, status: undefined as undefined, missing: false as const }
+                      : !isCommodity && !allAxesFilled
+                        ? { available: false, qty: 0, status: undefined as undefined, missing: true as const, missingAxes }
+                        : undefined;
                   const catalogLengths = getCatalogOptions(_item?.productName ?? '', 'length');
                   const lengthOpts = catalogLengths.length > 0 ? catalogLengths : globalWarehouseLengths;
                   return (
@@ -802,9 +869,15 @@ export default function ChapanNewOrderPage() {
                       <div className={`${styles.wtableCell} ${styles.wtableTotalCell}`}>{fmt(lineTotal)}</div>
                       <div className={styles.wtableCell}>
                         {itemStock !== undefined && (
-                          <span className={itemStock.status === 'low' ? styles.stockBadgeLow : itemStock.available ? styles.stockBadgeIn : styles.stockBadgeOut}>
-                            {itemStock.status === 'low' ? `мало (${itemStock.qty})` : itemStock.available ? `${itemStock.qty} шт.` : 'Нет'}
-                          </span>
+                          itemStock.missing ? (
+                            <span className={styles.stockBadgeHint} title={`Укажите: ${itemStock.missingAxes.map(f => f.label.toLowerCase()).join(', ')}`}>
+                              укажите параметры
+                            </span>
+                          ) : (
+                            <span className={itemStock.status === 'low' ? styles.stockBadgeLow : itemStock.available ? styles.stockBadgeIn : styles.stockBadgeOut}>
+                              {itemStock.status === 'low' ? `мало (${itemStock.qty})` : itemStock.available ? `${itemStock.qty} шт.` : 'Нет'}
+                            </span>
+                          )
                         )}
                       </div>
                       <div className={styles.wtableCell}>
@@ -842,14 +915,16 @@ export default function ChapanNewOrderPage() {
                 const lineTotal = Math.max(0, linePrice - lineDisc);
                 const availabilityInput = getAvailabilityInput(_item);
                 const variantStock = availabilityInput && variantMap
-                  ? variantMap[buildVariantLookupKey(availabilityInput.name, availabilityInput)]
+                  ? variantMap[buildVariantLookupKey(availabilityInput.name, availabilityInput, getEffectiveFields(_item?.productName?.trim() ?? ''))]
                   : undefined;
                 const productStock = _item?.productName && stockMap ? stockMap[_item.productName] : undefined;
-                const productFields = warehouseProductMap[_item?.productName?.trim() ?? ''];
-                const productHasVariantDimensions = !!(productFields?.some(f => f.affectsAvailability));
+                const productFields = getEffectiveFields(_item?.productName?.trim() ?? '');
+                const requiredAxes = (productFields ?? []).filter(f => f.affectsAvailability);
+                const missingAxes = getMissingAxes(_item);
+                const allAxesFilled = requiredAxes.length > 0 && missingAxes.length === 0;
+                const isCommodity = requiredAxes.length === 0;
                 const catalogLengths = getCatalogOptions(_item?.productName ?? '', 'length');
                 const lengthOpts = catalogLengths.length > 0 ? catalogLengths : globalWarehouseLengths;
-                const hasVariantAttrs = productHasVariantDimensions || !!availabilityInput;
 
                 return (
                   <div key={field.id} className={styles.itemCard}>
@@ -974,27 +1049,29 @@ export default function ChapanNewOrderPage() {
                     </div>
 
                     {_item?.productName?.trim() && (
-                      hasVariantAttrs ? (
-                        !availabilityInput ? (
-                          <div className={styles.variantStockHint}>Укажите параметры для просмотра остатка</div>
-                        ) : variantStock ? (
-                          variantStock.available > 0 ? (
-                            <div className={variantStock.status === 'low' ? styles.variantStockLow : styles.variantStockIn}>
-                              Остаток: {variantStock.available} шт.{variantStock.status === 'low' ? ' — мало' : ''}
-                            </div>
+                      isCommodity ? (
+                        productStock ? (
+                          productStock.available ? (
+                            <div className={styles.variantStockIn}>Остаток: {productStock.qty} шт.</div>
                           ) : (
                             <div className={styles.variantStockOut}>Нет на складе</div>
                           )
-                        ) : variantMap !== undefined ? (
+                        ) : stockMap !== undefined ? (
                           <div className={styles.variantStockHint}>Нет данных по складу</div>
                         ) : null
-                      ) : productStock ? (
-                        productStock.available ? (
-                          <div className={styles.variantStockIn}>Остаток: {productStock.qty} шт.</div>
+                      ) : !allAxesFilled ? (
+                        <div className={styles.variantStockHint}>
+                          Укажите параметры ({missingAxes.map(f => f.label.toLowerCase()).join(', ')}) для проверки остатка
+                        </div>
+                      ) : variantStock ? (
+                        variantStock.available > 0 ? (
+                          <div className={variantStock.status === 'low' ? styles.variantStockLow : styles.variantStockIn}>
+                            Остаток: {variantStock.available} шт.{variantStock.status === 'low' ? ' — мало' : ''}
+                          </div>
                         ) : (
                           <div className={styles.variantStockOut}>Нет на складе</div>
                         )
-                      ) : stockMap !== undefined ? (
+                      ) : variantMap !== undefined ? (
                         <div className={styles.variantStockHint}>Нет данных по складу</div>
                       ) : null
                     )}
@@ -1418,7 +1495,12 @@ export default function ChapanNewOrderPage() {
           <button type="button" className={styles.cancelBtn} onClick={() => navigate('/workzone/chapan/orders')}>
             Отмена
           </button>
-          <button type="submit" className={styles.submitBtn} disabled={isSubmitting || createOrder.isPending}>
+          <button
+            type="submit"
+            className={styles.submitBtn}
+            disabled={isSubmitting || createOrder.isPending || hasIncompleteVariantLines}
+            title={hasIncompleteVariantLines ? 'Заполните параметры всех позиций (цвет, размер, длина, пол) перед созданием заказа' : undefined}
+          >
             {createOrder.isPending ? 'Создание...' : 'Создать заказ'}
           </button>
         </div>

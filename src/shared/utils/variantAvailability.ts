@@ -1,4 +1,5 @@
 import type { OrderFormField } from '../../entities/warehouse/types';
+import { buildCanonicalVariantKey } from './variantKey';
 
 export interface VariantAvailabilityInput {
   name: string;
@@ -15,22 +16,22 @@ export interface VariantAvailabilityAttributesInput {
   length?: string | null;
 }
 
-function normalizeVariantValue(value: string): string {
-  return value.trim().toLowerCase().replace(/\s+/g, ' ');
+const KNOWN_AXIS_CODES = ['color', 'gender', 'length', 'size'] as const;
+
+function fieldsForKey(fields?: OrderFormField[]) {
+  if (fields && fields.length > 0) {
+    return fields.map((f) => ({ code: f.code, affectsAvailability: f.affectsAvailability }));
+  }
+  return KNOWN_AXIS_CODES.map((code) => ({ code, affectsAvailability: true }));
 }
 
 export function buildVariantLookupKey(
   name: string,
   attributes: VariantAvailabilityAttributesInput & { name?: string | null } = {},
+  fields?: OrderFormField[],
 ): string {
-  const base = normalizeVariantValue(name);
   const { name: _ignored, ...variantAttributes } = attributes;
-  const parts = Object.entries(variantAttributes)
-    .filter(([, value]) => value?.trim())
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([key, value]) => `${key}:${normalizeVariantValue(value as string)}`);
-
-  return [base, ...parts].join('|');
+  return buildCanonicalVariantKey(name, variantAttributes, fieldsForKey(fields));
 }
 
 export function pickVariantAvailabilityAttributes(
