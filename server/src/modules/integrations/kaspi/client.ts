@@ -1,5 +1,7 @@
 const KASPI_API_BASE_URL = 'https://kaspi.kz/shop/api/v2';
 const JSON_API_CONTENT_TYPE = 'application/vnd.api+json';
+const KASPI_MAX_ORDER_RANGE_DAYS = 14;
+const KASPI_REQUEST_TIMEOUT_MS = 20_000;
 
 export type JsonApiResource = {
   id?: string;
@@ -78,11 +80,20 @@ async function requestKaspi<T>(
     headers?: Record<string, string>;
   },
 ): Promise<T> {
-  const response = await fetch(`${KASPI_API_BASE_URL}${path}`, {
-    method: init?.method ?? 'GET',
-    headers: buildHeaders(apiToken, init?.headers),
-    body: init?.body === undefined ? undefined : JSON.stringify(init.body),
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${KASPI_API_BASE_URL}${path}`, {
+      method: init?.method ?? 'GET',
+      headers: buildHeaders(apiToken, init?.headers),
+      body: init?.body === undefined ? undefined : JSON.stringify(init.body),
+      signal: AbortSignal.timeout(KASPI_REQUEST_TIMEOUT_MS),
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === 'TimeoutError') {
+      throw new Error(`Kaspi API timeout after ${KASPI_REQUEST_TIMEOUT_MS}ms`);
+    }
+    throw error;
+  }
 
   if (!response.ok) {
     const bodyText = await response.text();
@@ -125,6 +136,26 @@ function normalizeOrder(resource: JsonApiResource): KaspiOrderSummary {
   };
 }
 
+function resolveKaspiOrderDateRange(params?: {
+  creationDateFromMs?: number;
+  creationDateToMs?: number;
+}) {
+  const now = Date.now();
+  const defaultFrom = now - (KASPI_MAX_ORDER_RANGE_DAYS * 24 * 60 * 60 * 1000);
+
+  const from = Number.isFinite(params?.creationDateFromMs)
+    ? Math.trunc(params!.creationDateFromMs!)
+    : defaultFrom;
+  const to = Number.isFinite(params?.creationDateToMs)
+    ? Math.trunc(params!.creationDateToMs!)
+    : now;
+
+  return {
+    from: Math.min(from, to),
+    to: Math.max(from, to),
+  };
+}
+
 export async function listKaspiOrders(
   apiToken: string,
   params?: {
@@ -132,11 +163,16 @@ export async function listKaspiOrders(
     pageSize?: number;
     state?: string;
     status?: string;
+    creationDateFromMs?: number;
+    creationDateToMs?: number;
   },
 ): Promise<KaspiOrderSummary[]> {
   const search = new URLSearchParams();
+  const range = resolveKaspiOrderDateRange(params);
   search.set('page[number]', String(params?.pageNumber ?? 0));
   search.set('page[size]', String(params?.pageSize ?? 100));
+  search.set('filter[orders][creationDate][$ge]', String(range.from));
+  search.set('filter[orders][creationDate][$le]', String(range.to));
   if (params?.state) search.set('filter[orders][state]', params.state);
   if (params?.status) search.set('filter[orders][status]', params.status);
 

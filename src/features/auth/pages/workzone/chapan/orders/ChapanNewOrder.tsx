@@ -461,6 +461,29 @@ export default function ChapanNewOrderPage() {
     autosaveEnabledRef.current = true;
   }
 
+  // Surface zod/RHF validation failures so a "dead" submit button always tells
+  // the user (and the console) what's wrong instead of silently doing nothing.
+  function onValidationError(formErrors: Record<string, unknown>) {
+    const flat: string[] = [];
+    const walk = (node: unknown, path: string[]) => {
+      if (!node || typeof node !== 'object') return;
+      if ('message' in (node as Record<string, unknown>) && typeof (node as { message?: unknown }).message === 'string') {
+        flat.push(`${path.join('.') || '(form)'}: ${(node as { message: string }).message}`);
+      }
+      for (const [key, val] of Object.entries(node as Record<string, unknown>)) {
+        if (key === 'message' || key === 'type' || key === 'ref') continue;
+        walk(val, [...path, key]);
+      }
+    };
+    walk(formErrors, []);
+    console.warn('[ChapanNewOrder] form validation failed:', formErrors);
+    if (flat.length > 0) {
+      toast.error(`Проверьте поля: ${flat.slice(0, 3).join('; ')}${flat.length > 3 ? `; +${flat.length - 3} ещё` : ''}`);
+    } else {
+      toast.error('Форма заполнена некорректно');
+    }
+  }
+
   async function onSubmit(data: FormData) {
     // Block creation only when a CATALOG-REGISTERED variant-bearing line has incomplete axes.
     // Free-text product names are not validated here — warehouse has no SKU to match against.
@@ -632,7 +655,7 @@ export default function ChapanNewOrderPage() {
         </div>
       )}
 
-      <form className={styles.form} onSubmit={handleSubmit(onSubmit)}>
+      <form className={styles.form} onSubmit={handleSubmit(onSubmit, onValidationError)}>
 
         {/* ── 01 Данные клиента ─────────────────────────────────────────────── */}
         <section className={styles.section}>
@@ -1498,8 +1521,8 @@ export default function ChapanNewOrderPage() {
           <button
             type="submit"
             className={styles.submitBtn}
-            disabled={isSubmitting || createOrder.isPending || hasIncompleteVariantLines}
-            title={hasIncompleteVariantLines ? 'Заполните параметры всех позиций (цвет, размер, длина, пол) перед созданием заказа' : undefined}
+            disabled={isSubmitting || createOrder.isPending}
+            title={hasIncompleteVariantLines ? 'У позиций каталога не заполнены атрибуты — нажмите, чтобы увидеть подсказку' : undefined}
           >
             {createOrder.isPending ? 'Создание...' : 'Создать заказ'}
           </button>
