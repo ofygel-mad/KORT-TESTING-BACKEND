@@ -234,7 +234,7 @@ model Organization {
   adDailyMetrics       AdDailyMetric[]
   conversations        Conversation[]
   chatAttachments      ChatAttachment[]
-  kaspiConnection      KaspiConnection?
+  kaspiConnections     KaspiConnection[]
   kaspiOrderLinks      KaspiOrderLink[]
 
   @@map("organizations")
@@ -242,11 +242,12 @@ model Organization {
 
 model KaspiConnection {
   id            String    @id @default(cuid())
-  orgId         String    @unique @map("org_id")
+  orgId         String    @map("org_id")
   sellerName    String?   @map("seller_name")
   apiToken      String    @map("api_token")
   tokenLast4    String    @map("token_last4")
   isActive      Boolean   @default(true) @map("is_active")
+  archivedAt    DateTime? @map("archived_at")
   lastCheckedAt DateTime? @map("last_checked_at")
   lastSyncAt    DateTime? @map("last_sync_at")
   lastSyncError String?   @map("last_sync_error")
@@ -256,6 +257,8 @@ model KaspiConnection {
   org        Organization     @relation(fields: [orgId], references: [id], onDelete: Cascade)
   orderLinks KaspiOrderLink[]
 
+  @@index([orgId, isActive])
+  @@index([orgId, archivedAt])
   @@map("kaspi_connections")
 }
 
@@ -283,9 +286,10 @@ model KaspiOrderLink {
   org        Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
   connection KaspiConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
 
-  @@unique([orgId, externalOrderId])
+  @@unique([connectionId, externalOrderId])
   @@index([orgId, externalStatus])
   @@index([orgId, externalState])
+  @@index([orgId, connectionId])
   @@index([orgId, internalOrderId])
   @@index([connectionId, lastSyncedAt])
   @@map("kaspi_order_links")

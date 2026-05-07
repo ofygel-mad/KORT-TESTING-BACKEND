@@ -16,11 +16,19 @@ export interface KaspiConnectionView {
   sellerName: string | null;
   tokenMasked: string;
   isActive: boolean;
+  archivedAt: string | null;
   lastCheckedAt: string | null;
   lastSyncAt: string | null;
   lastSyncError: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface KaspiConnectionHistoryItemView extends KaspiConnectionView {
+  ordersCount: number;
+  completedOrdersCount: number;
+  cancelledOrdersCount: number;
+  lastOrderUpdateAt: string | null;
 }
 
 export interface KaspiOrderItemView {
@@ -107,7 +115,7 @@ export interface KaspiOrdersSummaryView {
 }
 
 export interface SaveKaspiConnectionInput {
-  apiToken: string;
+  apiToken?: string;
   sellerName?: string;
   isActive?: boolean;
 }
@@ -144,4 +152,10 @@ export interface SyncKaspiOrdersResult {
   upserted: number;
   fetchedPages: number;
   syncedAt: string;
+}
+
+export interface KaspiExportResult {
+  buffer: Buffer;
+  filename: string;
+  contentType: string;
 }
