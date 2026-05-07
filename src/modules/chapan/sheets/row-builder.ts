@@ -159,7 +159,7 @@ function buildAttachmentNames(attachments: Array<{ originalName?: string | null;
     .join('; ');
 }
 
-function buildWorkshopNotes(orderNumber: string, items: Array<{
+function buildWorkshopNotes(items: Array<{
   position?: number | null;
   workshopNotes?: string | null;
   productName?: string | null;
@@ -167,9 +167,8 @@ function buildWorkshopNotes(orderNumber: string, items: Array<{
   return items
     .filter(i => compact(i.workshopNotes))
     .map(i => {
-      const itemNumber = formatOrderItemNumber(orderNumber, i.position);
       const title = compact(i.productName) || '\u041f\u043e\u0437\u0438\u0446\u0438\u044f';
-      return `#${itemNumber} ${title}: ${compact(i.workshopNotes)}`;
+      return `${title}: ${compact(i.workshopNotes)}`;
     })
     .join(' | ');
 }
@@ -266,7 +265,7 @@ export function buildSheetRow(order: SheetOrderPayload): string[] {
     compact(order.shippingNote),
     order.attachments.length > 0 ? String(order.attachments.length) : '',
     buildAttachmentNames(order.attachments),
-    buildWorkshopNotes(order.orderNumber, order.items),
+    buildWorkshopNotes(order.items),
     compact(order.sourceRequestId),
     fmtDate(order.updatedAt),
   ];
