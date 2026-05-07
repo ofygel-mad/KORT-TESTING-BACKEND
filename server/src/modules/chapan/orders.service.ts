@@ -94,7 +94,7 @@ type RouteOrderItemsInput = Array<{
 
 // Helpers
 
-const CLIENT_NAME_WORD_START_RE = /(^|[\s-]+)([a-z?-???????????])/giu;
+const CLIENT_NAME_WORD_START_RE = /(^|[\s-]+)(\p{L})/gu;
 
 function normalizeClientName(value: string) {
   return value

@@ -1,5 +1,5 @@
 import type { InputHTMLAttributes } from 'react';
-import { forwardRef, useDeferredValue, useEffect, useRef, useState } from 'react';
+import { forwardRef, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -21,6 +21,7 @@ import {
 import { SearchableSelect, type SearchableSelectOption } from '../../../../shared/ui/SearchableSelect';
 import { formatPersonNameInput } from '../../../../shared/utils/person';
 import { formatKazakhPhoneInput, isKazakhPhoneComplete } from '../../../../shared/utils/kz';
+import { buildVariantAvailabilityInput, buildVariantLookupKey, type VariantAvailabilityInput } from '../../../../shared/utils/variantAvailability';
 import styles from './ChapanNewOrder.module.css';
 
 // ─── Draft autosave ───────────────────────────────────────────────────────────
@@ -356,21 +357,27 @@ export default function ChapanNewOrderPage() {
   const items            = watch('items');
   const urgency          = watch('urgency');
   const isDemandingClient = watch('isDemandingClient');
+  const { data: orderFormCatalog } = useOrderFormCatalog();
+  const { data: fieldDefinitions } = useCatalogDefinitions();
+  const warehouseProductMap = useMemo<Record<string, OrderFormField[]>>(() => {
+    const map: Record<string, OrderFormField[]> = {};
+    for (const product of orderFormCatalog?.products ?? []) {
+      map[product.name] = product.fields;
+    }
+    return map;
+  }, [orderFormCatalog]);
   const deferredProductNames = useDeferredValue(
     items.map((i) => i.productName).filter(Boolean),
   );
-  const deferredVariants = useDeferredValue(
-    items
-      .filter((i) => i.productName?.trim())
-      .map((i) => ({
-        name: i.productName,
-        color: i.color || undefined,
-        gender: i.gender || undefined,
-        size: i.size || undefined,
-      })),
-  );
+  const availabilityVariants = items
+    .map((item) => buildVariantAvailabilityInput(
+      item.productName?.trim() ?? '',
+      item,
+      warehouseProductMap[item.productName?.trim() ?? ''],
+    ))
+    .filter((variant): variant is VariantAvailabilityInput => Boolean(variant));
   const { data: stockMap } = useProductsAvailability(deferredProductNames);
-  const { data: variantMap } = useVariantAvailability(deferredVariants);
+  const { data: variantMap } = useVariantAvailability(availabilityVariants);
   const paymentMethod    = watch('paymentMethod');
   const orderDiscountRaw = watch('orderDiscount');
   const prepaymentRaw    = watch('prepayment');
@@ -432,35 +439,40 @@ export default function ChapanNewOrderPage() {
     const isMixed = data.paymentMethod === 'mixed';
     const payloadItems = buildPayloadItems(data.items, orderDiscount);
 
-    const created = await createOrder.mutateAsync({
-      idempotencyKey: idemKeyRef.current,
-      clientName:    formatPersonNameInput(data.clientName).trim(),
-      clientPhone:   data.clientPhone ? formatKazakhPhoneInput(data.clientPhone) : '',
-      clientPhoneForeign: data.clientPhoneForeign?.trim() || undefined,
-      streetAddress: data.streetAddress?.trim() || undefined,
-      city:          data.city?.trim() || undefined,
-      deliveryType:  data.deliveryType?.trim() || undefined,
-      source:        data.source?.trim() || undefined,
-      expectedPaymentMethod: data.expectedPaymentMethod?.trim() || undefined,
-      priority:      data.urgency === 'urgent' ? 'urgent' : data.isDemandingClient ? 'vip' : 'normal',
-      urgency:       data.urgency as Urgency,
-      isDemandingClient: data.isDemandingClient,
-      postalCode:    data.postalCode?.trim() || undefined,
-      orderDate:     data.orderDate || undefined,
-      orderDiscount: orderDiscount > 0 ? orderDiscount : undefined,
-      deliveryFee:   deliveryFee > 0 ? deliveryFee : undefined,
-      bankCommissionPercent: bankCommissionPct > 0 ? bankCommissionPct : undefined,
-      bankCommissionAmount:  bankCommissionAmount > 0 ? bankCommissionAmount : undefined,
-      dueDate:       data.dueDate   || undefined,
-      prepayment:       hasPrepayment ? data.prepayment : undefined,
-      paymentMethod:    hasPrepayment ? data.paymentMethod : undefined,
-      paymentBreakdown: hasPrepayment && isMixed
-        ? Object.fromEntries(Object.entries(data.paymentBreakdown ?? {}).filter(([, v]) => Number(v) > 0))
-        : undefined,
-      items: payloadItems,
-      managerNote: data.managerNote?.trim() || undefined,
-      customerType: isWholesale ? 'wholesale' : 'retail',
-    });
+    let created;
+    try {
+      created = await createOrder.mutateAsync({
+        idempotencyKey: idemKeyRef.current,
+        clientName:    formatPersonNameInput(data.clientName).trim(),
+        clientPhone:   data.clientPhone ? formatKazakhPhoneInput(data.clientPhone) : '',
+        clientPhoneForeign: data.clientPhoneForeign?.trim() || undefined,
+        streetAddress: data.streetAddress?.trim() || undefined,
+        city:          data.city?.trim() || undefined,
+        deliveryType:  data.deliveryType?.trim() || undefined,
+        source:        data.source?.trim() || undefined,
+        expectedPaymentMethod: data.expectedPaymentMethod?.trim() || undefined,
+        priority:      data.urgency === 'urgent' ? 'urgent' : data.isDemandingClient ? 'vip' : 'normal',
+        urgency:       data.urgency as Urgency,
+        isDemandingClient: data.isDemandingClient,
+        postalCode:    data.postalCode?.trim() || undefined,
+        orderDate:     data.orderDate || undefined,
+        orderDiscount: orderDiscount > 0 ? orderDiscount : undefined,
+        deliveryFee:   deliveryFee > 0 ? deliveryFee : undefined,
+        bankCommissionPercent: bankCommissionPct > 0 ? bankCommissionPct : undefined,
+        bankCommissionAmount:  bankCommissionAmount > 0 ? bankCommissionAmount : undefined,
+        dueDate:       data.dueDate   || undefined,
+        prepayment:       hasPrepayment ? data.prepayment : undefined,
+        paymentMethod:    hasPrepayment ? data.paymentMethod : undefined,
+        paymentBreakdown: hasPrepayment && isMixed
+          ? Object.fromEntries(Object.entries(data.paymentBreakdown ?? {}).filter(([, v]) => Number(v) > 0))
+          : undefined,
+        items: payloadItems,
+        managerNote: data.managerNote?.trim() || undefined,
+        customerType: isWholesale ? 'wholesale' : 'retail',
+      });
+    } catch {
+      return;
+    }
 
     if (receipts.length > 0 && created?.id) {
       for (const file of receipts) {
@@ -497,15 +509,6 @@ export default function ChapanNewOrderPage() {
     }
   }, [paymentMethod, paymentBreakdownWatch?.kaspi_qr, setValue]);
 
-  // Warehouse smart catalog: live dropdowns per product
-  const { data: orderFormCatalog } = useOrderFormCatalog();
-  const { data: fieldDefinitions } = useCatalogDefinitions();
-  const warehouseProductMap: Record<string, OrderFormField[]> = {};
-  if (orderFormCatalog) {
-    for (const p of orderFormCatalog.products) {
-      warehouseProductMap[p.name] = p.fields;
-    }
-  }
   const warehouseProductNames = Object.keys(warehouseProductMap);
   // Merged product list: chapan catalog + warehouse catalog (deduped)
   const allProductNames = [...new Set([...products, ...warehouseProductNames])];
@@ -515,6 +518,14 @@ export default function ChapanNewOrderPage() {
   const globalWarehouseColors = fieldDefinitions?.find(d => d.code === 'color')?.options.map(o => o.label) ?? [];
   // Global length options from warehouse field definitions (single source of truth)
   const globalWarehouseLengths = fieldDefinitions?.find(d => d.code === 'length')?.options.map(o => o.label) ?? [];
+  function getAvailabilityInput(item?: FormData['items'][number]) {
+    if (!item?.productName?.trim()) return null;
+    return buildVariantAvailabilityInput(
+      item.productName.trim(),
+      item,
+      warehouseProductMap[item.productName.trim()],
+    );
+  }
   // Helper: get catalog options for a field code given current productName
   function getCatalogOptions(productName: string, code: string): string[] {
     const fields = warehouseProductMap[productName];
@@ -681,20 +692,15 @@ export default function ChapanNewOrderPage() {
                   const linePrice = (Number(_item?.quantity) || 0) * (Number(_item?.unitPrice) || 0);
                   const lineDisc = Number(_item?.itemDiscount) || 0;
                   const lineTotal = Math.max(0, linePrice - lineDisc);
-                  const _variantKey = (() => {
-                    if (!_item?.productName?.trim()) return null;
-                    const attrs: Record<string, string> = {};
-                    if (_item.color?.trim()) attrs.color = _item.color.trim();
-                    if (_item.gender?.trim()) attrs.gender = _item.gender.trim();
-                    if (_item.size?.trim()) attrs.size = _item.size.trim();
-                    const attrParts = Object.entries(attrs).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => `${k}=${v.toLowerCase()}`).join(':');
-                    return attrParts ? `${_item.productName.toLowerCase()}:${attrParts}` : _item.productName.toLowerCase();
-                  })();
-                  const variantStock = _variantKey && variantMap ? variantMap[_variantKey] : undefined;
+                  const availabilityInput = getAvailabilityInput(_item);
+                  const variantStock = availabilityInput && variantMap
+                    ? variantMap[buildVariantLookupKey(availabilityInput.name, availabilityInput)]
+                    : undefined;
+                  const productStock = _item?.productName && stockMap ? stockMap[_item.productName] : undefined;
                   const itemStock = variantStock
                     ? { available: variantStock.available > 0, qty: variantStock.available, status: variantStock.status }
-                    : _item?.productName && stockMap
-                      ? { available: stockMap[_item.productName]?.available ?? false, qty: stockMap[_item.productName]?.qty ?? 0, status: undefined as undefined }
+                    : !availabilityInput && productStock
+                      ? { available: productStock.available, qty: productStock.qty, status: undefined as undefined }
                       : undefined;
                   const catalogLengths = getCatalogOptions(_item?.productName ?? '', 'length');
                   const lengthOpts = catalogLengths.length > 0 ? catalogLengths : globalWarehouseLengths;
@@ -817,24 +823,19 @@ export default function ChapanNewOrderPage() {
                 const linePrice = (Number(_item?.quantity) || 0) * (Number(_item?.unitPrice) || 0);
                 const lineDisc = Number(_item?.itemDiscount) || 0;
                 const lineTotal = Math.max(0, linePrice - lineDisc);
-                const _variantKey = (() => {
-                  if (!_item?.productName?.trim()) return null;
-                  const attrs: Record<string, string> = {};
-                  if (_item.color?.trim()) attrs.color = _item.color.trim();
-                  if (_item.gender?.trim()) attrs.gender = _item.gender.trim();
-                  if (_item.size?.trim()) attrs.size = _item.size.trim();
-                  const attrParts = Object.entries(attrs).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => `${k}=${v.toLowerCase()}`).join(':');
-                  return attrParts ? `${_item.productName.toLowerCase()}:${attrParts}` : _item.productName.toLowerCase();
-                })();
-                const variantStock = _variantKey && variantMap ? variantMap[_variantKey] : undefined;
+                const availabilityInput = getAvailabilityInput(_item);
+                const variantStock = availabilityInput && variantMap
+                  ? variantMap[buildVariantLookupKey(availabilityInput.name, availabilityInput)]
+                  : undefined;
+                const productStock = _item?.productName && stockMap ? stockMap[_item.productName] : undefined;
                 const itemStock = variantStock
                   ? { available: variantStock.available > 0, qty: variantStock.available, status: variantStock.status }
-                  : _item?.productName && stockMap
-                    ? { available: stockMap[_item.productName]?.available ?? false, qty: stockMap[_item.productName]?.qty ?? 0, status: undefined as undefined }
+                  : !availabilityInput && productStock
+                    ? { available: productStock.available, qty: productStock.qty, status: undefined as undefined }
                     : undefined;
                 const catalogLengths = getCatalogOptions(_item?.productName ?? '', 'length');
                 const lengthOpts = catalogLengths.length > 0 ? catalogLengths : globalWarehouseLengths;
-                const hasVariantAttrs = !!(_item?.color?.trim() || _item?.size?.trim() || _item?.gender?.trim());
+                const hasVariantAttrs = !!availabilityInput;
 
                 return (
                   <div key={field.id} className={styles.itemCard}>
@@ -959,17 +960,25 @@ export default function ChapanNewOrderPage() {
                     </div>
 
                     {_item?.productName?.trim() && (
-                      !hasVariantAttrs ? (
-                        <div className={styles.variantStockHint}>Укажите цвет, размер или пол для проверки остатка</div>
-                      ) : variantStock ? (
-                        variantStock.available > 0 ? (
-                          <div className={variantStock.status === 'low' ? styles.variantStockLow : styles.variantStockIn}>
-                            Остаток: {variantStock.available} шт.{variantStock.status === 'low' ? ' — мало' : ''}
-                          </div>
+                      hasVariantAttrs ? (
+                        variantStock ? (
+                          variantStock.available > 0 ? (
+                            <div className={variantStock.status === 'low' ? styles.variantStockLow : styles.variantStockIn}>
+                              Остаток: {variantStock.available} шт.{variantStock.status === 'low' ? ' — мало' : ''}
+                            </div>
+                          ) : (
+                            <div className={styles.variantStockOut}>Нет на складе</div>
+                          )
+                        ) : variantMap !== undefined ? (
+                          <div className={styles.variantStockHint}>Нет данных по складу</div>
+                        ) : null
+                      ) : productStock ? (
+                        productStock.available ? (
+                          <div className={styles.variantStockIn}>Остаток: {productStock.qty} шт.</div>
                         ) : (
                           <div className={styles.variantStockOut}>Нет на складе</div>
                         )
-                      ) : variantMap !== undefined ? (
+                      ) : stockMap !== undefined ? (
                         <div className={styles.variantStockHint}>Нет данных по складу</div>
                       ) : null
                     )}

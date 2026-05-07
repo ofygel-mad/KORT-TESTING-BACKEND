@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ChapanOrder } from '../../../../entities/order/types';
@@ -27,7 +27,7 @@ let mockStoreState = {
   },
 };
 
-vi.mock('../../../../features/workzone/chapan/store', () => ({
+vi.mock('@/features/workzone/chapan/store', () => ({
   useChapanUiStore: () => ({
     selectedOrderId: null,
     setSelectedOrderId: vi.fn(),
@@ -51,7 +51,7 @@ vi.mock('../../../../features/workzone/chapan/store', () => ({
   }),
 }));
 
-vi.mock('../../../../entities/order/queries', () => ({
+vi.mock('@/entities/order/queries', () => ({
   useOrders: (params: unknown) => useOrdersMock(params),
   useCreateOrder: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useTrashOrder: () => ({ mutate: vi.fn() }),
@@ -59,17 +59,21 @@ vi.mock('../../../../entities/order/queries', () => ({
   useOrgManagers: () => ({ data: [] }),
 }));
 
-vi.mock('../../../../entities/warehouse/queries', () => ({
+vi.mock('@/entities/warehouse/queries', () => ({
   useProductsAvailability: () => ({ data: undefined }),
   useVariantAvailability: () => ({ data: undefined }),
 }));
 
-vi.mock('../../../../entities/alert/queries', () => ({
+vi.mock('@/entities/alert/queries', () => ({
   useUnpaidAlerts: () => ({ data: undefined }),
 }));
 
-vi.mock('../../../../shared/hooks/useEmployeePermissions', () => ({
+vi.mock('@/shared/hooks/useEmployeePermissions', () => ({
   useEmployeePermissions: () => ({ isAbsolute: true }),
+}));
+
+vi.mock('@/shared/hooks/useRole', () => ({
+  useRole: () => ({ isOwner: true, isAdmin: false }),
 }));
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────

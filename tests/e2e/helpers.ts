@@ -73,6 +73,23 @@ export async function preparePage(page: Page) {
   });
 }
 
+export async function openCompanyRegistration(page: Page) {
+  await preparePage(page);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+  await page.locator('[data-photo-screen]').click({ force: true });
+  await expect(page.locator('[data-intro]')).toBeHidden({ timeout: 15_000 });
+
+  const openRegister = page.locator('[data-kort-action="register"]').first();
+  await expect(openRegister).toBeVisible({ timeout: 15_000 });
+  await openRegister.click();
+
+  const fields = page.locator('form input:not([type="checkbox"])');
+  await expect(fields).toHaveCount(6);
+  return fields;
+}
+
 export async function clearSession(page: Page) {
   await page.context().clearCookies();
   await page.goto('/', { waitUntil: 'domcontentloaded' });

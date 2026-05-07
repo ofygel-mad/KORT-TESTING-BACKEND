@@ -1140,6 +1140,14 @@ export interface VariantAvailabilityResult {
   itemName: string | null;
 }
 
+export interface VariantAvailabilityInput {
+  name: string;
+  color?: string;
+  size?: string;
+  gender?: string;
+  length?: string;
+}
+
 /** key = variantKey (e.g. "платье:color=красный:size=m") */
 export type VariantAvailabilityMap = Record<string, VariantAvailabilityResult>;
 

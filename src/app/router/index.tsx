@@ -59,6 +59,7 @@ const LandingPage = makePage(() => import('../../pages/landing'));
 const DevPanelPage = makePage(() => import('../../pages/dev'));
 
 // Auth pages
+const LoginPage         = makePage(() => import('../../pages/auth/login'));
 const AcceptInvitePage  = makePage(() => import('../../pages/auth/accept-invite'));
 const ResetPasswordPage = makePage(() => import('../../pages/auth/reset-password'));
 
@@ -472,7 +473,7 @@ export const appRouter = createBrowserRouter([
   },
 
   // ── Auth ───────────────────────────────────────────────
-  { path: '/auth/login',         element: <Navigate to="/" replace /> },
+  { path: '/auth/login',         element: <LoginPage /> },
   { path: '/auth/register',      element: <Navigate to="/" replace /> },
   { path: '/auth/accept-invite', element: <AcceptInvitePage /> },
   { path: '/reset-password',     element: <ResetPasswordPage /> },

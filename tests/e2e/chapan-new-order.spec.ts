@@ -1,6 +1,23 @@
 ﻿import { expect, test, type Page } from '@playwright/test';
 import { preparePage } from './helpers';
 
+function normalizeAvailabilityValue(value: string) {
+  return value.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function buildVariantKey(
+  name: string,
+  attrs: { color?: string; gender?: string; length?: string; size?: string },
+) {
+  const { name: _ignored, ...variantAttrs } = attrs as typeof attrs & { name?: string };
+  const parts = Object.entries(variantAttrs)
+    .filter(([, value]) => value?.trim())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, value]) => `${key}:${normalizeAvailabilityValue(value as string)}`);
+
+  return [normalizeAvailabilityValue(name), ...parts].join('|');
+}
+
 async function loginOwner(page: Page) {
   await preparePage(page);
 }
@@ -68,6 +85,17 @@ async function stubChapanOrderFormData(page: Page) {
                 options: [
                   { value: '44', label: '44' },
                   { value: '46', label: '46' },
+                ],
+              },
+              {
+                code: 'length',
+                label: '\u0414\u043b\u0438\u043d\u0430',
+                inputType: 'select',
+                isRequired: false,
+                affectsAvailability: true,
+                options: [
+                  { value: 'short', label: '\u041a\u043e\u0440\u043e\u0442\u043a\u0438\u0439' },
+                  { value: 'long', label: '\u0414\u043b\u0438\u043d\u043d\u044b\u0439' },
                 ],
               },
             ],
@@ -163,6 +191,48 @@ async function stubChapanOrderFormData(page: Page) {
       ]),
     });
   });
+
+  await page.route('**/api/v1/warehouse/products-availability', async (route) => {
+    const body = route.request().postDataJSON() as { names?: string[] };
+    const response = Object.fromEntries(
+      (body.names ?? []).map((name) => [
+        name,
+        {
+          available: true,
+          qty: 11,
+          itemName: name,
+        },
+      ]),
+    );
+
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(response),
+    });
+  });
+
+  await page.route('**/api/v1/warehouse/items/variant-availability', async (route) => {
+    const body = route.request().postDataJSON() as { variants?: Array<{ name: string; color?: string; size?: string; gender?: string; length?: string }> };
+    const response: Record<string, { qty: number; available: number; status: 'ok' | 'low' | 'none'; itemName: string | null }> = {};
+
+    for (const variant of body.variants ?? []) {
+      const key = buildVariantKey(variant.name, variant);
+      const qty = variant.length?.trim() ? 4 : 9;
+      response[key] = {
+        qty,
+        available: qty,
+        status: qty <= 5 ? 'low' : 'ok',
+        itemName: variant.name,
+      };
+    }
+
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(response),
+    });
+  });
 }
 
 async function openNewOrderPage(page: Page) {
@@ -198,6 +268,33 @@ async function fillOrderForm(page: Page, suffix: string) {
   return clientName;
 }
 
+async function addSecondItem(page: Page) {
+  await page.getByRole('button', { name: /\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u043f\u043e\u0437\u0438\u0446\u0438\u044e/ }).click();
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+
+  const product = page.getByLabel(/\u041c\u043e\u0434\u0435\u043b\u044c \u043f\u043e\u0437\u0438\u0446\u0438\u0438 2/);
+  await expect(product).toBeVisible({ timeout: 10_000 });
+  await product.fill('\u0427\u0430\u043f');
+  await product.press('ArrowDown');
+  await product.press('Enter');
+  await expect(product).toHaveValue('\u0427\u0430\u043f\u0430\u043d deluxe');
+
+  const size = page.getByLabel(/\u0420\u0430\u0437\u043c\u0435\u0440 \u043f\u043e\u0437\u0438\u0446\u0438\u0438 2/);
+  await size.fill('44');
+  await size.press('ArrowDown');
+  await size.press('Enter');
+  await expect(size).toHaveValue('44');
+
+  const length = page.getByLabel(/\u0414\u043b\u0438\u043d\u0430 \u0438\u0437\u0434\u0435\u043b\u0438\u044f \u0434\u043b\u044f \u043f\u043e\u0437\u0438\u0446\u0438\u0438 2/);
+  await length.selectOption({ label: '\u0414\u043b\u0438\u043d\u043d\u044b\u0439' });
+  await expect(length).toHaveValue('\u0414\u043b\u0438\u043d\u043d\u044b\u0439');
+
+  await page.getByLabel(/\u041a\u043e\u043b-\u0432\u043e \u043f\u043e\u0437\u0438\u0446\u0438\u0438 2/).fill('1');
+  await page.getByLabel(/\u0426\u0435\u043d\u0430 \u0437\u0430 \u0435\u0434\. \u043f\u043e\u0437\u0438\u0446\u0438\u0438 2/).fill('18000');
+  await expect(page.getByText(/\u041e\u0441\u0442\u0430\u0442\u043e\u043a: 4 \u0448\u0442\.\s*\u2014 \u043c\u0430\u043b\u043e/)).toBeVisible({ timeout: 10_000 });
+}
+
 test.describe('Chapan new order workflow', () => {
   test('creates an order and persists it in the list', async ({ page }) => {
     test.setTimeout(90_000);
@@ -229,6 +326,112 @@ test.describe('Chapan new order workflow', () => {
 
     await expect(page).toHaveURL(/\/workzone\/chapan\/orders(?:\/)?$/);
     await expect(page.getByText(clientName)).toBeVisible();
+    expect(errors, errors.join('\n')).toEqual([]);
+  });
+
+  test('creates a two-line order, scrolls to the bottom, and keeps stock badges accurate', async ({ page }) => {
+    test.setTimeout(120_000);
+    const errors: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    page.on('console', (message) => {
+      if (message.type() === 'error') {
+        errors.push(message.text());
+      }
+    });
+
+    await loginOwner(page);
+    await stubChapanOrderFormData(page);
+    await openNewOrderPage(page);
+
+    const clientName = await fillOrderForm(page, `two-line-${Date.now()}`);
+    await addSecondItem(page);
+
+    const responsePromise = page.waitForResponse((response) =>
+      response.request().method() === 'POST'
+      && response.url().includes('/api/v1/chapan/orders'),
+      { timeout: 10_000 },
+    );
+
+    await expect(page.getByRole('button', { name: /\u0421\u043e\u0437\u0434\u0430\u0442\u044c \u0437\u0430\u043a\u0430\u0437/ })).toBeEnabled();
+    await page.getByRole('button', { name: /\u0421\u043e\u0437\u0434\u0430\u0442\u044c \u0437\u0430\u043a\u0430\u0437/ }).click({ timeout: 5_000 });
+
+    const response = await responsePromise;
+    expect(response.status(), await response.text()).toBe(201);
+
+    await expect(page).toHaveURL(/\/workzone\/chapan\/orders(?:\/)?$/);
+    await expect(page.getByText(clientName)).toBeVisible();
+    expect(errors, errors.join('\n')).toEqual([]);
+  });
+
+  test('draft reset → new values → order created: full abandon-reset-reorder flow', async ({ page }) => {
+    test.setTimeout(180_000);
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+
+    await loginOwner(page);
+    await stubChapanOrderFormData(page);
+    await openNewOrderPage(page);
+
+    // Step 1: fill a partial order (first client), let autosave fire
+    await fillOrderForm(page, `draft-${Date.now()}`);
+    await page.waitForTimeout(1200); // autosave debounce is 800ms
+
+    // Step 2: navigate away WITHOUT submitting — draft should be saved
+    await page.goto('/workzone/chapan/orders', { waitUntil: 'domcontentloaded' });
+    await expect(page).toHaveURL(/\/workzone\/chapan\/orders/);
+
+    // Step 3: return to new order form — draft banner must appear
+    await stubChapanOrderFormData(page); // re-stub because new page context
+    await openNewOrderPage(page);
+    await expect(
+      page.getByText(/Восстановлен незавершённый черновик/),
+    ).toBeVisible({ timeout: 10_000 });
+
+    // Step 4: reset the draft
+    await page.getByRole('button', { name: /Сбросить/ }).click();
+    await expect(
+      page.getByText(/Восстановлен незавершённый черновик/),
+    ).not.toBeVisible({ timeout: 5_000 });
+
+    // Verify form is empty after reset
+    await expect(page.getByLabel(/ФИО клиента/)).toHaveValue('');
+    await expect(page.getByLabel(/Телефон KZ/)).toHaveValue('');
+    await expect(page.getByLabel(/Модель позиции 1/)).toHaveValue('');
+
+    // Step 5: fill a NEW order with different client data
+    const secondClient = `Second Client ${Date.now()}`;
+    const responsePromise = page.waitForResponse(
+      (r) => r.request().method() === 'POST' && r.url().includes('/api/v1/chapan/orders'),
+      { timeout: 15_000 },
+    );
+
+    await page.getByLabel(/ФИО клиента/).fill(secondClient);
+    await page.getByLabel(/Телефон KZ/).fill('+7 (702) 999-88-77');
+
+    const product = page.getByLabel(/Модель позиции 1/);
+    await product.fill('Чап');
+    await product.press('ArrowDown');
+    await product.press('Enter');
+
+    const size = page.getByLabel(/Размер позиции 1/);
+    await size.fill('44');
+    await size.press('ArrowDown');
+    await size.press('Enter');
+
+    await page.getByLabel(/Кол-во позиции 1/).fill('1');
+    await page.getByLabel(/Цена за ед\. позиции 1/).fill('20000');
+
+    // Step 6: submit — should create successfully
+    await expect(page.getByRole('button', { name: /Создать заказ/ })).toBeEnabled();
+    await page.getByRole('button', { name: /Создать заказ/ }).click();
+
+    const response = await responsePromise;
+    expect(response.status(), await response.text()).toBe(201);
+
+    // Step 7: navigated to list, new order visible
+    await expect(page).toHaveURL(/\/workzone\/chapan\/orders(?:\/)?$/);
+    await expect(page.getByText(secondClient)).toBeVisible();
+
     expect(errors, errors.join('\n')).toEqual([]);
   });
 
@@ -284,4 +487,3 @@ test.describe('Chapan new order workflow', () => {
     await expect(page.getByLabel(/\u041f\u0440\u043e\u0446\u0435\u043d\u0442 \u0441\u043a\u0438\u0434\u043a\u0438/)).toHaveValue('');
   });
 });
-

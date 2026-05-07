@@ -10,6 +10,7 @@ import { useAuthStore } from '../../../../../../shared/stores/auth';
 import { useEmployeePermissions } from '../../../../../../shared/hooks/useEmployeePermissions';
 import { useRole } from '../../../../../../shared/hooks/useRole';
 import { buildItemLine } from '../../../../../../shared/utils/itemLine';
+import { buildVariantAvailabilityInput, buildVariantLookupKey, type VariantAvailabilityInput } from '../../../../../../shared/utils/variantAvailability';
 import { useChapanUiStore } from '../../../../../workzone/chapan/store';
 import { useUnpaidAlerts } from '../../../../../../entities/alert/queries';
 import OrderDetailDrawer from './OrderDetailDrawer';
@@ -36,16 +37,6 @@ const DEMANDING_LABEL = 'Требовательный';
 
 function fmt(n: number) { return new Intl.NumberFormat('ru-KZ', { maximumFractionDigits: 0 }).format(n) + ' ₸'; }
 function isOverdue(d: string | null) { return !!d && new Date(d) < new Date(); }
-
-function norm(s: string) { return s.trim().toLowerCase().replace(/\s+/g, ' '); }
-function buildVariantLookupKey(name: string, color?: string | null, size?: string | null, gender?: string | null): string {
-  const parts: string[] = [];
-  if (color?.trim()) parts.push(`color:${norm(color)}`);
-  if (gender?.trim()) parts.push(`gender:${norm(gender)}`);
-  if (size?.trim()) parts.push(`size:${norm(size)}`);
-  parts.sort();
-  return [norm(name), ...parts].join('|');
-}
 function fmtDate(d: string | null) {
   if (!d) return '';
   return new Date(d).toLocaleDateString('ru-KZ', { day: '2-digit', month: 'short' });
@@ -373,16 +364,16 @@ const setViewMode = (mode: ViewMode) => {
 
   const newOrderVariants = useMemo(() => {
     const seen = new Set<string>();
-    const result: Array<{ name: string; color?: string; size?: string; gender?: string }> = [];
+    const result: VariantAvailabilityInput[] = [];
     for (const o of orders) {
       if (o.status !== 'new' && o.status !== 'confirmed') continue;
       for (const item of o.items ?? []) {
-        if (!item.productName?.trim()) continue;
-        if (!item.color?.trim() && !item.size?.trim()) continue;
-        const key = buildVariantLookupKey(item.productName, item.color, item.size, item.gender);
+        const variant = buildVariantAvailabilityInput(item.productName, item);
+        if (!variant) continue;
+        const key = buildVariantLookupKey(variant.name, variant);
         if (seen.has(key)) continue;
         seen.add(key);
-        result.push({ name: item.productName, color: item.color ?? undefined, size: item.size ?? undefined, gender: item.gender ?? undefined });
+        result.push(variant);
       }
     }
     return result;
@@ -876,9 +867,9 @@ const OrderCard = memo(function OrderCard({ order, onSelectOrder, hasAlert, stoc
   const first = order.items?.[0];
   const more = (order.items?.length ?? 0) - 1;
   const isNewOrConfirmed = order.status === 'new' || order.status === 'confirmed';
-  const hasVariantData = !!first?.productName && !!(first.color?.trim() || first.size?.trim());
-  const stockInfo: VariantAvailabilityResult | undefined = (isNewOrConfirmed && hasVariantData && stockMap)
-    ? stockMap[buildVariantLookupKey(first!.productName!, first!.color, first!.size, first!.gender)]
+  const variantInput = first?.productName ? buildVariantAvailabilityInput(first.productName, first) : null;
+  const stockInfo: VariantAvailabilityResult | undefined = (isNewOrConfirmed && variantInput && stockMap)
+    ? stockMap[buildVariantLookupKey(variantInput.name, variantInput)]
     : undefined;
   const isUrgent = (order.urgency ?? order.priority) === 'urgent';
   const isDemanding = order.isDemandingClient ?? (order.priority === 'vip');
@@ -1078,9 +1069,9 @@ const OrderRow = memo(function OrderRow({ order, onSelectOrder, hasAlert, stockM
   const first = order.items?.[0];
   const more = (order.items?.length ?? 0) - 1;
   const isNewOrConfirmed = order.status === 'new' || order.status === 'confirmed';
-  const hasVariantData = !!first?.productName && !!(first.color?.trim() || first.size?.trim());
-  const stockInfo: VariantAvailabilityResult | undefined = (isNewOrConfirmed && hasVariantData && stockMap)
-    ? stockMap[buildVariantLookupKey(first!.productName!, first!.color, first!.size, first!.gender)]
+  const variantInput = first?.productName ? buildVariantAvailabilityInput(first.productName, first) : null;
+  const stockInfo: VariantAvailabilityResult | undefined = (isNewOrConfirmed && variantInput && stockMap)
+    ? stockMap[buildVariantLookupKey(variantInput.name, variantInput)]
     : undefined;
   const isUrgent = (order.urgency ?? order.priority) === 'urgent';
   const isDemanding = order.isDemandingClient ?? (order.priority === 'vip');

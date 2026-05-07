@@ -6,7 +6,9 @@ import type {
   CreateWarehouseZoneDto, CreateWarehouseBinDto, UpsertWarehouseVariantDto,
   PostStockReceiptDto, PostStockTransferDto, CreateStockReservationDto,
   WarehousePoolPolicyDto, ImportOpeningBalanceRow,
+  VariantAvailabilityInput,
 } from './types';
+import { buildVariantLookupKey } from '../../shared/utils/variantAvailability';
 
 // New query key for formula
 const warehouseFormulaKey = (id: string) => ['warehouse', 'item-formula', id] as const;
@@ -636,12 +638,19 @@ export const useProductsAvailability = (names: string[]) => {
 };
 
 export const useVariantAvailability = (
-  variants: Array<{ name: string; color?: string; size?: string; gender?: string }>,
+  variants: VariantAvailabilityInput[],
 ) => {
   const stable = JSON.stringify(
     [...variants]
       .filter((v) => v.name?.trim())
-      .sort((a, b) => a.name.localeCompare(b.name)),
+      .map((variant) => ({
+        name: variant.name.trim(),
+        color: variant.color?.trim() || undefined,
+        gender: variant.gender?.trim() || undefined,
+        length: variant.length?.trim() || undefined,
+        size: variant.size?.trim() || undefined,
+      }))
+      .sort((a, b) => buildVariantLookupKey(a.name, a).localeCompare(buildVariantLookupKey(b.name, b))),
   );
   return useQuery({
     queryKey: ['warehouse_variant_availability', stable],

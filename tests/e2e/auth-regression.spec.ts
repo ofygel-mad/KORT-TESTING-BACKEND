@@ -1,5 +1,5 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
-import { preparePage } from './helpers';
+import { openCompanyRegistration, preparePage } from './helpers';
 
 const E2E_API_BASE_URL = process.env.E2E_API_BASE_URL || `http://${process.env.E2E_HOST || '127.0.0.1'}:${process.env.E2E_BACKEND_PORT || '8002'}/api/v1`;
 
@@ -21,11 +21,7 @@ async function expectFullyVisibleInViewport(page: Page, locator: Locator) {
 test('company registration submits on Enter from password confirmation', async ({ page }) => {
   const unique = Date.now();
 
-  await preparePage(page);
-  await page.goto('/auth/register');
-
-  const fields = page.locator('form input:not([type="checkbox"])');
-  await expect(fields).toHaveCount(6);
+  const fields = await openCompanyRegistration(page);
 
   await fields.nth(0).fill(`Test Company ${unique}`);
   await fields.nth(1).fill(`Test Owner ${unique}`);
@@ -40,11 +36,7 @@ test('company registration submits on Enter from password confirmation', async (
 
 test('company registration footer stays visible on short desktop viewport', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 640 });
-  await preparePage(page);
-  await page.goto('/auth/register');
-
-  const fields = page.locator('form input:not([type="checkbox"])');
-  await expect(fields).toHaveCount(6);
+  const fields = await openCompanyRegistration(page);
 
   await fields.nth(0).fill('Test');
   await fields.nth(1).fill('Zhasaral Askhat');

@@ -11,8 +11,8 @@ test('chapan orders route opens without crashing', async ({ page }) => {
 
   await expect(page).toHaveURL(/\/workzone\/chapan\/orders$/);
   await expect(page.getByText('Чапан', { exact: true })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Заказы' })).toBeVisible();
-  await expect(page.getByRole('button', { name: /\+ Создать заказ/i })).toBeVisible();
+  await expect(page.getByRole('link', { name: /^\u0417\u0430\u043a\u0430\u0437\u044b$/ })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^\u0422\u0435\u0441\u0442-\u0434\u0430\u043d\u043d\u044b\u0435$/ })).toBeVisible();
 });
 
 test('chapan warehouse route opens without crashing', async ({ page }) => {

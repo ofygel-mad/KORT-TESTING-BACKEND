@@ -22,6 +22,7 @@ import type {
   WarehouseRouteHistoryResponse, WarehouseSlaEscalationResult, WarehousePoolPolicyDto,
   TransitZonesResponse, TransitEntriesResponse,
   WarehouseProductPhoto,
+  VariantAvailabilityInput,
 } from './types';
 
 export const warehouseApi = {
@@ -201,7 +202,7 @@ export const warehouseApi = {
     api.post<ProductsAvailabilityMap>('/warehouse/products-availability', { names }),
 
   // Chapan integration: check stock by full variant (name + color/size/gender)
-  checkVariants: (variants: Array<{ name: string; color?: string; size?: string; gender?: string }>) =>
+  checkVariants: (variants: VariantAvailabilityInput[]) =>
     api.post<VariantAvailabilityMap>('/warehouse/items/variant-availability', { variants }),
 
   // Layout rollback
