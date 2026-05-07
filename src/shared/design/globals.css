@@ -188,6 +188,22 @@
   --radius-pill:           32px;
   --radius-pill-sm:        40px;
 
+  /* ── Mobile / responsive tokens (Phase 0 mobile optimization) ── */
+  --bp-xs: 380px;
+  --bp-sm: 480px;
+  --bp-md: 768px;
+  --bp-lg: 1024px;
+  --bp-xl: 1280px;
+  --sp-mobile-page-x:    16px;
+  --sp-mobile-page-x-xs: 12px;
+  --sp-mobile-card-x:    14px;
+  --sp-mobile-section-y: 18px;
+  --tap-min: 44px;
+  --z-sheet: 280;
+
+  /* visualViewport-aware fallbacks (synced from useViewportProfile) */
+  --vvh: 100vh;
+  --vk-bottom: 0px;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -860,6 +876,23 @@ header, nav, main, aside, section, article,
 @media (prefers-reduced-motion:reduce) {
   *,*::before,*::after { animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important; }
 }
+
+/* ── Mobile utility classes (Phase 0 mobile optimization) ──────────────────── */
+/* opt-in tap-target enforcement on mobile — wrap interactive elements that
+   need to honor the 44px Apple/WCAG minimum (forms, list rows, FABs). */
+.kort-tap { min-height: var(--tap-min); min-width: var(--tap-min); }
+@media (max-width: 768px) {
+  .kort-tap-mobile { min-height: var(--tap-min); }
+}
+
+/* lazy-render long lists — defers paint cost until scroll proximity */
+.cv-auto { content-visibility: auto; contain-intrinsic-size: 0 96px; }
+.cv-auto-row { content-visibility: auto; contain-intrinsic-size: 0 56px; }
+
+/* respect notch / home indicator on fixed-bottom UI */
+.kort-safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.kort-safe-top { padding-top: env(safe-area-inset-top, 0px); }
+.kort-safe-x { padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px); }
 
 
 .kort-page {

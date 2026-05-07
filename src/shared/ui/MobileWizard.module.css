@@ -1,0 +1,150 @@
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-drawer);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-canvas);
+  /* fill the *visual* viewport, so the OS keyboard never crops the form */
+  height: var(--vvh, 100dvh);
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* ── Progress bar ────────────────────────────────────────────────────────── */
+.progressBar {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 16px 12px;
+  background: color-mix(in srgb, var(--bg-canvas) 92%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.progressTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: var(--text-size-sm);
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+
+.cancelBtn {
+  background: none;
+  border: none;
+  padding: 4px 8px;
+  margin-left: -8px;
+  font-size: var(--text-size-base);
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  min-height: var(--tap-min);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.cancelBtn:hover { background: var(--bg-hover); }
+.cancelBtn:active { transform: var(--feedback-soft-press); }
+
+.stepCounter { font-variant-numeric: tabular-nums; }
+
+.dots {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.dot {
+  flex: 1;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--border-subtle);
+  transition: background var(--motion-fast) var(--motion-ease);
+}
+
+.dotDone   { background: var(--fill-accent); }
+.dotActive { background: var(--fill-accent); box-shadow: 0 0 0 3px var(--fill-accent-soft); }
+
+.stepTitle {
+  font-size: var(--text-size-xl);
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  margin-top: 2px;
+}
+
+/* ── Body ────────────────────────────────────────────────────────────────── */
+.body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 14px var(--sp-mobile-page-x) calc(96px + max(env(safe-area-inset-bottom, 0px), var(--vk-bottom, 0px)));
+  touch-action: pan-y;
+}
+
+@media (max-width: 380px) {
+  .body { padding-left: var(--sp-mobile-page-x-xs); padding-right: var(--sp-mobile-page-x-xs); }
+}
+
+.stepWrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-mobile-section-y);
+}
+
+/* ── Action bar ──────────────────────────────────────────────────────────── */
+.actionBar {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  gap: 10px;
+  padding: 12px var(--sp-mobile-page-x);
+  padding-bottom: calc(12px + max(env(safe-area-inset-bottom, 0px), var(--vk-bottom, 0px)));
+  background: color-mix(in srgb, var(--bg-canvas) 94%, transparent);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid var(--border-subtle);
+  box-shadow: 0 -8px 24px -16px rgba(0,0,0,0.18);
+}
+
+.btn {
+  flex: 1;
+  min-height: var(--tap-min);
+  border-radius: var(--radius-lg);
+  border: 1px solid transparent;
+  font-size: var(--text-size-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--motion-fast) var(--motion-ease), transform var(--motion-fast) var(--motion-ease);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btnPrimary {
+  background: var(--fill-accent);
+  color: var(--text-on-accent);
+  box-shadow: var(--shadow-accent);
+}
+.btnPrimary:hover  { filter: brightness(1.04); }
+.btnPrimary:active { transform: var(--feedback-soft-press); }
+.btnPrimary[disabled] { opacity: 0.55; cursor: not-allowed; box-shadow: none; }
+
+.btnGhost {
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  border-color: var(--border-default);
+  flex: 0 0 auto;
+  min-width: 96px;
+}
+.btnGhost:hover  { background: var(--bg-hover); color: var(--text-primary); }
+.btnGhost:active { transform: var(--feedback-soft-press); }
+.btnGhost[disabled] { opacity: 0.5; cursor: not-allowed; }

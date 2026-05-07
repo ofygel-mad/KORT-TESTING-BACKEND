@@ -142,6 +142,21 @@ export const overlayVariants = {
   exit:    { opacity: 0, transition: { duration: (duration.base - 60) / 1000 } },
 } as const;
 
+// ─── Bottom sheet — slides up from screen bottom (mobile-first) ────────────
+export const bottomSheetVariants = {
+  hidden:  { y: '100%', opacity: 0.6 },
+  visible: {
+    y:       0,
+    opacity: 1,
+    transition: { duration: duration.sheet / 1000, ease: easing.standard },
+  },
+  exit: {
+    y:       '100%',
+    opacity: 0.6,
+    transition: { duration: (duration.sheet - 40) / 1000, ease: easing.exit },
+  },
+} as const;
+
 // ─── List stagger ─────────────────────────────────────────────────────────────
 /**
  * Для списков карточек или строк.

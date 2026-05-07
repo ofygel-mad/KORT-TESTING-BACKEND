@@ -223,44 +223,27 @@ function parseOptionalInteger(value: string) {
   return Number.isFinite(n) ? Math.trunc(n) : undefined;
 }
 
-function buildPayloadItems(items: FormData['items'], orderDiscount: number) {
-  const discountedLines = items.map((item) => {
+function buildPayloadItems(items: FormData['items']) {
+  return items.map((item) => {
     const quantity = Number(item.quantity) || 0;
     const unitPrice = Number(item.unitPrice) || 0;
     const lineTotal = quantity * unitPrice;
+    // Keep order-level discount separate; only per-item discount is baked into item price.
     const itemDiscount = Math.min(Number(item.itemDiscount) || 0, lineTotal);
-    return {
-      item,
-      quantity,
-      lineTotal: Math.max(0, lineTotal - itemDiscount),
-    };
-  });
-
-  const subtotal = discountedLines.reduce((sum, line) => sum + line.lineTotal, 0);
-  const safeOrderDiscount = Math.min(orderDiscount, subtotal);
-  let remainingDiscount = safeOrderDiscount;
-
-  return discountedLines.map((line, index) => {
-    const proportionalDiscount = index === discountedLines.length - 1
-      ? remainingDiscount
-      : subtotal > 0
-        ? safeOrderDiscount * (line.lineTotal / subtotal)
-        : 0;
-    const finalLineTotal = Math.max(0, line.lineTotal - proportionalDiscount);
-    remainingDiscount = Math.max(0, remainingDiscount - proportionalDiscount);
-    const effectiveUnitPrice = line.quantity > 0
-      ? Number((finalLineTotal / line.quantity).toFixed(4))
+    const finalLineTotal = Math.max(0, lineTotal - itemDiscount);
+    const effectiveUnitPrice = quantity > 0
+      ? Number((finalLineTotal / quantity).toFixed(4))
       : 0;
 
     return {
-      productName: line.item.productName,
-      color: line.item.color?.trim() || undefined,
-      gender: line.item.gender?.trim() || undefined,
-      length: line.item.length?.trim() || undefined,
-      size: line.item.size,
-      quantity: line.quantity,
+      productName: item.productName,
+      color: item.color?.trim() || undefined,
+      gender: item.gender?.trim() || undefined,
+      length: item.length?.trim() || undefined,
+      size: item.size,
+      quantity,
       unitPrice: effectiveUnitPrice,
-      workshopNotes: line.item.workshopNotes || undefined,
+      workshopNotes: item.workshopNotes || undefined,
     };
   });
 }
@@ -534,7 +517,7 @@ export default function ChapanNewOrderPage() {
 
     const hasPrepayment = (data.prepayment ?? 0) > 0;
     const isMixed = data.paymentMethod === 'mixed';
-    const payloadItems = buildPayloadItems(data.items, orderDiscount);
+    const payloadItems = buildPayloadItems(data.items);
 
     let created;
     try {
