@@ -159,6 +159,38 @@
   color: var(--ch-text-muted);
 }
 
+.viewToggle {
+  display: flex;
+  gap: 2px;
+  border: 1px solid color-mix(in srgb, var(--ch-accent) 16%, var(--ch-border));
+  border-radius: 10px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.viewBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  min-height: 40px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--ch-text-muted);
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.viewBtn:hover {
+  background: color-mix(in srgb, var(--ch-accent-soft) 60%, transparent);
+  color: var(--ch-text);
+}
+
+.viewBtnActive {
+  background: color-mix(in srgb, var(--ch-accent-soft) 80%, var(--ch-card));
+  color: var(--ch-accent);
+}
+
 .filterBtn,
 .onlySelBtn {
   display: inline-flex;

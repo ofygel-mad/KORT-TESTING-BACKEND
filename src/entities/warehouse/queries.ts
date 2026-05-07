@@ -1,4 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueries, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { toast } from 'sonner';
 import { warehouseApi, warehouseCatalogApi, productPhotosApi } from './api';
 import type {
@@ -1008,4 +1009,45 @@ export const useDeleteProductPhoto = (productId: string) => {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['warehouse', 'catalog', 'product-photos', productId] }),
     onError: () => toast.error('Не удалось удалить фото'),
   });
+};
+
+// ── Workshop Photo Map ─────────────────────────────────────────────────────────
+// Builds a productName → first-photo-URL map for the card view in the Workshop.
+// Uses batch useQueries so each product's photos are independently cached.
+export const useWorkshopPhotoMap = (productNames: string[], enabled = true): Map<string, string> => {
+  const { data: products = [] } = useCatalogProducts();
+
+  const nameToId = useMemo(
+    () => new Map(products.map((p) => [p.name, p.id])),
+    [products],
+  );
+
+  const relevantProducts = useMemo(() => {
+    if (!enabled) return [];
+    return [...new Set(productNames)].flatMap((name) => {
+      const id = nameToId.get(name);
+      return id ? [{ name, id }] : [];
+    });
+  }, [productNames, nameToId, enabled]);
+
+  const photoQueries = useQueries({
+    queries: relevantProducts.map(({ id }) => ({
+      queryKey: ['warehouse', 'catalog', 'product-photos', id] as const,
+      queryFn: () => productPhotosApi.list(id),
+      staleTime: 5 * 60_000,
+      enabled,
+    })),
+  });
+
+  return useMemo(() => {
+    const map = new Map<string, string>();
+    relevantProducts.forEach(({ name, id }, idx) => {
+      const photos = photoQueries[idx]?.data ?? [];
+      if (photos.length > 0) {
+        const photo = photos[0];
+        map.set(name, photo.fileUrl ?? productPhotosApi.fileUrl(id, photo.id));
+      }
+    });
+    return map;
+  }, [relevantProducts, photoQueries]);
 };

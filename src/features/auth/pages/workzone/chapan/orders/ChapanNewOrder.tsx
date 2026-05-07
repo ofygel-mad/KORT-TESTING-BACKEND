@@ -697,9 +697,11 @@ export default function ChapanNewOrderPage() {
                     ? variantMap[buildVariantLookupKey(availabilityInput.name, availabilityInput)]
                     : undefined;
                   const productStock = _item?.productName && stockMap ? stockMap[_item.productName] : undefined;
+                  const productFields = warehouseProductMap[_item?.productName?.trim() ?? ''];
+                  const productHasVariantDimensions = !!(productFields?.some(f => f.affectsAvailability));
                   const itemStock = variantStock
                     ? { available: variantStock.available > 0, qty: variantStock.available, status: variantStock.status }
-                    : !availabilityInput && productStock
+                    : !availabilityInput && !productHasVariantDimensions && productStock
                       ? { available: productStock.available, qty: productStock.qty, status: undefined as undefined }
                       : undefined;
                   const catalogLengths = getCatalogOptions(_item?.productName ?? '', 'length');
@@ -828,14 +830,11 @@ export default function ChapanNewOrderPage() {
                   ? variantMap[buildVariantLookupKey(availabilityInput.name, availabilityInput)]
                   : undefined;
                 const productStock = _item?.productName && stockMap ? stockMap[_item.productName] : undefined;
-                const itemStock = variantStock
-                  ? { available: variantStock.available > 0, qty: variantStock.available, status: variantStock.status }
-                  : !availabilityInput && productStock
-                    ? { available: productStock.available, qty: productStock.qty, status: undefined as undefined }
-                    : undefined;
+                const productFields = warehouseProductMap[_item?.productName?.trim() ?? ''];
+                const productHasVariantDimensions = !!(productFields?.some(f => f.affectsAvailability));
                 const catalogLengths = getCatalogOptions(_item?.productName ?? '', 'length');
                 const lengthOpts = catalogLengths.length > 0 ? catalogLengths : globalWarehouseLengths;
-                const hasVariantAttrs = !!availabilityInput;
+                const hasVariantAttrs = productHasVariantDimensions || !!availabilityInput;
 
                 return (
                   <div key={field.id} className={styles.itemCard}>
@@ -961,7 +960,9 @@ export default function ChapanNewOrderPage() {
 
                     {_item?.productName?.trim() && (
                       hasVariantAttrs ? (
-                        variantStock ? (
+                        !availabilityInput ? (
+                          <div className={styles.variantStockHint}>Укажите параметры для просмотра остатка</div>
+                        ) : variantStock ? (
                           variantStock.available > 0 ? (
                             <div className={variantStock.status === 'low' ? styles.variantStockLow : styles.variantStockIn}>
                               Остаток: {variantStock.available} шт.{variantStock.status === 'low' ? ' — мало' : ''}

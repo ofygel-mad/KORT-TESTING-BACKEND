@@ -1,5 +1,5 @@
 import { useDeferredValue, useMemo, useState, type CSSProperties } from 'react';
-import { AlertTriangle, CalendarDays, Factory, MessageCircle, Search, Star, X, XCircle } from 'lucide-react';
+import { AlertTriangle, CalendarDays, Factory, LayoutGrid, LayoutList, MessageCircle, Search, Star, X, XCircle } from 'lucide-react';
 import {
   useAssignWorker,
   useClaimProductionTask,
@@ -16,8 +16,16 @@ import { useAuthStore } from '@/shared/stores/auth';
 import { useChapanPermissions } from '@/shared/hooks/useChapanPermissions';
 import { buildItemLine } from '../../../../shared/utils/itemLine';
 import WorkshopTaskCard from './WorkshopTaskCard';
+import WorkshopCardView from './WorkshopCardView';
 import { sortWorkshopTasks } from './workshopSort';
+import { useWorkshopPhotoMap } from '../../../../entities/warehouse/queries';
 import styles from './ChapanProduction.module.css';
+
+type WorkshopViewMode = 'table' | 'card';
+
+function viewStorageKey(userId?: string) {
+  return `chapan_production_view_${userId ?? 'guest'}`;
+}
 
 function applySearch(tasks: ProductionTask[], q: string): ProductionTask[] {
   if (!q.trim()) return tasks;
@@ -142,6 +150,16 @@ export default function ChapanProductionPage() {
   const [rejectModal, setRejectModal] = useState<{ crId: string; orderNumber: string } | null>(null);
   const [rejectReason, setRejectReason] = useState('');
 
+  // View mode (table | card) — persisted in localStorage per user
+  const [viewMode, setViewModeState] = useState<WorkshopViewMode>(() => {
+    const saved = localStorage.getItem(viewStorageKey(userId));
+    return saved === 'card' ? 'card' : 'table';
+  });
+  const setViewMode = (mode: WorkshopViewMode) => {
+    setViewModeState(mode);
+    localStorage.setItem(viewStorageKey(userId), mode);
+  };
+
   // Handlers
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) => {
@@ -210,6 +228,10 @@ export default function ChapanProductionPage() {
     }
     return result;
   }, [workshopData, pendingDoneIds, deferredSearch, dueDateFilter, acceptedFilter, showOnlySelected, selectedIds]);
+
+  // Photo map — only fetched when card view is active
+  const taskProductNames = useMemo(() => visibleTasks.map((t) => t.productName), [visibleTasks]);
+  const photoMap = useWorkshopPhotoMap(taskProductNames, viewMode === 'card');
 
   return (
     <div className={styles.root}>
@@ -352,6 +374,22 @@ export default function ChapanProductionPage() {
           </div>
           <DatePickerPopover label="Срок сдачи" value={dueDateFilter} onChange={setDueDateFilter} />
           <DatePickerPopover label="Принят" value={acceptedFilter} onChange={setAcceptedFilter} />
+          <div className={styles.viewToggle}>
+            <button
+              className={`${styles.viewBtn} ${viewMode === 'table' ? styles.viewBtnActive : ''}`}
+              onClick={() => setViewMode('table')}
+              title="Таблица"
+            >
+              <LayoutList size={15} />
+            </button>
+            <button
+              className={`${styles.viewBtn} ${viewMode === 'card' ? styles.viewBtnActive : ''}`}
+              onClick={() => setViewMode('card')}
+              title="Карточки"
+            >
+              <LayoutGrid size={15} />
+            </button>
+          </div>
           {selectedIds.size > 0 && (
             <button
               className={`${styles.onlySelBtn} ${showOnlySelected ? styles.active : ''}`}
@@ -379,56 +417,88 @@ export default function ChapanProductionPage() {
         </div>
       )}
 
-      {/* ── Shared horizontal scroll wrapper ──────────────────────────── */}
-      <div className={styles.tableScrollWrap}>
-        {/* ── Table Header ────────────────────────────────────────────────── */}
-        <div className={styles.tableHeader}>
-          <div className={styles.tableHeaderCol}>✓</div>
-          <div className={styles.tableHeaderCol}>!</div>
-          <div className={styles.tableHeaderCol}>№</div>
-          <div className={styles.tableHeaderCol}>Товар</div>
-          <div className={styles.tableHeaderCol}>Пол</div>
-          <div className={styles.tableHeaderCol}>Длина</div>
-          <div className={styles.tableHeaderCol}>Цвет</div>
-          <div className={styles.tableHeaderCol}>Кол.во</div>
-          <div className={styles.tableHeaderCol}>Разм.</div>
-          <div className={styles.tableHeaderCol}>Принят</div>
-          <div className={styles.tableHeaderCol}>Срок</div>
-          <div className={styles.tableHeaderCol}>Действие</div>
-        </div>
+      {/* ── Table view ────────────────────────────────────────────────────── */}
+      {viewMode === 'table' && (
+        <div className={styles.tableScrollWrap}>
+          <div className={styles.tableHeader}>
+            <div className={styles.tableHeaderCol}>✓</div>
+            <div className={styles.tableHeaderCol}>!</div>
+            <div className={styles.tableHeaderCol}>№</div>
+            <div className={styles.tableHeaderCol}>Товар</div>
+            <div className={styles.tableHeaderCol}>Пол</div>
+            <div className={styles.tableHeaderCol}>Длина</div>
+            <div className={styles.tableHeaderCol}>Цвет</div>
+            <div className={styles.tableHeaderCol}>Кол.во</div>
+            <div className={styles.tableHeaderCol}>Разм.</div>
+            <div className={styles.tableHeaderCol}>Принят</div>
+            <div className={styles.tableHeaderCol}>Срок</div>
+            <div className={styles.tableHeaderCol}>Действие</div>
+          </div>
 
-        {/* ── Card List ──────────────────────────────────────────────────── */}
-        <div className={styles.cardList}>
-        {isLoading && (
-          <div className={styles.emptyState}>
-            <div className={styles.emptyText}>Загрузка...</div>
+          <div className={styles.cardList}>
+            {isLoading && (
+              <div className={styles.emptyState}>
+                <div className={styles.emptyText}>Загрузка...</div>
+              </div>
+            )}
+            {!isLoading && visibleTasks.length === 0 && (
+              <div className={styles.emptyState}>
+                <div className={styles.emptyIcon}>📋</div>
+                <div className={styles.emptyText}>Нет заданий</div>
+                <div className={styles.emptySubtext}>Все позиции выполнены или отфильтрованы</div>
+              </div>
+            )}
+            {visibleTasks.map((task) => (
+              <WorkshopTaskCard
+                key={task.id}
+                task={task}
+                isSelected={selectedIds.has(task.id)}
+                onToggleSelect={toggleSelect}
+                onMarkDone={handleMarkDone}
+                isPending={pendingDoneIds.has(task.id)}
+                {...(canManageProduction
+                  ? {
+                      onFlag: handleFlagTask,
+                      onReturnToQueue: handleReturnToQueue,
+                    }
+                  : {})}
+              />
+            ))}
           </div>
-        )}
-        {!isLoading && visibleTasks.length === 0 && (
-          <div className={styles.emptyState}>
-            <div className={styles.emptyIcon}>📋</div>
-            <div className={styles.emptyText}>Нет заданий</div>
-            <div className={styles.emptySubtext}>Все позиции выполнены или отфильтрованы</div>
-          </div>
-        )}
-        {visibleTasks.map((task) => (
-          <WorkshopTaskCard
-            key={task.id}
-            task={task}
-            isSelected={selectedIds.has(task.id)}
-            onToggleSelect={toggleSelect}
-            onMarkDone={handleMarkDone}
-            isPending={pendingDoneIds.has(task.id)}
-            {...(canManageProduction
-              ? {
-                  onFlag: handleFlagTask,
-                  onReturnToQueue: handleReturnToQueue,
-                }
-              : {})}
-          />
-        ))}
         </div>
-      </div>
+      )}
+
+      {/* ── Card view ─────────────────────────────────────────────────────── */}
+      {viewMode === 'card' && (
+        <>
+          {isLoading && (
+            <div className={styles.cardList}>
+              <div className={styles.emptyState}>
+                <div className={styles.emptyText}>Загрузка...</div>
+              </div>
+            </div>
+          )}
+          {!isLoading && visibleTasks.length === 0 && (
+            <div className={styles.cardList}>
+              <div className={styles.emptyState}>
+                <div className={styles.emptyIcon}>📋</div>
+                <div className={styles.emptyText}>Нет заданий</div>
+                <div className={styles.emptySubtext}>Все позиции выполнены или отфильтрованы</div>
+              </div>
+            </div>
+          )}
+          {!isLoading && visibleTasks.length > 0 && (
+            <WorkshopCardView
+              tasks={visibleTasks}
+              selectedIds={selectedIds}
+              onToggleSelect={toggleSelect}
+              pendingDoneIds={pendingDoneIds}
+              photoMap={photoMap}
+              onMarkDone={handleMarkDone}
+            />
+          )}
+        </>
+      )}
     </div>
   );
 }
