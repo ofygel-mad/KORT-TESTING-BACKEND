@@ -373,7 +373,7 @@ export default function ChapanNewOrderPage() {
     .map((item) => buildVariantAvailabilityInput(
       item.productName?.trim() ?? '',
       item,
-      warehouseProductMap[item.productName?.trim() ?? ''],
+      getEffectiveFields(item.productName?.trim() ?? ''),
     ))
     .filter((variant): variant is VariantAvailabilityInput => Boolean(variant));
   const { data: stockMap } = useProductsAvailability(deferredProductNames);
@@ -518,12 +518,27 @@ export default function ChapanNewOrderPage() {
   const globalWarehouseColors = fieldDefinitions?.find(d => d.code === 'color')?.options.map(o => o.label) ?? [];
   // Global length options from warehouse field definitions (single source of truth)
   const globalWarehouseLengths = fieldDefinitions?.find(d => d.code === 'length')?.options.map(o => o.label) ?? [];
+
+  // When a product has no per-product order form config, fall back to global field definitions
+  // so that non-axis fields like gender are correctly excluded from the variant lookup key.
+  function getEffectiveFields(productName: string) {
+    return warehouseProductMap[productName?.trim() ?? '']
+      ?? fieldDefinitions?.map(def => ({
+          code: def.code,
+          label: def.label,
+          inputType: def.inputType,
+          isRequired: false as const,
+          affectsAvailability: def.affectsAvailability,
+          options: [] as Array<{ value: string; label: string }>,
+        }));
+  }
+
   function getAvailabilityInput(item?: FormData['items'][number]) {
     if (!item?.productName?.trim()) return null;
     return buildVariantAvailabilityInput(
       item.productName.trim(),
       item,
-      warehouseProductMap[item.productName.trim()],
+      getEffectiveFields(item.productName.trim()),
     );
   }
   // Helper: get catalog options for a field code given current productName
