@@ -1,9 +1,9 @@
 .root {
   position: relative;
   display: flex;
-  min-height: 100vh;
-  min-height: 100svh;
-  min-height: 100dvh;
+  height: 100vh;
+  height: 100svh;
+  height: 100dvh;
   overflow-x: clip;
   background:
     radial-gradient(circle at top left, color-mix(in srgb, var(--fill-accent) 8%, transparent) 0%, transparent 28%),
@@ -87,8 +87,14 @@
 
 .routeViewport {
   min-height: 100%;
-  height: 100%;
   background: var(--bg-canvas);
+}
+
+/* Canvas mode (WorkspaceCanvas at '/') needs a fixed-height viewport so
+   absolutely-positioned widgets resolve their container correctly. All other
+   routes scroll naturally inside `.main`. */
+.canvasMode .routeViewport {
+  height: 100%;
 }
 
 .offlineBanner {
@@ -125,13 +131,6 @@
 
   .main {
     padding-bottom: calc(var(--bottom-nav-height, 60px) + env(safe-area-inset-bottom, 0px));
-  }
-
-  /* Release the fixed 100% height so route content can grow and `.main` can
-     scroll naturally. Desktop still needs `height: 100%` for absolutely-
-     positioned canvas widgets (WorkspaceCanvas). */
-  .routeViewport {
-    height: auto;
   }
 
   .offlineBanner {
