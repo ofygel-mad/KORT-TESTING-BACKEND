@@ -37,33 +37,33 @@ function makePage(imp: () => Promise<{ default: ComponentType }>) {
 }
 
 // Core pages
-const CanvasPage     = makePage(() => import('../../pages/canvas'));
-const LeadsPage      = makePage(() => import('../../pages/crm/leads'));
-const DealsPage      = makePage(() => import('../../pages/crm/deals'));
-const CustomersPage  = makePage(() => import('../../pages/crm/customers'));
-const TasksPage      = makePage(() => import('../../pages/crm/tasks'));
-const WarehousePage  = makePage(() => import('../../pages/warehouse'));
-const WarehouseTwinPage = makePage(() => import('../../pages/warehouse/Twin'));
-const WarehouseOperationsPage = makePage(() => import('../../pages/warehouse/Operations'));
-const WarehouseControlTowerPage = makePage(() => import('../../pages/warehouse/ControlTower'));
-const ProductionPage = makePage(() => import('../../pages/production'));
-const FinancePage    = makePage(() => import('../../pages/finance'));
-const EmployeesPage  = makePage(() => import('../../pages/employees'));
-const ReportsPage    = makePage(() => import('../../pages/reports'));
-const DocumentsPage  = makePage(() => import('../../pages/documents'));
-const SettingsPage   = makePage(() => import('../../pages/settings'));
-const OnboardingPage = makePage(() => import('../../pages/onboarding'));
+const CanvasPage     = makePage(() => import('@/features/auth/pages/canvas'));
+const LeadsPage      = makePage(() => import('@/features/auth/pages/crm/leads'));
+const DealsPage      = makePage(() => import('@/features/auth/pages/crm/deals'));
+const CustomersPage  = makePage(() => import('@/features/auth/pages/crm/customers'));
+const TasksPage      = makePage(() => import('@/features/auth/pages/crm/tasks'));
+const WarehousePage  = makePage(() => import('@/features/auth/pages/warehouse'));
+const WarehouseTwinPage = makePage(() => import('@/features/auth/pages/warehouse/Twin'));
+const WarehouseOperationsPage = makePage(() => import('@/features/auth/pages/warehouse/Operations'));
+const WarehouseControlTowerPage = makePage(() => import('@/features/auth/pages/warehouse/ControlTower'));
+const ProductionPage = makePage(() => import('@/features/auth/pages/production'));
+const FinancePage    = makePage(() => import('@/features/auth/pages/finance'));
+const EmployeesPage  = makePage(() => import('@/features/auth/pages/employees'));
+const ReportsPage    = makePage(() => import('@/features/auth/pages/reports'));
+const DocumentsPage  = makePage(() => import('@/features/auth/pages/documents'));
+const SettingsPage   = makePage(() => import('@/features/auth/pages/settings'));
+const OnboardingPage = makePage(() => import('@/features/auth/pages/onboarding'));
 
 // Landing page (public)
-const LandingPage = makePage(() => import('../../pages/landing'));
+const LandingPage = makePage(() => import('@/features/auth/pages/landing'));
 
 // Dev panel — no auth, service password only
-const DevPanelPage = makePage(() => import('../../pages/dev'));
+const DevPanelPage = makePage(() => import('@/features/auth/pages/dev'));
 
 // Auth pages
-const LoginPage         = makePage(() => import('../../pages/auth/login'));
-const AcceptInvitePage  = makePage(() => import('../../pages/auth/accept-invite'));
-const ResetPasswordPage = makePage(() => import('../../pages/auth/reset-password'));
+const LoginPage         = makePage(() => import('@/features/auth/pages/auth/login'));
+const AcceptInvitePage  = makePage(() => import('@/features/auth/pages/auth/accept-invite'));
+const ResetPasswordPage = makePage(() => import('@/features/auth/pages/auth/reset-password'));
 
 // Chapan Workzone — own layout
 const ChapanShell             = makePage(() => import('@/features/auth/pages/workzone/chapan/ChapanShell'));
