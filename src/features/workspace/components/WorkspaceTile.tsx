@@ -251,7 +251,13 @@ export const WorkspaceTile = memo(function WorkspaceTile({ tile, presentation = 
           )}
           {tile.pinned && <Pin size={10} className={styles.tilePinIcon} />}
         </div>
-        <p className={styles.tileDesc}>{definition.description}</p>
+        {definition.Preview ? (
+          <div className={styles.tilePreviewWrap}>
+            <definition.Preview tileId={tile.id} />
+          </div>
+        ) : (
+          <p className={styles.tileDesc}>{definition.description}</p>
+        )}
         <div className={styles.tileArrow}>
           <span>Открыть →</span>
         </div>
