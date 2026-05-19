@@ -1,17 +1,17 @@
 import { useEffect, useRef, useState, useCallback, useMemo, type CSSProperties, type ReactNode, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { motion } from 'framer-motion';
-import { overlayVariants, commandInvoke } from '../../shared/motion/presets';
+import { overlayVariants, commandInvoke } from '@/shared/motion/presets';
 import { useNavigate } from 'react-router-dom';
 import {
   Search, Users, Briefcase, CheckSquare, Settings,
   BarChart2, Zap, Upload, Clock, Loader2,
   ArrowRight, Plus, MessageSquare, Sparkles, Command, Wand2, CornerDownLeft, X,
 } from 'lucide-react';
-import { useCommandPalette } from '../../shared/stores/commandPalette';
-import { useUIStore } from '../../shared/stores/ui';
-import { api } from '../../shared/api/client';
-import { readStorage, writeStorage } from '../../shared/lib/browser';
-import { useCapabilities } from '../../shared/hooks/useCapabilities';
+import { useCommandPalette } from '@/shared/stores/commandPalette';
+import { useUIStore } from '@/shared/stores/ui';
+import { api } from '@/shared/api/client';
+import { readStorage, writeStorage } from '@/shared/lib/browser';
+import { useCapabilities } from '@/shared/hooks/useCapabilities';
 import styles from './CommandPalette.module.css';
 
 interface Result {

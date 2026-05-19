@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { readApiErrorMessage } from '../../shared/api/errors';
+import { readApiErrorMessage } from '@/shared/api/errors';
 import { adsApi } from './api';
 import type { AdChannel, CreateAdCampaignDto, UpdateAdCampaignDto, UpsertAdMetricDto } from './types';
 

@@ -3,7 +3,7 @@ import { Plus, X } from 'lucide-react';
 import { useTasks, useCreateTask, useUpdateTaskStatus } from '@/entities/task/queries';
 import type { Task, TaskStatus, TaskPriority } from '@/entities/task/types';
 import { TaskDrawer } from './TaskDrawer';
-import { useViewportProfile } from '../../../shared/hooks/useViewportProfile';
+import { useViewportProfile } from '@/shared/hooks/useViewportProfile';
 import styles from './Tasks.module.css';
 
 const COLS: { key: TaskStatus; label: string; color: string }[] = [

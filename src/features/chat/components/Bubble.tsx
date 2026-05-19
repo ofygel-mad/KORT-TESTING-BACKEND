@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Check, CheckCheck, Clock, MoreVertical } from 'lucide-react';
-import { ContextMenu, type ContextMenuItem } from '../../../shared/ui/ContextMenu';
+import { ContextMenu, type ContextMenuItem } from '@/shared/ui/ContextMenu';
 import { ReplyQuote } from './ReplyQuote';
 import { AttachmentPreview } from './AttachmentPreview';
 import { OrderRefCard } from './OrderRefCard';

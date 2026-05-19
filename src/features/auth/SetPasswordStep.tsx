@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Eye, EyeOff, KeyRound, ShieldCheck } from 'lucide-react';
 import axios from 'axios';
-import { API_BASE_URL } from '../../shared/api/client';
-import { readApiErrorMessage } from '../../shared/api/errors';
+import { API_BASE_URL } from '@/shared/api/client';
+import { readApiErrorMessage } from '@/shared/api/errors';
 import styles from './SetPasswordStep.module.css';
 
 interface Props {

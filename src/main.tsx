@@ -5,16 +5,16 @@ import { toast, Toaster } from 'sonner';
 import * as Sentry from '@sentry/react';
 import { AppRouter } from './app/router';
 import { ConsoleRoot } from './console';
-import { api } from './shared/api/client';
-import type { AuthSessionResponse } from './shared/api/contracts';
-import { readApiErrorMessage, readApiErrorStatus } from './shared/api/errors';
-import { ensureDevAuthBypass } from './shared/config/devAccess';
+import { api } from '@/shared/api/client';
+import type { AuthSessionResponse } from '@/shared/api/contracts';
+import { readApiErrorMessage, readApiErrorStatus } from '@/shared/api/errors';
+import { ensureDevAuthBypass } from '@/shared/config/devAccess';
 import './shared/design/globals.css';
-import { getNavigator, getWindow, isBrowser } from './shared/lib/browser';
-import { isChunkLoadError, reloadForChunkErrorOnce } from './shared/lib/browser';
-import { readStorage, reloadWindow, writeStorage } from './shared/lib/browser';
-import { useAuthStore } from './shared/stores/auth';
-import { PageLoader } from './shared/ui/PageLoader';
+import { getNavigator, getWindow, isBrowser } from '@/shared/lib/browser';
+import { isChunkLoadError, reloadForChunkErrorOnce } from '@/shared/lib/browser';
+import { readStorage, reloadWindow, writeStorage } from '@/shared/lib/browser';
+import { useAuthStore } from '@/shared/stores/auth';
+import { PageLoader } from '@/shared/ui/PageLoader';
 
 const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN;
 if (SENTRY_DSN) {
@@ -42,7 +42,7 @@ const queryClient = new QueryClient({
   },
 });
 
-type BootstrapResponse = Omit<AuthSessionResponse, 'access' | 'refresh'> & { orgs?: import('./shared/stores/auth').OrgSummary[] };
+type BootstrapResponse = Omit<AuthSessionResponse, 'access' | 'refresh'> & { orgs?: import('@/shared/stores/auth').OrgSummary[] };
 
 
 function SessionBootstrap({ children }: { children: ReactNode }) {

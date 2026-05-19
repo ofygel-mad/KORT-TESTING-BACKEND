@@ -4,7 +4,7 @@
  * Separator is dash (-) per requirement #18.
  */
 import { describe, expect, it } from 'vitest';
-import { buildItemLine } from '../../../../shared/utils/itemLine';
+import { buildItemLine } from '@/shared/utils/itemLine';
 
 describe('D2/S8: buildItemLine', () => {
   it('product name only', () => {

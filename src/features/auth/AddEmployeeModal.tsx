@@ -1,11 +1,11 @@
 import { createPortal } from 'react-dom';
 import { useState } from 'react';
 import { X, UserRoundPlus } from 'lucide-react';
-import { formatKazakhPhoneInput, isKazakhPhoneComplete, normalizeKazakhPhone } from '../../shared/utils/kz';
+import { formatKazakhPhoneInput, isKazakhPhoneComplete, normalizeKazakhPhone } from '@/shared/utils/kz';
 import type {
   CreateEmployeePayload,
   EmployeePermission,
-} from '../../shared/api/contracts';
+} from '@/shared/api/contracts';
 import styles from './AddEmployeeModal.module.css';
 
 // ─── Константы ───────────────────────────────────────────────────────────────

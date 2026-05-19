@@ -1,8 +1,8 @@
 import type { PointerEvent as ReactPointerEvent, WheelEvent } from 'react';
 import { memo, startTransition, useEffect, useRef, useCallback, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { useDevicePerformance } from '../../../shared/hooks/useDevicePerformance';
-import { useIsMobile } from '../../../shared/hooks/useIsMobile';
+import { useDevicePerformance } from '@/shared/hooks/useDevicePerformance';
+import { useIsMobile } from '@/shared/hooks/useIsMobile';
 import { useWorkspaceStore, ZOOM_MIN, ZOOM_MAX } from '../model/store';
 import type { WorkspaceTile as WorkspaceTileType } from '../model/types';
 import type { WorkspaceSceneFlightTileProjection } from '../scene/sceneRuntime';

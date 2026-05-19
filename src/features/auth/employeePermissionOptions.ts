@@ -1,4 +1,4 @@
-import type { EmployeePermission } from '../../shared/api/contracts';
+import type { EmployeePermission } from '@/shared/api/contracts';
 
 export const EMPLOYEE_PERMISSION_OPTIONS: Array<{
   key: EmployeePermission;

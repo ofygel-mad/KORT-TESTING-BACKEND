@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { purchaseApi } from './api';
 import type { CreateManualInvoiceDto, UpdateManualInvoiceDto } from './types';
-import { readApiErrorMessage } from '../../shared/api/errors';
+import { readApiErrorMessage } from '@/shared/api/errors';
 
 const purchaseKeys = {
   all: ['chapan-purchase'] as const,

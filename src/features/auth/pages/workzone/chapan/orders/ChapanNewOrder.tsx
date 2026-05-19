@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { AlertCircle, AlertTriangle, ImagePlus, Pencil, Plus, Star, Trash2, Calculator, Paperclip, X } from 'lucide-react';
 import { useId } from 'react';
 import { useCreateOrder, useChapanCatalogs, useChapanProfile, useUpdateBankCommission } from '@/entities/order/queries';
-import { useAuthStore } from '../../../../shared/stores/auth';
+import { useAuthStore } from '@/shared/stores/auth';
 import { useProductsAvailability, useVariantAvailability, useOrderFormCatalog, useCatalogDefinitions } from '@/entities/warehouse/queries';
 import type { OrderFormField } from '@/entities/warehouse/types';
 import { attachmentsApi } from '@/entities/order/api';
@@ -18,12 +18,12 @@ import {
   buildMixedBreakdownRows,
   buildPaymentMethodOptions,
   buildSizeCatalog,
-} from '../../../../shared/lib/chapanCatalogDefaults';
+} from '@/shared/lib/chapanCatalogDefaults';
 import { calculateChapanOrderFinancials } from '@/shared/lib/chapanFinancials';
-import { SearchableSelect, type SearchableSelectOption } from '../../../../shared/ui/SearchableSelect';
-import { formatPersonNameInput } from '../../../../shared/utils/person';
-import { formatKazakhPhoneInput, isKazakhPhoneComplete } from '../../../../shared/utils/kz';
-import { buildVariantAvailabilityInput, buildVariantLookupKey, type VariantAvailabilityInput } from '../../../../shared/utils/variantAvailability';
+import { SearchableSelect, type SearchableSelectOption } from '@/shared/ui/SearchableSelect';
+import { formatPersonNameInput } from '@/shared/utils/person';
+import { formatKazakhPhoneInput, isKazakhPhoneComplete } from '@/shared/utils/kz';
+import { buildVariantAvailabilityInput, buildVariantLookupKey, type VariantAvailabilityInput } from '@/shared/utils/variantAvailability';
 import styles from './ChapanNewOrder.module.css';
 
 // ─── Draft autosave ───────────────────────────────────────────────────────────

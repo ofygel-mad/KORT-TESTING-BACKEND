@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { UserRoundPlus, Users, Search } from 'lucide-react';
 import { toast } from 'sonner';
-import { api } from '../../shared/api/client';
-import { useRole } from '../../shared/hooks/useRole';
+import { api } from '@/shared/api/client';
+import { useRole } from '@/shared/hooks/useRole';
 import type {
   CreateEmployeePayload,
   EmployeeRecord,
   UpdateEmployeePayload,
-} from '../../shared/api/contracts';
+} from '@/shared/api/contracts';
 import { AddEmployeeModal } from './AddEmployeeModal';
 import { EmployeeDetailModal } from './EmployeeDetailModal';
 import styles from './EmployeePanel.module.css';

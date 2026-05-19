@@ -2,8 +2,8 @@ import { useCallback, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Lock } from 'lucide-react';
 import { AuthModal } from './AuthModal';
-import { DEV_RUNTIME_BLOCKERS_DISABLED } from '../../shared/config/devAccess';
-import { useAuthStore } from '../../shared/stores/auth';
+import { DEV_RUNTIME_BLOCKERS_DISABLED } from '@/shared/config/devAccess';
+import { useAuthStore } from '@/shared/stores/auth';
 import styles from './WorkspaceLock.module.css';
 
 interface WorkspaceLockProps {

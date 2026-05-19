@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { API_BASE_URL, apiClient } from '../../shared/api/client';
-import { useAuthStore } from '../../shared/stores/auth';
+import { API_BASE_URL, apiClient } from '@/shared/api/client';
+import { useAuthStore } from '@/shared/stores/auth';
 import type {
   OrderWarehouseMetricsPatchEvent,
   OrderWarehouseLiveSnapshot,

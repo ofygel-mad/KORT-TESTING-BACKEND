@@ -4,7 +4,7 @@ import { useLead, useUpdateLead, useAddLeadHistory } from '@/entities/lead/queri
 import { useCreateDeal } from '@/entities/deal/queries';
 import type { LeadStage } from '@/entities/lead/types';
 import { toast } from 'sonner';
-import { Drawer } from '../../../shared/ui/Drawer';
+import { Drawer } from '@/shared/ui/Drawer';
 import styles from './LeadDrawer.module.css';
 
 const STAGES: { key: LeadStage; label: string }[] = [

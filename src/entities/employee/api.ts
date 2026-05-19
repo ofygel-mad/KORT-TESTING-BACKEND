@@ -1,4 +1,4 @@
-import { api } from '../../shared/api/client';
+import { api } from '@/shared/api/client';
 import type { Employee, CreateEmployeeDto, UpdateEmployeeDto } from './types';
 
 export const employeeApi = {

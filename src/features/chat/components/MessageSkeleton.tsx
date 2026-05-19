@@ -1,4 +1,4 @@
-import { Skeleton, SkeletonAvatar } from '../../../shared/ui/Skeleton';
+import { Skeleton, SkeletonAvatar } from '@/shared/ui/Skeleton';
 import styles from './MessageSkeleton.module.css';
 
 function SkeletonBubble({ mine }: { mine: boolean }) {

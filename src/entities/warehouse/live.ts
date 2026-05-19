@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { API_BASE_URL, apiClient } from '../../shared/api/client';
-import { useAuthStore } from '../../shared/stores/auth';
+import { API_BASE_URL, apiClient } from '@/shared/api/client';
+import { useAuthStore } from '@/shared/stores/auth';
 import type {
   WarehouseSiteAlertsPatchEvent,
   WarehouseSiteFeedPatchEvent,

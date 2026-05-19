@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Button } from '../../shared/ui/Button';
+import { Button } from '@/shared/ui/Button';
 import styles from './AuthRouteLayout.module.css';
 
 export function AuthRouteLayout({ children }: { children?: ReactNode }) {

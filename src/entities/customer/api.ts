@@ -1,4 +1,4 @@
-import { api } from '../../shared/api/client';
+import { api } from '@/shared/api/client';
 import type { Customer } from './types';
 interface PaginatedCustomers { count: number; page: number; limit: number; totalPages: number; results: Customer[]; }
 export const customersApi = {

@@ -1,15 +1,15 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { ChevronRight, LogOut } from 'lucide-react';
-import { useAuthStore } from '../../shared/stores/auth';
-import { KortLogo } from '../../shared/ui/KortLogo';
+import { useAuthStore } from '@/shared/stores/auth';
+import { KortLogo } from '@/shared/ui/KortLogo';
 import {
   CANVAS_NAV_ITEM,
   CHAPAN_NAV_ITEM,
   SETTINGS_NAV_ITEM,
   SIDEBAR_NAV_SECTIONS,
   type ShortcutNavItem,
-} from '../../shared/navigation/appNavigation';
-import { usePlan, planIncludes } from '../../shared/hooks/usePlan';
+} from '@/shared/navigation/appNavigation';
+import { usePlan, planIncludes } from '@/shared/hooks/usePlan';
 import styles from './Sidebar.module.css';
 
 function SidebarRouteItem({

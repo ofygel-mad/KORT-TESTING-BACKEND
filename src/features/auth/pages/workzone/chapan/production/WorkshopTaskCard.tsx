@@ -1,7 +1,7 @@
 import React from 'react';
 import { Check, MessageSquare, AlertCircle, Star } from 'lucide-react';
 import type { ProductionTask, ProductionStatus } from '@/entities/order/types';
-import { formatOrderItemNumber } from '../../../../../../shared/utils/orderItemNumber';
+import { formatOrderItemNumber } from '@/shared/utils/orderItemNumber';
 import styles from './ChapanProduction.module.css';
 
 interface WorkshopTaskCardProps {

@@ -12,7 +12,7 @@ import type {
   InvoiceDocumentPayload,
   CreateReturnDto,
 } from './types';
-import { readApiErrorMessage } from '../../shared/api/errors';
+import { readApiErrorMessage } from '@/shared/api/errors';
 
 // ── Query keys ────────────────────────────────────────────────────────────────
 

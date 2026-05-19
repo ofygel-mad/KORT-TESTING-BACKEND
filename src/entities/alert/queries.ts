@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '../../shared/api/client';
+import { api } from '@/shared/api/client';
 
 export interface UnpaidAlert {
   id: string;

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Trash2, RotateCcw, AlertTriangle } from 'lucide-react';
 import { useTrashedOrders, useRestoreFromTrash, usePermanentDelete } from '@/entities/order/queries';
-import { useEmployeePermissions } from '../../../../shared/hooks/useEmployeePermissions';
+import { useEmployeePermissions } from '@/shared/hooks/useEmployeePermissions';
 import type { ChapanOrder } from '@/entities/order/types';
 import { calculateChapanOrderFinancials } from '@/shared/lib/chapanFinancials';
 import styles from './ChapanTrash.module.css';

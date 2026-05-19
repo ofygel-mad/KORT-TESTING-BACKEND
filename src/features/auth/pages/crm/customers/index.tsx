@@ -1,10 +1,10 @@
 import { useState, useDeferredValue } from 'react';
 import { Plus, Search, X, Phone, Mail, MapPin, Calendar } from 'lucide-react';
 import { useCustomers, useCreateCustomer } from '@/entities/customer/queries';
-import { api } from '../../../shared/api/client';
+import { api } from '@/shared/api/client';
 import { useQuery } from '@tanstack/react-query';
-import { PhoneInput } from '../../../shared/ui/PhoneInput';
-import { Skeleton } from '../../../shared/ui/Skeleton';
+import { PhoneInput } from '@/shared/ui/PhoneInput';
+import { Skeleton } from '@/shared/ui/Skeleton';
 import styles from './Customers.module.css';
 
 function fmtDate(s: string) {

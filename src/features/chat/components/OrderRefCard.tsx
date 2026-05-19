@@ -1,7 +1,7 @@
 import { ExternalLink, Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useOrderPreview } from '../hooks';
-import { Skeleton, SkeletonText } from '../../../shared/ui/Skeleton';
+import { Skeleton, SkeletonText } from '@/shared/ui/Skeleton';
 import styles from './OrderRefCard.module.css';
 
 const STATUS_LABELS: Record<string, string> = {

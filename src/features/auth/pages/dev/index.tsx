@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
-import { API_BASE_URL } from '../../shared/api/client';
+import { API_BASE_URL } from '@/shared/api/client';
 
 type OrgInfo = { id: string; name: string; slug: string };
 type CleanResult = {

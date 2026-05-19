@@ -1,4 +1,4 @@
-import { api, apiClient } from '../../shared/api/client';
+import { api, apiClient } from '@/shared/api/client';
 import type {
   KaspiConnection,
   KaspiConnectionHistoryItem,

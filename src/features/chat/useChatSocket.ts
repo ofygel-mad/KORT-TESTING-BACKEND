@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useQueryClient, type InfiniteData } from '@tanstack/react-query';
-import { useAuthStore } from '../../shared/stores/auth';
-import { useChatStore } from '../../shared/stores/chat';
+import { useAuthStore } from '@/shared/stores/auth';
+import { useChatStore } from '@/shared/stores/chat';
 import type { ChatMessage } from './types';
 
 const WS_BASE =

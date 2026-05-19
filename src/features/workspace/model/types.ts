@@ -1,4 +1,4 @@
-import type { ShortcutNavItemId } from '../../../shared/navigation/appNavigation';
+import type { ShortcutNavItemId } from '@/shared/navigation/appNavigation';
 
 export type WorkspaceWidgetKind = ShortcutNavItemId;
 export type WorkspaceSceneTheme = 'default' | 'morning' | 'overcast' | 'dusk' | 'night';

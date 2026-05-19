@@ -4,12 +4,12 @@ import { Lock, X } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
 import { WORKSPACE_WIDGETS } from '../registry';
-import { usePlan, planIncludes, PLAN_LABELS } from '../../../shared/hooks/usePlan';
-import { useRole } from '../../../shared/hooks/useRole';
-import { useEmployeePermissions } from '../../../shared/hooks/useEmployeePermissions';
-import { useChapanPermissions } from '../../../shared/hooks/useChapanPermissions';
+import { usePlan, planIncludes, PLAN_LABELS } from '@/shared/hooks/usePlan';
+import { useRole } from '@/shared/hooks/useRole';
+import { useEmployeePermissions } from '@/shared/hooks/useEmployeePermissions';
+import { useChapanPermissions } from '@/shared/hooks/useChapanPermissions';
 import type { WorkspaceWidgetKind } from '../model/types';
-import type { ShortcutNavItemId } from '../../../shared/navigation/appNavigation';
+import type { ShortcutNavItemId } from '@/shared/navigation/appNavigation';
 import styles from './Workspace.module.css';
 
 interface Props {

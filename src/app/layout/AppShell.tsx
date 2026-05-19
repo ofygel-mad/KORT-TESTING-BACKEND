@@ -6,16 +6,16 @@ import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { MobileNav } from './MobileNav';
 import { CommandPalette } from '../../widgets/command-palette/CommandPalette';
-import { useCommandPalette } from '../../shared/stores/commandPalette';
-import { useKeyboardShortcuts } from '../../shared/hooks/useKeyboardShortcuts';
-import { ShortcutsModal } from '../../shared/ui/ShortcutsModal';
-import { useIsMobile } from '../../shared/hooks/useIsMobile';
-import { useDevicePerformance } from '../../shared/hooks/useDevicePerformance';
-import { useViewportProfile } from '../../shared/hooks/useViewportProfile';
-import { useAuthStore } from '../../shared/stores/auth';
-import { useActivityTracker } from '../../shared/stores/profile';
-import { pageTransition } from '../../shared/motion/presets';
-import { addDocumentListener } from '../../shared/lib/browser';
+import { useCommandPalette } from '@/shared/stores/commandPalette';
+import { useKeyboardShortcuts } from '@/shared/hooks/useKeyboardShortcuts';
+import { ShortcutsModal } from '@/shared/ui/ShortcutsModal';
+import { useIsMobile } from '@/shared/hooks/useIsMobile';
+import { useDevicePerformance } from '@/shared/hooks/useDevicePerformance';
+import { useViewportProfile } from '@/shared/hooks/useViewportProfile';
+import { useAuthStore } from '@/shared/stores/auth';
+import { useActivityTracker } from '@/shared/stores/profile';
+import { pageTransition } from '@/shared/motion/presets';
+import { addDocumentListener } from '@/shared/lib/browser';
 import styles from './AppShell.module.css';
 
 const subscribeToTheme = (cb: () => void) => {

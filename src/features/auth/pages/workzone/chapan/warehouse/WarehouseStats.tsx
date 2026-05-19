@@ -1,5 +1,5 @@
 import React from 'react';
-import { Skeleton } from '../../../../shared/ui/Skeleton';
+import { Skeleton } from '@/shared/ui/Skeleton';
 import type { WarehouseSummary } from '@/entities/warehouse/types';
 import styles from './WarehouseStats.module.css';
 

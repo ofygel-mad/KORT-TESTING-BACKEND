@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { AlertTriangle, Plus, RotateCcw, Trash2, X } from 'lucide-react';
 import { useWarehouseMovements, useItemFormula, useDeleteItem } from '@/entities/warehouse/queries';
 import type { WarehouseItem, WarehouseMovement } from '@/entities/warehouse/types';
-import { localizeAttrSummary } from '../../../../shared/lib/attrLocalize';
+import { localizeAttrSummary } from '@/shared/lib/attrLocalize';
 import styles from '../../../warehouse/Warehouse.module.css';
 
 const NUMBER_FORMATTER = new Intl.NumberFormat('ru-KZ');

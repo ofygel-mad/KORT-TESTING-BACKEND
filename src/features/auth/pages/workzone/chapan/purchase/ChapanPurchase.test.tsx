@@ -25,7 +25,7 @@ vi.mock('@/entities/purchase/api', () => ({
   },
 }));
 
-vi.mock('../../../../shared/lib/browserDownload', () => ({
+vi.mock('@/shared/lib/browserDownload', () => ({
   triggerBrowserDownload: (...args: unknown[]) => triggerBrowserDownloadMock(...args),
   getFilenameFromContentDisposition: (...args: unknown[]) => getFilenameFromContentDispositionMock(...args),
 }));

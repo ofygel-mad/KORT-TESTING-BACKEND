@@ -1,14 +1,14 @@
 import { useRef, useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { CircleCheck, CheckCheck, ChevronLeft, Factory, FileText, Package, ShoppingCart, TrendingUp, Truck, Users, Warehouse, Undo2, Boxes } from 'lucide-react';
-import { useAuthStore } from '../../../../../shared/stores/auth';
-import { useChapanPermissions } from '../../../../../shared/hooks/useChapanPermissions';
-import { ThemeSwitcher } from '../../../../../shared/ui/ThemeSwitcher';
+import { useAuthStore } from '@/shared/stores/auth';
+import { useChapanPermissions } from '@/shared/hooks/useChapanPermissions';
+import { ThemeSwitcher } from '@/shared/ui/ThemeSwitcher';
 import { useChapanUiStore } from '../../../../workzone/chapan/store';
 import ChapanInvoicesDrawer from './invoices/ChapanInvoicesDrawer';
 import ChapanMonitorWidget from '../../../../chapan-monitor/ChapanMonitorWidget';
 import styles from './ChapanShell.module.css';
-import { useEmployeePermissions } from '../../../../../shared/hooks/useEmployeePermissions';
+import { useEmployeePermissions } from '@/shared/hooks/useEmployeePermissions';
 
 // Статичный список используется только как источник данных; фильтрация — ниже
 const ALL_SECTION_NAV = [

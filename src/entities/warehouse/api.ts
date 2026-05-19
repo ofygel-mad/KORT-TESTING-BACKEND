@@ -1,4 +1,4 @@
-import { api, apiClient } from '../../shared/api/client';
+import { api, apiClient } from '@/shared/api/client';
 import type {
   WarehouseItem, WarehouseMovement, WarehouseAlert, WarehouseCategory,
   WarehouseSummary, PaginatedWarehouseItems, PaginatedMovements,

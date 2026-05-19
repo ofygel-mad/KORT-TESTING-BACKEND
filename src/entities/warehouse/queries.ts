@@ -9,7 +9,7 @@ import type {
   WarehousePoolPolicyDto, ImportOpeningBalanceRow,
   VariantAvailabilityInput,
 } from './types';
-import { buildVariantLookupKey } from '../../shared/utils/variantAvailability';
+import { buildVariantLookupKey } from '@/shared/utils/variantAvailability';
 
 // New query key for formula
 const warehouseFormulaKey = (id: string) => ['warehouse', 'item-formula', id] as const;

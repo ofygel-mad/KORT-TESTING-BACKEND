@@ -1,14 +1,14 @@
 import { createBrowserRouter, Navigate, NavLink, RouterProvider } from 'react-router-dom';
 import { lazy, Suspense, type ComponentType, type ReactNode } from 'react';
 import { AppShell } from '../layout/AppShell';
-import { PageLoader } from '../../shared/ui/PageLoader';
-import { ErrorBoundary } from '../../shared/ui/ErrorBoundary';
-import { isChunkLoadError, reloadForChunkErrorOnce } from '../../shared/lib/browser';
-import { useAuthStore } from '../../shared/stores/auth';
-import { usePlan, planIncludes, PLAN_LABELS, type OrgMode } from '../../shared/hooks/usePlan';
-import { useRole } from '../../shared/hooks/useRole';
-import { useEmployeePermissions } from '../../shared/hooks/useEmployeePermissions';
-import { useChapanPermissions } from '../../shared/hooks/useChapanPermissions';
+import { PageLoader } from '@/shared/ui/PageLoader';
+import { ErrorBoundary } from '@/shared/ui/ErrorBoundary';
+import { isChunkLoadError, reloadForChunkErrorOnce } from '@/shared/lib/browser';
+import { useAuthStore } from '@/shared/stores/auth';
+import { usePlan, planIncludes, PLAN_LABELS, type OrgMode } from '@/shared/hooks/usePlan';
+import { useRole } from '@/shared/hooks/useRole';
+import { useEmployeePermissions } from '@/shared/hooks/useEmployeePermissions';
+import { useChapanPermissions } from '@/shared/hooks/useChapanPermissions';
 import ChapanKaspiStagePage from '@/features/auth/pages/workzone/chapan/kaspi-orders/ChapanKaspiStagePage';
 import ChapanKaspiStockPage from '@/features/auth/pages/workzone/chapan/kaspi-orders/ChapanKaspiStockPage';
 

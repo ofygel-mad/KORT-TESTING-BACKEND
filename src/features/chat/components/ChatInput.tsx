@@ -1,6 +1,6 @@
 import { useRef, useState, type KeyboardEvent } from 'react';
 import { Plus, Send, X, Reply, Edit2 } from 'lucide-react';
-import { useChatStore } from '../../../shared/stores/chat';
+import { useChatStore } from '@/shared/stores/chat';
 import { useTypingBroadcast } from '../hooks/useTypingBroadcast';
 import type { ChatMessage } from '../types';
 import styles from './ChatInput.module.css';

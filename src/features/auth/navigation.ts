@@ -1,4 +1,4 @@
-import type { Membership, Org } from '../../shared/stores/auth';
+import type { Membership, Org } from '@/shared/stores/auth';
 
 export function resolvePostAuthPath(args: {
   org: Org | null;

@@ -1,4 +1,4 @@
-import { api } from '../../shared/api/client';
+import { api } from '@/shared/api/client';
 import type { Lead, CreateLeadDto, UpdateLeadDto, LeadFilters, PaginatedLeads } from './types';
 
 export const leadsApi = {

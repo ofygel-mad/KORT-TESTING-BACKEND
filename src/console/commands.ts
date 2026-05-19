@@ -1,8 +1,8 @@
 import { appRouter } from '../app/router';
-import { copyToClipboard, readStorage, reloadWindow, removeStorage, writeStorage } from '../shared/lib/browser';
-import { useAuthStore } from '../shared/stores/auth';
-import { useUIStore } from '../shared/stores/ui';
-import type { ThemePack } from '../shared/stores/ui';
+import { copyToClipboard, readStorage, reloadWindow, removeStorage, writeStorage } from '@/shared/lib/browser';
+import { useAuthStore } from '@/shared/stores/auth';
+import { useUIStore } from '@/shared/stores/ui';
+import type { ThemePack } from '@/shared/stores/ui';
 import {
   MOCK_AUTH_SESSIONS,
   MOCK_COMPANIES,
@@ -11,7 +11,7 @@ import {
   MOCK_TASKS,
   MOCK_PIPELINE,
   MOCK_DASHBOARD,
-} from '../shared/api/mock-data';
+} from '@/shared/api/mock-data';
 import {
   activateConsoleAccess,
   activateConsoleAccessFromResponse,

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { TrendingUp, Users, Target, CheckSquare } from 'lucide-react';
-import { api } from '../../shared/api/client';
+import { api } from '@/shared/api/client';
 import s from './Home.module.css';
 
 const MOCK_KPIS = [

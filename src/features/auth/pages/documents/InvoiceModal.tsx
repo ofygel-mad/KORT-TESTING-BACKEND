@@ -3,11 +3,11 @@ import { useState } from 'react';
 import { X, FileText, Sparkles, ArrowLeft, Download, Loader2, User, Phone, Calendar, Package } from 'lucide-react';
 import { useOrders } from '@/entities/order/queries';
 import type { ChapanOrder } from '@/entities/order/types';
-import { apiClient } from '../../shared/api/client';
-import { useAuthStore } from '../../shared/stores/auth';
+import { apiClient } from '@/shared/api/client';
+import { useAuthStore } from '@/shared/stores/auth';
 import { calculateChapanOrderFinancials } from '@/shared/lib/chapanFinancials';
 import styles from './InvoiceModal.module.css';
-import { buildItemLine } from '../../shared/utils/itemLine';
+import { buildItemLine } from '@/shared/utils/itemLine';
 
 type Step = 'style' | 'order-list';
 type InvoiceStyle = 'default' | 'branded';

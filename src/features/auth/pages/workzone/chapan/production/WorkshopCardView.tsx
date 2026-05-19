@@ -1,6 +1,6 @@
 import { Check, ImageOff, AlertCircle, Star, MessageSquare } from 'lucide-react';
 import type { ProductionTask, ProductionStatus } from '@/entities/order/types';
-import { formatOrderItemNumber } from '../../../../../../shared/utils/orderItemNumber';
+import { formatOrderItemNumber } from '@/shared/utils/orderItemNumber';
 import styles from './WorkshopCardView.module.css';
 
 interface WorkshopCardViewProps {

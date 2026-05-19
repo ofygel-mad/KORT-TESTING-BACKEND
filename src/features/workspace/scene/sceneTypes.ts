@@ -1,5 +1,5 @@
 import type * as THREE from 'three';
-import type { DevicePerformanceProfile } from '../../../shared/lib/browser';
+import type { DevicePerformanceProfile } from '@/shared/lib/browser';
 import type {
   WorkspaceTileDistance,
   WorkspaceTileStatus,

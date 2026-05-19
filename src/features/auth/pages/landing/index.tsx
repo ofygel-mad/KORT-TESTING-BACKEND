@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { mountLanding } from '../../../../../LANDING-PROJECT/src/main';
 import { AuthModal } from '../../AuthModal';
 import { resolvePostAuthPath } from '../../navigation';
-import { useAuthStore } from '../../shared/stores/auth';
+import { useAuthStore } from '@/shared/stores/auth';
 
 const APP_URL = (import.meta.env.VITE_APP_URL as string | undefined) ?? '';
 

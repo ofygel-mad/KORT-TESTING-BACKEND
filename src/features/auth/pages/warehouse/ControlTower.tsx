@@ -20,7 +20,7 @@ import {
 } from '@/entities/warehouse/queries';
 import { useWarehouseFoundationLiveSync } from '@/entities/warehouse/live';
 import { WarehouseModeNav } from './WarehouseModeNav';
-import { localizeAttrSummary } from '../../shared/lib/attrLocalize';
+import { localizeAttrSummary } from '@/shared/lib/attrLocalize';
 import styles from './Warehouse.module.css';
 
 function formatNumber(value: number) {

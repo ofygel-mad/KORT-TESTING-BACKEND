@@ -3,9 +3,9 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { MessageCircleMore, MessageSquareDashed, Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAuthStore } from '../../shared/stores/auth';
-import { useChatStore } from '../../shared/stores/chat';
-import { SearchInput } from '../../shared/ui/SearchInput';
+import { useAuthStore } from '@/shared/stores/auth';
+import { useChatStore } from '@/shared/stores/chat';
+import { SearchInput } from '@/shared/ui/SearchInput';
 import {
   useChatConversations,
   useChatMessages,

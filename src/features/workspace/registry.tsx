@@ -4,8 +4,8 @@ import {
   SHORTCUT_NAV_ITEMS,
   SIDEBAR_NAV_SECTIONS,
   type ShortcutNavItem,
-} from '../../shared/navigation/appNavigation';
-import type { OrgMode } from '../../shared/hooks/usePlan';
+} from '@/shared/navigation/appNavigation';
+import type { OrgMode } from '@/shared/hooks/usePlan';
 import type { WorkspaceWidgetKind } from './model/types';
 import {
   LeadsTilePreview,

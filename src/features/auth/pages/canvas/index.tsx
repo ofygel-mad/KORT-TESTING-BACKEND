@@ -1,7 +1,7 @@
 import { Suspense, lazy, useMemo, useState, type ElementType } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { ArrowRight, LogOut, Settings } from 'lucide-react';
-import { isChunkLoadError, reloadForChunkErrorOnce } from '../../shared/lib/browser';
+import { isChunkLoadError, reloadForChunkErrorOnce } from '@/shared/lib/browser';
 
 async function loadCanvasChunk<T>(loader: () => Promise<T>) {
   try {
@@ -26,18 +26,18 @@ const WorkspaceAddMenu = lazy(() =>
 );
 import { useWorkspaceStore } from '@/features/workspace/model/store';
 import type { WorkspaceWidgetKind } from '@/features/workspace/model/types';
-import { usePlan, planIncludes } from '../../shared/hooks/usePlan';
-import { useIsMobile } from '../../shared/hooks/useIsMobile';
-import { useAuthStore } from '../../shared/stores/auth';
-import { useRole } from '../../shared/hooks/useRole';
-import { useEmployeePermissions } from '../../shared/hooks/useEmployeePermissions';
-import { useChapanPermissions } from '../../shared/hooks/useChapanPermissions';
+import { usePlan, planIncludes } from '@/shared/hooks/usePlan';
+import { useIsMobile } from '@/shared/hooks/useIsMobile';
+import { useAuthStore } from '@/shared/stores/auth';
+import { useRole } from '@/shared/hooks/useRole';
+import { useEmployeePermissions } from '@/shared/hooks/useEmployeePermissions';
+import { useChapanPermissions } from '@/shared/hooks/useChapanPermissions';
 import {
   CHAPAN_NAV_ITEM,
   SETTINGS_NAV_ITEM,
   SIDEBAR_NAV_SECTIONS,
   type ShortcutNavItemId,
-} from '../../shared/navigation/appNavigation';
+} from '@/shared/navigation/appNavigation';
 import styles from './Canvas.module.css';
 
 interface MobileMenuItem {

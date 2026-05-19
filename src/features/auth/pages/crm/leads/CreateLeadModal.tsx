@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { X } from 'lucide-react';
 import { useCreateLead } from '@/entities/lead/queries';
 import type { LeadPipeline } from '@/entities/lead/types';
-import { PhoneInput } from '../../../shared/ui/PhoneInput';
+import { PhoneInput } from '@/shared/ui/PhoneInput';
 import styles from './CreateLeadModal.module.css';
 
 const schema = z.object({

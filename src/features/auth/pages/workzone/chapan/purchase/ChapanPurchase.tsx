@@ -9,9 +9,9 @@ import {
 } from '@/entities/purchase/queries';
 import { purchaseApi } from '@/entities/purchase/api';
 import type { ManualInvoice } from '@/entities/purchase/types';
-import { getFilenameFromContentDisposition, triggerBrowserDownload } from '../../../../shared/lib/browserDownload';
-import { useCurrency } from '../../../../shared/hooks/useCurrency';
-import { formatMoney } from '../../../../shared/utils/format';
+import { getFilenameFromContentDisposition, triggerBrowserDownload } from '@/shared/lib/browserDownload';
+import { useCurrency } from '@/shared/hooks/useCurrency';
+import { formatMoney } from '@/shared/utils/format';
 import ManualInvoiceForm from './ManualInvoiceForm';
 import PurchaseInvoicePreviewModal from './PurchaseInvoicePreviewModal';
 import styles from './ChapanPurchase.module.css';

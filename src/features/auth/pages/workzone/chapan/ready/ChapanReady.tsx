@@ -4,9 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import { useArchiveOrder, useChangeOrderStatus, useConfirmSeamstress, useCreateInvoice, useOrders, usePreviewInvoiceDocument, useInvoices } from '@/entities/order/queries';
 import type { ChapanOrder, InvoiceDocumentPayload, OrderStatus, Priority, Urgency } from '@/entities/order/types';
 import { useAuthStore } from '@/shared/stores/auth';
-import { buildItemLine } from '../../../../shared/utils/itemLine';
+import { buildItemLine } from '@/shared/utils/itemLine';
 import { calculateChapanOrderFinancials } from '@/shared/lib/chapanFinancials';
-import { formatOrderItemNumber } from '../../../../../../shared/utils/orderItemNumber';
+import { formatOrderItemNumber } from '@/shared/utils/orderItemNumber';
 import { useChapanUiStore } from '@/features/workzone/chapan/store';
 import ChapanInvoicePreviewModal from '../invoices/ChapanInvoicePreviewModal';
 import styles from './ChapanReady.module.css';
@@ -370,7 +370,7 @@ export default function ChapanReadyPage() {
   }
 
   async function handleBatchInvoiceDownload() {
-    const { apiClient } = await import('../../../../shared/api/client');
+    const { apiClient } = await import('@/shared/api/client');
     try {
       const response = await apiClient.post('/chapan/orders/batch-invoice', {
         orderIds: [...selectedIds],

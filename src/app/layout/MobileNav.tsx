@@ -9,14 +9,14 @@ import {
   Users,
   X,
 } from 'lucide-react';
-import { useAuthStore } from '../../shared/stores/auth';
+import { useAuthStore } from '@/shared/stores/auth';
 import {
   CANVAS_NAV_ITEM,
   CHAPAN_NAV_ITEM,
   SETTINGS_NAV_ITEM,
   SIDEBAR_NAV_SECTIONS,
-} from '../../shared/navigation/appNavigation';
-import { usePlan, planIncludes } from '../../shared/hooks/usePlan';
+} from '@/shared/navigation/appNavigation';
+import { usePlan, planIncludes } from '@/shared/hooks/usePlan';
 import styles from './MobileNav.module.css';
 
 const PRIMARY_TABS = [

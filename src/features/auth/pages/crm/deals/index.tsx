@@ -3,7 +3,7 @@ import { Plus, X } from 'lucide-react';
 import { useDealsBoard, useCreateDeal } from '@/entities/deal/queries';
 import type { Deal, DealStage, CreateDealDto } from '@/entities/deal/types';
 import { DealDrawer } from './DealDrawer';
-import { useViewportProfile } from '../../../shared/hooks/useViewportProfile';
+import { useViewportProfile } from '@/shared/hooks/useViewportProfile';
 import styles from './Deals.module.css';
 
 const STAGES: { key: DealStage; label: string; color: string }[] = [

@@ -6,8 +6,8 @@ import {
   type InfiniteData,
 } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { api, apiClient } from '../../shared/api/client';
-import { useAuthStore } from '../../shared/stores/auth';
+import { api, apiClient } from '@/shared/api/client';
+import { useAuthStore } from '@/shared/stores/auth';
 import type { ChatConversation, ChatMessage, OrderPreview } from './types';
 
 export function useChatConversations() {

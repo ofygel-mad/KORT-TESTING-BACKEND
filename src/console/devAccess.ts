@@ -1,6 +1,6 @@
-import { readStorage, removeStorage, writeStorage } from '../shared/lib/browser';
-import type { AuthSessionResponse } from '../shared/api/contracts';
-import { useAuthStore } from '../shared/stores/auth';
+import { readStorage, removeStorage, writeStorage } from '@/shared/lib/browser';
+import type { AuthSessionResponse } from '@/shared/api/contracts';
+import { useAuthStore } from '@/shared/stores/auth';
 import { buildConsoleAuthSession, isConsoleAccessToken } from './devSession';
 import type { AuthSnapshot } from './store';
 

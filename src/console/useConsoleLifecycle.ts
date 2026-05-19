@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { appRouter } from '../app/router';
-import { useAuthStore } from '../shared/stores/auth';
+import { useAuthStore } from '@/shared/stores/auth';
 import { emitConsoleEvent, listenConsoleEvents } from './events';
 import {
   activateConsoleAccess,

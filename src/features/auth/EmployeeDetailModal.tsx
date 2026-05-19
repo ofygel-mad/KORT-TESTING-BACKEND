@@ -15,7 +15,7 @@ import type {
   EmployeeRecord,
   EmployeePermission,
   UpdateEmployeePayload,
-} from '../../shared/api/contracts';
+} from '@/shared/api/contracts';
 import styles from './EmployeeDetailModal.module.css';
 
 // ─── Константы ───────────────────────────────────────────────────────────────

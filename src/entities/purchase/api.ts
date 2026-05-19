@@ -1,4 +1,4 @@
-import { api, apiClient } from '../../shared/api/client';
+import { api, apiClient } from '@/shared/api/client';
 import type { ManualInvoice, CreateManualInvoiceDto, UpdateManualInvoiceDto } from './types';
 
 export const purchaseApi = {

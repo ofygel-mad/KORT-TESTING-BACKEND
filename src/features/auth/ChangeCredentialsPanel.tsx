@@ -3,10 +3,10 @@ import { useMutation } from '@tanstack/react-query';
 import { KeyRound } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { api } from '../../shared/api/client';
-import { useRole } from '../../shared/hooks/useRole';
-import { useAuthStore } from '../../shared/stores/auth';
-import { usePinStore } from '../../shared/stores/pin';
+import { api } from '@/shared/api/client';
+import { useRole } from '@/shared/hooks/useRole';
+import { useAuthStore } from '@/shared/stores/auth';
+import { usePinStore } from '@/shared/stores/pin';
 import styles from './ChangeCredentialsPanel.module.css';
 
 export function ChangeCredentialsPanel() {

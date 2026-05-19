@@ -1,8 +1,8 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { ChevronLeft, Clock, CloudMoon, Image, Plane, Sparkles } from 'lucide-react';
-import { readStorage } from '../../../shared/lib/browser';
-import { useDevicePerformance } from '../../../shared/hooks/useDevicePerformance';
+import { readStorage } from '@/shared/lib/browser';
+import { useDevicePerformance } from '@/shared/hooks/useDevicePerformance';
 import { useWorkspaceStore, WORLD_FACTOR } from '../model/store';
 import { WorkspaceSceneRuntime, type WorkspaceSceneFlightTileProjection, type WorkspaceSceneTileDescriptor } from '../scene/sceneRuntime';
 import { WORKSPACE_SCENE_THEMES, WORKSPACE_SCENE_THEME_OPTIONS } from '../scene/sceneConfig';

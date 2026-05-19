@@ -1,6 +1,6 @@
 import { nanoid } from 'nanoid';
 import { create } from 'zustand';
-import type { InviteContext, Membership, Org, User } from '../shared/stores/auth';
+import type { InviteContext, Membership, Org, User } from '@/shared/stores/auth';
 import type { ConsoleEventPayload, ConsoleFilter, ConsoleLogEntry } from './types';
 
 const MAX_LOG_ENTRIES = 400;

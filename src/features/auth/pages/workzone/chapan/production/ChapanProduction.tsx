@@ -14,7 +14,7 @@ import {
 import type { ChapanChangeRequest, ProductionStatus, ProductionTask } from '@/entities/order/types';
 import { useAuthStore } from '@/shared/stores/auth';
 import { useChapanPermissions } from '@/shared/hooks/useChapanPermissions';
-import { buildItemLine } from '../../../../shared/utils/itemLine';
+import { buildItemLine } from '@/shared/utils/itemLine';
 import WorkshopTaskCard from './WorkshopTaskCard';
 import WorkshopCardView from './WorkshopCardView';
 import { sortWorkshopTasks } from './workshopSort';

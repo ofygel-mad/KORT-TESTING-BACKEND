@@ -6,19 +6,19 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { AlertTriangle, Calculator, Pencil, Plus, Star, Trash2, X } from 'lucide-react';
 import { useOrder, useUpdateOrder, useChapanCatalogs, useChapanProfile, useRequestItemChange, useUpdateBankCommission } from '@/entities/order/queries';
-import { useEmployeePermissions } from '../../../../shared/hooks/useEmployeePermissions';
-import { useRole } from '../../../../shared/hooks/useRole';
+import { useEmployeePermissions } from '@/shared/hooks/useEmployeePermissions';
+import { useRole } from '@/shared/hooks/useRole';
 import type { Urgency } from '@/entities/order/types';
-import { formatPersonNameInput } from '../../../../shared/utils/person';
-import { formatKazakhPhoneInput, isKazakhPhoneComplete } from '../../../../shared/utils/kz';
+import { formatPersonNameInput } from '@/shared/utils/person';
+import { formatKazakhPhoneInput, isKazakhPhoneComplete } from '@/shared/utils/kz';
 import {
   buildDeliveryOptions,
   buildMixedBreakdownRows,
   buildPaymentMethodOptions,
   buildSizeCatalog,
-} from '../../../../shared/lib/chapanCatalogDefaults';
+} from '@/shared/lib/chapanCatalogDefaults';
 import { calculateChapanOrderFinancials } from '@/shared/lib/chapanFinancials';
-import { useAuthStore } from '../../../../shared/stores/auth';
+import { useAuthStore } from '@/shared/stores/auth';
 import styles from './ChapanNewOrder.module.css';
 
 // ── Constants ─────────────────────────────────────────────────────────────────

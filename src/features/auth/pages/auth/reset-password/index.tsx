@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle, KeyRound } from 'lucide-react';
-import { api } from '../../../shared/api/client';
-import { readApiErrorMessage } from '../../../shared/api/errors';
+import { api } from '@/shared/api/client';
+import { readApiErrorMessage } from '@/shared/api/errors';
 import { AuthRouteLayout } from '../../../AuthRouteLayout';
 
 import styles from '../../../AuthModal.module.css';

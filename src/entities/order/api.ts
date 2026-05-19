@@ -1,4 +1,4 @@
-import { api, apiClient } from '../../shared/api/client';
+import { api, apiClient } from '@/shared/api/client';
 import type {
   ChapanOrder, ChapanInvoice, CreateOrderDto, UpdateOrderDto, AddPaymentDto, ListResponse,
   ProductionTask, ChapanCatalogs, ChapanProfile, ChapanClient, ChapanChangeRequest, CreateOrderItemDto, InvoiceDocumentPayload,

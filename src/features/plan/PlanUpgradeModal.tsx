@@ -2,9 +2,9 @@ import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CheckCircle2, Factory, Users, X, Zap } from 'lucide-react';
 import { toast } from 'sonner';
-import { api } from '../../shared/api/client';
-import { useAuthStore } from '../../shared/stores/auth';
-import { usePlan, PLAN_LABELS, type OrgMode } from '../../shared/hooks/usePlan';
+import { api } from '@/shared/api/client';
+import { useAuthStore } from '@/shared/stores/auth';
+import { usePlan, PLAN_LABELS, type OrgMode } from '@/shared/hooks/usePlan';
 import styles from './PlanUpgradeModal.module.css';
 
 interface ModeCard {

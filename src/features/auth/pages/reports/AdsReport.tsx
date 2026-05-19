@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { CalendarDays, FileSpreadsheet, Pencil, Plus, RefreshCw, Save, Trash2, Upload, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { adsApi } from '@/entities/ads/api';
-import { readApiErrorMessage } from '../../shared/api/errors';
+import { readApiErrorMessage } from '@/shared/api/errors';
 import {
   useAdsDashboard,
   useCreateAdCampaign,
@@ -12,7 +12,7 @@ import {
   useUpsertAdMetric,
 } from '@/entities/ads/queries';
 import type { AdCampaignReport, AdChannel, AdDailyMetric, AdSummary } from '@/entities/ads/types';
-import { Skeleton } from '../../shared/ui/Skeleton';
+import { Skeleton } from '@/shared/ui/Skeleton';
 import styles from './Reports.module.css';
 
 const CHANNELS: Array<{ value: AdChannel; label: string }> = [

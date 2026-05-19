@@ -1,8 +1,8 @@
-import { setProductMoment } from '../../shared/utils/productMoment';
+import { setProductMoment } from '@/shared/utils/productMoment';
 import { useState, type ReactNode, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { successBurst } from '../../shared/motion/presets';
+import { successBurst } from '@/shared/motion/presets';
 import {
   ArrowLeft,
   BriefcaseBusiness,
@@ -19,11 +19,11 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
-import { api } from '../../shared/api/client';
-import { Button } from '../../shared/ui/Button';
-import { KortLogo } from '../../shared/ui/KortLogo';
-import { useAuthStore } from '../../shared/stores/auth';
-import { useDocumentTitle } from '../../shared/hooks/useDocumentTitle';
+import { api } from '@/shared/api/client';
+import { Button } from '@/shared/ui/Button';
+import { KortLogo } from '@/shared/ui/KortLogo';
+import { useAuthStore } from '@/shared/stores/auth';
+import { useDocumentTitle } from '@/shared/hooks/useDocumentTitle';
 import { toast } from 'sonner';
 import s from './Onboarding.module.css';
 

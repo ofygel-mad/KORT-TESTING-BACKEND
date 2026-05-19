@@ -4,7 +4,7 @@ import { useLeads, useUpdateLead, useCreateLead } from '@/entities/lead/queries'
 import type { Lead, LeadStage, LeadPipeline } from '@/entities/lead/types';
 import { LeadDrawer } from './LeadDrawer';
 import { CreateLeadModal } from './CreateLeadModal';
-import { useViewportProfile } from '../../../shared/hooks/useViewportProfile';
+import { useViewportProfile } from '@/shared/hooks/useViewportProfile';
 import styles from './Leads.module.css';
 
 const STAGES: { key: LeadStage; label: string; color: string }[] = [

@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { ClipboardList, FileText, Check, Clock, X, Download, AlertTriangle } from 'lucide-react';
-import { useAuthStore } from '../../../../shared/stores/auth';
+import { useAuthStore } from '@/shared/stores/auth';
 import {
   useInvoices,
   useConfirmWarehouse,
   useRejectInvoice,
 } from '@/entities/order/queries';
 import type { ChapanInvoice, InvoiceStatus } from '@/entities/order/types';
-import { useChapanPermissions } from '../../../../shared/hooks/useChapanPermissions';
+import { useChapanPermissions } from '@/shared/hooks/useChapanPermissions';
 import styles from './ChapanInvoices.module.css';
 
 const STATUS_LABEL: Record<InvoiceStatus, string> = {
@@ -70,7 +70,7 @@ export default function ChapanInvoicesPage() {
   }
 
   async function handleDownload(invoiceId: string, invoiceNumber: string) {
-    const { apiClient } = await import('../../../../shared/api/client');
+    const { apiClient } = await import('@/shared/api/client');
     try {
       const currency = useAuthStore.getState().org?.currency ?? 'KZT';
       const response = await apiClient.get(`/chapan/invoices/${invoiceId}/download`, {

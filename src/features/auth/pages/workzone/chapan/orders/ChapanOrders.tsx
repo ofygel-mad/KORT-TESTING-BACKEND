@@ -6,17 +6,17 @@ import { toast } from 'sonner';
 import type { ChapanOrder, OrderStatus, OrderWarehouseState } from '@/entities/order/types';
 import { useVariantAvailability } from '@/entities/warehouse/queries';
 import type { VariantAvailabilityMap, VariantAvailabilityResult } from '@/entities/warehouse/types';
-import { useAuthStore } from '../../../../../../shared/stores/auth';
-import { useEmployeePermissions } from '../../../../../../shared/hooks/useEmployeePermissions';
-import { useRole } from '../../../../../../shared/hooks/useRole';
-import { buildItemLine } from '../../../../../../shared/utils/itemLine';
+import { useAuthStore } from '@/shared/stores/auth';
+import { useEmployeePermissions } from '@/shared/hooks/useEmployeePermissions';
+import { useRole } from '@/shared/hooks/useRole';
+import { buildItemLine } from '@/shared/utils/itemLine';
 import { calculateChapanOrderFinancials, getChapanOrderBalance } from '@/shared/lib/chapanFinancials';
-import { buildVariantAvailabilityInput, buildVariantLookupKey, type VariantAvailabilityInput } from '../../../../../../shared/utils/variantAvailability';
+import { buildVariantAvailabilityInput, buildVariantLookupKey, type VariantAvailabilityInput } from '@/shared/utils/variantAvailability';
 import { useChapanUiStore } from '../../../../../workzone/chapan/store';
 import { useUnpaidAlerts } from '@/entities/alert/queries';
 import OrderDetailDrawer from './OrderDetailDrawer';
 import styles from './ChapanOrders.module.css';
-import { formatOrderItemNumber } from '../../../../../../shared/utils/orderItemNumber';
+import { formatOrderItemNumber } from '@/shared/utils/orderItemNumber';
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
   new: 'Новый', confirmed: 'Подтверждён', in_production: 'В цехе',

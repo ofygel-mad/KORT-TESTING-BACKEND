@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { employeeApi } from './api';
-import { readApiErrorMessage } from '../../shared/api/errors';
+import { readApiErrorMessage } from '@/shared/api/errors';
 import type { CreateEmployeeDto, UpdateEmployeeDto, Employee } from './types';
 
 export const employeeKeys = {

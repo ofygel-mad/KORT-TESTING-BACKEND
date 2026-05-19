@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { AuthModal } from '../../../AuthModal';
 import { AuthRouteLayout } from '../../../AuthRouteLayout';
 import { resolvePostAuthPath } from '../../../navigation';
-import { DEV_RUNTIME_BLOCKERS_DISABLED } from '../../../shared/config/devAccess';
-import { useAuthStore } from '../../../shared/stores/auth';
+import { DEV_RUNTIME_BLOCKERS_DISABLED } from '@/shared/config/devAccess';
+import { useAuthStore } from '@/shared/stores/auth';
 
 export default function RegisterPage() {
   const navigate = useNavigate();

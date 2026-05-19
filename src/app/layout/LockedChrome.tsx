@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
-import { KortLogo } from '../../shared/ui/KortLogo';
+import { KortLogo } from '@/shared/ui/KortLogo';
 import styles from './LockedChrome.module.css';
 
 function getCurrentLabel(pathname: string) {

@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { X, User } from 'lucide-react';
-import { api } from '../../../shared/api/client';
-import { useAuthStore } from '../../../shared/stores/auth';
-import { useChatStore } from '../../../shared/stores/chat';
+import { api } from '@/shared/api/client';
+import { useAuthStore } from '@/shared/stores/auth';
+import { useChatStore } from '@/shared/stores/chat';
 import { useChatConversations, useStartConversation } from '../hooks';
-import { SearchInput } from '../../../shared/ui/SearchInput';
+import { SearchInput } from '@/shared/ui/SearchInput';
 import styles from './NewChatPanel.module.css';
 
 interface TeamMember {

@@ -3,9 +3,9 @@ import { Plus, X } from 'lucide-react';
 import { useCreateManualInvoice } from '@/entities/purchase/queries';
 import { useCatalogDefinitions, useOrderFormCatalog } from '@/entities/warehouse/queries';
 import type { PurchaseType } from '@/entities/purchase/types';
-import { SearchableSelect } from '../../../../shared/ui/SearchableSelect';
-import { useCurrency } from '../../../../shared/hooks/useCurrency';
-import { formatMoney } from '../../../../shared/utils/format';
+import { SearchableSelect } from '@/shared/ui/SearchableSelect';
+import { useCurrency } from '@/shared/hooks/useCurrency';
+import { formatMoney } from '@/shared/utils/format';
 import {
   buildPurchaseProductFieldMap,
   getGlobalWarehouseOptions,

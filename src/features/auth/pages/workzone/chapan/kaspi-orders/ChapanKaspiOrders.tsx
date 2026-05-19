@@ -12,7 +12,7 @@ import {
   useTestKaspiConnection,
 } from '@/entities/kaspi/queries';
 import type { SaveKaspiConnectionDto } from '@/entities/kaspi/types';
-import { useRole } from '../../../../../../shared/hooks/useRole';
+import { useRole } from '@/shared/hooks/useRole';
 import {
   formatKaspiDateTime,
   KASPI_STAGE_META,

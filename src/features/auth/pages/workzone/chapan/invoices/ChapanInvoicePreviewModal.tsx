@@ -2,14 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Clock, Download, Eye, PencilLine, Save, X } from 'lucide-react';
 import { useInvoice, useSaveInvoiceDocument } from '@/entities/order/queries';
-import { apiClient } from '../../../../shared/api/client';
+import { apiClient } from '@/shared/api/client';
 import type {
   InvoiceDocumentPayload,
   InvoiceDocumentRow,
   InvoiceDocumentSourceOrder,
 } from '@/entities/order/types';
-import { useAuthStore } from '../../../../shared/stores/auth';
-import { useChapanPermissions } from '../../../../shared/hooks/useChapanPermissions';
+import { useAuthStore } from '@/shared/stores/auth';
+import { useChapanPermissions } from '@/shared/hooks/useChapanPermissions';
 import styles from './ChapanInvoicePreviewModal.module.css';
 
 const FIELD_LABELS: Record<string, string> = {

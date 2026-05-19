@@ -1,6 +1,6 @@
-import type { AuthSessionResponse } from '../shared/api/contracts';
-import { MOCK_COMPANIES } from '../shared/api/mock-data';
-import type { Membership, Org, User } from '../shared/stores/auth';
+import type { AuthSessionResponse } from '@/shared/api/contracts';
+import { MOCK_COMPANIES } from '@/shared/api/mock-data';
+import type { Membership, Org, User } from '@/shared/stores/auth';
 
 export const LOCAL_CONSOLE_ACCESS_TOKEN = 'kort_console_access_token';
 export const LOCAL_CONSOLE_REFRESH_TOKEN = 'kort_console_refresh_token';

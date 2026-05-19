@@ -1,4 +1,4 @@
-import { api } from '../../shared/api/client';
+import { api } from '@/shared/api/client';
 import type { Task, PaginatedTasks, CreateTaskDto, UpdateTaskDto, TaskFilters } from './types';
 
 export const tasksApi = {

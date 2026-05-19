@@ -1,8 +1,8 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Warehouse, Filter, ChevronDown, Eye, Settings, Plus, Download, AlertCircle, HelpCircle } from 'lucide-react';
-import { Button } from '../../../../shared/ui/Button';
-import { Badge } from '../../../../shared/ui/Badge';
-import { SearchInput } from '../../../../shared/ui/SearchInput';
+import { Button } from '@/shared/ui/Button';
+import { Badge } from '@/shared/ui/Badge';
+import { SearchInput } from '@/shared/ui/SearchInput';
 import styles from './WarehouseHeader.module.css';
 
 type StatusFilter = 'all' | 'instock' | 'reserved' | 'empty';

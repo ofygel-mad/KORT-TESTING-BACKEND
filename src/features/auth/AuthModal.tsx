@@ -10,20 +10,20 @@ import {
   KeyRound,
   ShieldX,
 } from 'lucide-react';
-import { api } from '../../shared/api/client';
-import type { AuthSessionResponse } from '../../shared/api/contracts';
+import { api } from '@/shared/api/client';
+import type { AuthSessionResponse } from '@/shared/api/contracts';
 import {
   isFirstLoginResponse,
   type LoginApiResponse,
-} from '../../shared/api/contracts';
-import { readApiErrorMessage, readApiErrorStatus } from '../../shared/api/errors';
-import { useAuthStore } from '../../shared/stores/auth';
-import { usePinStore } from '../../shared/stores/pin';
+} from '@/shared/api/contracts';
+import { readApiErrorMessage, readApiErrorStatus } from '@/shared/api/errors';
+import { useAuthStore } from '@/shared/stores/auth';
+import { usePinStore } from '@/shared/stores/pin';
 import {
   formatKazakhPhoneInput,
   isKazakhPhoneComplete,
   normalizeKazakhPhone,
-} from '../../shared/utils/kz';
+} from '@/shared/utils/kz';
 import { SetPasswordStep } from './SetPasswordStep';
 import styles from './AuthModal.module.css';
 

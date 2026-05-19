@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useAuthStore } from '../../../../shared/stores/auth';
-import { useEmployeePermissions } from '../../../../shared/hooks/useEmployeePermissions';
+import { useAuthStore } from '@/shared/stores/auth';
+import { useEmployeePermissions } from '@/shared/hooks/useEmployeePermissions';
 import { useChapanCatalogs, useChapanProfile, useSaveCatalogs, useSaveProfile, useChapanClients, useChangeEmail } from '@/entities/order/queries';
 import { AlertCircle, Plus, RefreshCw, Save, X } from 'lucide-react';
 import type { ChapanCatalogs } from '@/entities/order/types';
@@ -10,7 +10,7 @@ import {
   normalizePaymentMethodLabel,
   normalizeSizeCatalog,
   normalizeSizeValue,
-} from '../../../../shared/lib/chapanCatalogDefaults';
+} from '@/shared/lib/chapanCatalogDefaults';
 import styles from './ChapanSettings.module.css';
 
 type CatalogKey = 'productCatalog' | 'sizeCatalog' | 'workers' | 'paymentMethodCatalog';
@@ -433,7 +433,7 @@ function AccountTab({ isOwner }: { isOwner: boolean }) {
     if (pwNew !== pwConfirm) { setPwError('Пароли не совпадают.'); return; }
     setPwLoading(true);
     try {
-      const { api } = await import('../../../../shared/api/client');
+      const { api } = await import('@/shared/api/client');
       await (api as { post: (url: string, data: object) => Promise<unknown> })
         .post('/auth/change-password', { current_password: pwCurrent, new_password: pwNew });
       setPwSuccess('Пароль успешно изменён.');
