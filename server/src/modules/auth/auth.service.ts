@@ -121,7 +121,12 @@ function isUniqueConstraint(error: unknown, field: string) {
   return typeof target === 'string' ? target.includes(field) : false;
 }
 
-async function generateUniqueSlug(
+/**
+ * Provisioning primitive: derives a unique org slug from a company name.
+ * Exported so the Product Platform API (R4.2) can provision tenants without
+ * duplicating the slug-uniqueness logic.
+ */
+export async function generateUniqueSlug(
   companyName: string,
   tx: Prisma.TransactionClient,
 ) {

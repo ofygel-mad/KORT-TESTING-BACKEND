@@ -58,6 +58,15 @@ const envSchema = z.object({
   R2_ACCESS_KEY_ID: z.preprocess((value) => value === '' ? undefined : value, z.string().min(1).optional()),
   R2_SECRET_ACCESS_KEY: z.preprocess((value) => value === '' ? undefined : value, z.string().min(1).optional()),
   R2_BUCKET: z.preprocess((value) => value === '' ? undefined : value, z.string().min(1).optional()),
+  // R4.2 — Product Platform API (Control Plane integration). All optional:
+  // without PLATFORM_SERVICE_SECRET the /platform/v1/* surface is NOT mounted.
+  // PLATFORM_ALLOWED_IPS — comma-separated IPs/CIDRs; empty = IP allowlist off.
+  PLATFORM_SERVICE_SECRET: z.preprocess(
+    (value) => (value === '' ? undefined : value),
+    z.string().min(16).optional(),
+  ),
+  PLATFORM_ALLOWED_IPS: z.string().default(''),
+  PLATFORM_PRODUCT_CODE: z.string().default('kort'),
 });
 
 function loadConfig() {

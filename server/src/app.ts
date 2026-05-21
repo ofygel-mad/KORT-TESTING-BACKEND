@@ -48,6 +48,7 @@ import { warehouseFoundationRoutes } from './modules/warehouse/warehouse-foundat
 import { warehouseInventoryCoreRoutes } from './modules/warehouse/warehouse-inventory-core.routes.js';
 import { warehouseLiveRoutes } from './modules/warehouse/warehouse-live.routes.js';
 import { warehouseRuntimeRoutes } from './modules/warehouse/warehouse-runtime.routes.js';
+import { platformRoutes } from './modules/platform/platform.routes.js';
 // Chat routes disabled - pending schema migration
 // import { chatRoutes } from './modules/chat/chat.routes.js';
 
@@ -116,7 +117,8 @@ export async function buildApp() {
   // response is sent; the write is fire-and-forget so it never adds latency.
   app.addHook('onResponse', (request, reply, done) => {
     const path = request.routeOptions?.url ?? request.url.split('?')[0] ?? request.url;
-    if (path !== '/api/v1/health' && request.method !== 'OPTIONS') {
+    const isHealthProbe = path === '/api/v1/health' || path === '/platform/v1/health';
+    if (!isHealthProbe && request.method !== 'OPTIONS') {
       recordAuditEvent({
         type: 'request',
         action: `${request.method} ${path}`,
@@ -227,6 +229,15 @@ export async function buildApp() {
   await app.register(adsRoutes, { prefix: '/api/v1/ads' });
   // Chat routes disabled - pending schema migration
   // await app.register(chatRoutes, { prefix: '/api/v1/chat' });
+
+  // ── Product Platform API (R4.2) ─────────────────────────
+  // Service-to-service surface for the Control Plane. Mounted only when a
+  // service secret is configured — no secret, no platform attack surface.
+  if (config.PLATFORM_SERVICE_SECRET) {
+    await app.register(platformRoutes, { prefix: '/platform/v1' });
+  } else {
+    app.log.warn('Platform API disabled — PLATFORM_SERVICE_SECRET is not set.');
+  }
 
   // ── Health check ────────────────────────────────────────
   const healthHandler = async () => ({ status: 'ok', ts: new Date().toISOString() });

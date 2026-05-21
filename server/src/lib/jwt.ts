@@ -49,6 +49,33 @@ export function signFirstLoginToken(userId: string): string {
   return jwt.sign(payload, config.JWT_ACCESS_SECRET, { expiresIn: '30m' });
 }
 
+/**
+ * Impersonation token — issued by the Product Platform API (R4.2) so a
+ * Control Plane operator can act inside a tenant. It works as a regular
+ * access token (no `type` field, signed with JWT_ACCESS_SECRET, so the auth
+ * plugin verifies it transparently) but carries `impersonated: true` plus the
+ * operator id in `act` for downstream enforcement (UI banner / destructive-op
+ * blocking — landed later, R4.5+).
+ */
+export interface ImpersonationTokenPayload {
+  sub: string;        // userId being impersonated (the tenant owner)
+  email: string;
+  orgId: string;      // tenant org id
+  act: string;        // Control Plane operator (platform user id)
+  impersonated: true;
+}
+
+/** Signs a short-lived impersonation token; ttlSec is the lifetime in seconds. */
+export function signImpersonationToken(
+  claims: Omit<ImpersonationTokenPayload, 'impersonated'>,
+  ttlSec: number,
+): string {
+  const payload: ImpersonationTokenPayload = { ...claims, impersonated: true };
+  return jwt.sign(payload, config.JWT_ACCESS_SECRET, {
+    expiresIn: ttlSec as SignOptions['expiresIn'],
+  });
+}
+
 // ─── Verification ─────────────────────────────────────────────────────────────
 
 export function verifyAccessToken(token: string): AccessTokenPayload {
