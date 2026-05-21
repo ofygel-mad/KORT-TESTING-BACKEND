@@ -3,28 +3,28 @@ import type { ManualInvoice, CreateManualInvoiceDto, UpdateManualInvoiceDto } fr
 
 export const purchaseApi = {
   list: (params?: { type?: string; archived?: boolean }) =>
-    api.get<{ count: number; results: ManualInvoice[] }>('/chapan/purchase', params),
+    api.get<{ count: number; results: ManualInvoice[] }>('/purchase', params),
 
   getById: (id: string) =>
-    api.get<ManualInvoice>(`/chapan/purchase/${id}`),
+    api.get<ManualInvoice>(`/purchase/${id}`),
 
   create: (dto: CreateManualInvoiceDto) =>
-    api.post<ManualInvoice>('/chapan/purchase', dto),
+    api.post<ManualInvoice>('/purchase', dto),
 
   update: (id: string, dto: UpdateManualInvoiceDto) =>
-    api.patch<ManualInvoice>(`/chapan/purchase/${id}`, dto),
+    api.patch<ManualInvoice>(`/purchase/${id}`, dto),
 
   archive: (id: string) =>
-    api.post<ManualInvoice>(`/chapan/purchase/${id}/archive`),
+    api.post<ManualInvoice>(`/purchase/${id}/archive`),
 
   restore: (id: string) =>
-    api.post<ManualInvoice>(`/chapan/purchase/${id}/restore`),
+    api.post<ManualInvoice>(`/purchase/${id}/restore`),
 
   remove: (id: string) =>
-    api.delete<{ deleted: boolean }>(`/chapan/purchase/${id}`),
+    api.delete<{ deleted: boolean }>(`/purchase/${id}`),
 
   download: (id: string, currency = 'KZT') =>
-    apiClient.get(`/chapan/purchase/${id}/download`, {
+    apiClient.get(`/purchase/${id}/download`, {
       params: { currency },
       responseType: 'blob',
     }),

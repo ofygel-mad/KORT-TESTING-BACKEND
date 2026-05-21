@@ -72,8 +72,8 @@ export function OrderRefCard({ orderId }: Props) {
       className={styles.card}
       role="button"
       tabIndex={0}
-      onClick={() => navigate(`/workzone/chapan/orders/${orderId}`)}
-      onKeyDown={(e) => e.key === 'Enter' && navigate(`/workzone/chapan/orders/${orderId}`)}
+      onClick={() => navigate(`/sales/${orderId}`)}
+      onKeyDown={(e) => e.key === 'Enter' && navigate(`/sales/${orderId}`)}
     >
       <div className={styles.header}>
         <Package size={14} className={styles.icon} />

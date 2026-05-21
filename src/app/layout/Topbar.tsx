@@ -44,21 +44,21 @@ function NotificationBell({ enabled }: { enabled: boolean }) {
     enabled,
     onNotification: (data) => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      // Legacy: invalidate Chapan on generic notification events
+      // Invalidate operations queries on generic notification events
       const entity = (data?.entity ?? data?.type ?? '') as string;
-      if (!entity || entity.startsWith('order') || entity.startsWith('chapan') || entity.startsWith('production')) {
-        queryClient.invalidateQueries({ queryKey: ['chapan_orders'] });
-        queryClient.invalidateQueries({ queryKey: ['chapan_production'] });
-        queryClient.invalidateQueries({ queryKey: ['chapan_invoices'] });
+      if (!entity || entity.startsWith('order') || entity.startsWith('production')) {
+        queryClient.invalidateQueries({ queryKey: ['orders'] });
+        queryClient.invalidateQueries({ queryKey: ['production'] });
+        queryClient.invalidateQueries({ queryKey: ['invoices'] });
       }
     },
     onEntityUpdate: (entities) => {
       const keyMap: Record<string, readonly unknown[]> = {
-        chapan_orders:          ['chapan_orders'],
-        chapan_production:      ['chapan_production'],
-        chapan_invoices:        ['chapan_invoices'],
-        chapan_returns:         ['chapan_returns'],
-        chapan_change_requests: ['chapan_change_requests'],
+        orders:                 ['orders'],
+        production:             ['production'],
+        invoices:               ['invoices'],
+        returns:                ['returns'],
+        change_requests:        ['change_requests'],
         leads:                  ['leads'],
         deals:                  ['deals'],
         customers:              ['customers'],
@@ -68,8 +68,8 @@ function NotificationBell({ enabled }: { enabled: boolean }) {
       for (const key of entities) {
         const queryKey = keyMap[key];
         if (queryKey) queryClient.invalidateQueries({ queryKey });
-        if (key === 'chapan_orders') {
-          queryClient.invalidateQueries({ queryKey: ['chapan_production'] });
+        if (key === 'orders') {
+          queryClient.invalidateQueries({ queryKey: ['production'] });
         }
       }
     },

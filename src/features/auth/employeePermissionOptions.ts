@@ -1,63 +1,24 @@
-import type { EmployeePermission } from '@/shared/api/contracts';
+import { PERMISSION_MATRIX, type Permission } from '@/entities/employee/types';
 
-export const EMPLOYEE_PERMISSION_OPTIONS: Array<{
-  key: EmployeePermission;
+export interface PermissionGroup {
+  module: string;
   label: string;
-  description: string;
-}> = [
-  {
-    key: 'full_access',
-    label: 'Полный доступ',
-    description: 'Все разделы системы и все действия без ограничений.',
-  },
-  {
-    key: 'chapan_access_orders',
-    label: 'Заказы',
-    description: 'Просмотр списка заказов, создание и редактирование заказов.',
-  },
-  {
-    key: 'chapan_access_production',
-    label: 'Производство',
-    description: 'Доступ к производственным задачам и ходу выполнения заказов.',
-  },
-  {
-    key: 'chapan_access_ready',
-    label: 'Готовые заказы',
-    description: 'Работа с готовыми заказами, передачей и выдачей.',
-  },
-  {
-    key: 'chapan_access_archive',
-    label: 'Архив',
-    description: 'Просмотр архивных заказов и возврат из архива.',
-  },
-  {
-    key: 'chapan_access_warehouse_nav',
-    label: 'Склад и накладные',
-    description: 'Доступ к складу, накладным и связанным операциям.',
-  },
-  {
-    key: 'chapan_manage_production',
-    label: 'Управление производством',
-    description: 'Назначение исполнителей и управление этапами производства.',
-  },
-  {
-    key: 'chapan_confirm_invoice',
-    label: 'Подтверждение накладных',
-    description: 'Подтверждение отгрузок и приёмки по накладным.',
-  },
-  {
-    key: 'chapan_warehouse_operator',
-    label: 'ЗавСклад / Оператор склада',
-    description: 'Приём накладных, подтверждение отгрузок и операции на складе.',
-  },
-  {
-    key: 'chapan_shipping',
-    label: 'Менеджер отправки',
-    description: 'Отправка заказов клиентам, контроль оплаты перед отправкой.',
-  },
-  {
-    key: 'chapan_manage_settings',
-    label: 'Настройки модуля',
-    description: 'Изменение настроек рабочего модуля и его параметров.',
-  },
-];
+  actions: Array<{ key: Permission; label: string }>;
+}
+
+/** Permission options grouped by module — drives the access editor checkboxes. */
+export const PERMISSION_GROUPS: PermissionGroup[] = PERMISSION_MATRIX.map((row) => ({
+  module: row.module,
+  label: row.label,
+  actions: [
+    row.read ? { key: row.read, label: 'Просмотр' } : null,
+    row.write ? { key: row.write, label: 'Изменение' } : null,
+    row.admin ? { key: row.admin, label: row.adminLabel ?? 'Администрирование' } : null,
+  ].filter((a): a is { key: Permission; label: string } => a !== null),
+}));
+
+/** Flat list of every assignable permission. */
+export const EMPLOYEE_PERMISSION_OPTIONS: Array<{ key: Permission; label: string }> =
+  PERMISSION_GROUPS.flatMap((g) =>
+    g.actions.map((a) => ({ key: a.key, label: `${g.label}: ${a.label}` })),
+  );

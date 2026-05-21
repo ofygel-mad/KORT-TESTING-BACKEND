@@ -12,6 +12,7 @@ import {
   MonitorCog,
   Moon,
   Plus,
+  Shield,
   ShieldCheck,
   Smartphone,
   Sun,
@@ -43,9 +44,10 @@ import { CompanyAccessGate } from '@/shared/ui/CompanyAccessGate';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { PageHeader } from '@/shared/ui/PageHeader';
 import { Skeleton } from '@/shared/ui/Skeleton';
-import type { Employee, EmployeePermission, CreateEmployeeDto, UpdateEmployeeDto } from '@/entities/employee/types';
-import { PERMISSION_LABEL, PERMISSION_DESCRIPTION, BASE_PERMISSIONS, CHAPAN_PERMISSIONS } from '@/entities/employee/types';
+import type { Employee, CreateEmployeeDto, PermissionOverride } from '@/entities/employee/types';
 import { useEmployees, useCreateEmployee, useUpdateEmployee, useDismissEmployee, useResetPassword, useRemoveEmployee } from '@/entities/employee/queries';
+import { RoleAccessFields } from '@/features/auth/RoleAccessFields';
+import { RolesManager } from '@/features/auth/RolesManager';
 import { isKazakhPhoneComplete, normalizeKazakhPhone } from '@/shared/utils/kz';
 import { PhoneInput } from '@/shared/ui/PhoneInput';
 import s from './Settings.module.css';
@@ -85,6 +87,7 @@ type SectionKey =
   | 'profile'
   | 'organization'
   | 'company-access'
+  | 'roles'
   | 'appearance'
   | 'security'
   | 'integrations'
@@ -111,6 +114,7 @@ const SECTIONS: Array<{ key: SectionKey; label: string; icon: JSX.Element }> = [
   { key: 'profile', label: 'Профиль', icon: <User size={15} /> },
   { key: 'organization', label: 'Организация', icon: <Building2 size={15} /> },
   { key: 'company-access', label: 'Компания и доступ', icon: <Users size={15} /> },
+  { key: 'roles', label: 'Роли', icon: <Shield size={15} /> },
   { key: 'appearance', label: 'Оформление', icon: <MonitorCog size={15} /> },
   { key: 'security', label: 'Безопасность', icon: <ShieldCheck size={15} /> },
   { key: 'integrations', label: 'Интеграции', icon: <Globe size={15} /> },
@@ -361,16 +365,9 @@ const EMP_DEPT_PRESETS = ['Менеджмент', 'Продажи', 'Произ�
 function AddEmpDrawer({ onClose }: { onClose: () => void }) {
   const createEmployee = useCreateEmployee();
   const [form, setForm] = useState<CreateEmployeeDto>({
-    phone: '', full_name: '', department: '', permissions: ['sales'],
+    phone: '', full_name: '', department: '', roleId: '', overrides: [],
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  function togglePerm(p: EmployeePermission) {
-    setForm(f => ({
-      ...f,
-      permissions: f.permissions.includes(p) ? f.permissions.filter(x => x !== p) : [...f.permissions, p],
-    }));
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -379,7 +376,7 @@ function AddEmpDrawer({ onClose }: { onClose: () => void }) {
     if (!form.phone.trim()) errs.phone = 'Введите телефон';
     if (!isKazakhPhoneComplete(form.phone)) errs.phone = 'Введите полный номер: +7 (XXX) XXX-XX-XX';
     if (!form.department.trim()) errs.department = 'Введите отдел';
-    if (!form.permissions.length) errs.permissions = 'Выберите хотя бы одно право';
+    if (!form.roleId) errs.role = 'Выберите роль';
     if (Object.keys(errs).length) { setErrors(errs); return; }
     await createEmployee.mutateAsync({ ...form, phone: normalizeKazakhPhone(form.phone) ?? form.phone });
     onClose();
@@ -390,7 +387,7 @@ function AddEmpDrawer({ onClose }: { onClose: () => void }) {
       <div className={s.empDrawer} onClick={e => e.stopPropagation()}>
         <div className={s.empDrawerHeader}>
           <span className={s.empDrawerTitle}>Добавить сотрудника</span>
-          <button className={s.empDrawerClose} onClick={onClose}><X size={16} /></button>
+          <button type="button" className={s.empDrawerClose} onClick={onClose}><X size={16} /></button>
         </div>
         <form className={s.empDrawerBody} onSubmit={handleSubmit}>
           <div className={s.empField}>
@@ -415,39 +412,13 @@ function AddEmpDrawer({ onClose }: { onClose: () => void }) {
             {errors.department && <span className={s.empErrMsg}>{errors.department}</span>}
           </div>
           <div className={s.empField}>
-            <div className={s.empPermSectionLabel}><ShieldCheck size={12} />Права доступа <span className={s.empReq}>*</span></div>
-            <div className={s.empPermChecklist}>
-              {BASE_PERMISSIONS.map(p => {
-                const checked = form.permissions.includes(p);
-                return (
-                  <label key={p} className={`${s.empPermCheckItem} ${checked ? s.empPermCheckItemActive : ''}`}>
-                    <input type="checkbox" checked={checked} onChange={() => togglePerm(p)} className={s.empPermCheckbox} />
-                    <div>
-                      <span className={s.empPermCheckLabel}>{PERMISSION_LABEL[p]}</span>
-                      <span className={s.empPermCheckDesc}>{PERMISSION_DESCRIPTION[p]}</span>
-                    </div>
-                  </label>
-                );
-              })}
-            </div>
-            {errors.permissions && <span className={s.empErrMsg}>{errors.permissions}</span>}
-          </div>
-          <div className={s.empField}>
-            <div className={s.empPermModuleDivider}>Модуль Чапан</div>
-            <div className={s.empPermChecklist}>
-              {CHAPAN_PERMISSIONS.map(p => {
-                const checked = form.permissions.includes(p);
-                return (
-                  <label key={p} className={`${s.empPermCheckItem} ${checked ? s.empPermCheckItemActive : ''}`}>
-                    <input type="checkbox" checked={checked} onChange={() => togglePerm(p)} className={s.empPermCheckbox} />
-                    <div>
-                      <span className={s.empPermCheckLabel}>{PERMISSION_LABEL[p]}</span>
-                      <span className={s.empPermCheckDesc}>{PERMISSION_DESCRIPTION[p]}</span>
-                    </div>
-                  </label>
-                );
-              })}
-            </div>
+            <RoleAccessFields
+              roleId={form.roleId}
+              onRoleChange={(roleId) => setForm(f => ({ ...f, roleId }))}
+              overrides={form.overrides ?? []}
+              onOverridesChange={(overrides) => setForm(f => ({ ...f, overrides }))}
+            />
+            {errors.role && <span className={s.empErrMsg}>{errors.role}</span>}
           </div>
           <div className={s.empDrawerNote}>
             Система создаст учётную запись. Временный пароль будет показан после создания.
@@ -468,23 +439,22 @@ function EditEmpDrawer({ employee, onClose }: { employee: Employee; onClose: () 
   const updateEmployee = useUpdateEmployee();
   const dismissEmployee = useDismissEmployee();
   const resetPassword = useResetPassword();
-  const [perms, setPerms] = useState<EmployeePermission[]>([...employee.permissions]);
+  const [roleId, setRoleId] = useState(employee.role_id ?? '');
+  const [overrides, setOverrides] = useState<PermissionOverride[]>([...employee.overrides]);
   const [dept, setDept] = useState(employee.department);
-  const [permsDirty, setPermsDirty] = useState(false);
   const [confirmDismiss, setConfirmDismiss] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
 
   const isDismissed = employee.status === 'dismissed';
-
-  function togglePerm(p: EmployeePermission) {
-    setPerms(prev => prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p]);
-    setPermsDirty(true);
-  }
+  const dirty =
+    roleId !== (employee.role_id ?? '') ||
+    dept !== employee.department ||
+    JSON.stringify(overrides) !== JSON.stringify(employee.overrides);
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    await updateEmployee.mutateAsync({ id: employee.id, dto: { department: dept, permissions: perms } });
-    setPermsDirty(false);
+    if (!roleId) return;
+    await updateEmployee.mutateAsync({ id: employee.id, dto: { department: dept, roleId, overrides } });
     onClose();
   }
 
@@ -499,7 +469,7 @@ function EditEmpDrawer({ employee, onClose }: { employee: Employee; onClose: () 
               {isDismissed ? 'Деактивирован' : 'Активен'}
             </span>
           </div>
-          <button className={s.empDrawerClose} onClick={onClose}><X size={16} /></button>
+          <button type="button" className={s.empDrawerClose} onClick={onClose}><X size={16} /></button>
         </div>
         <form className={s.empDrawerBody} onSubmit={handleSave}>
           {/* Department */}
@@ -510,51 +480,22 @@ function EditEmpDrawer({ employee, onClose }: { employee: Employee; onClose: () 
             <datalist id="emp-dept-list2">{EMP_DEPT_PRESETS.map(d => <option key={d} value={d} />)}</datalist>
           </div>
 
-          {/* Base permissions */}
+          {/* Role + overrides */}
           <div className={s.empField}>
-            <div className={s.empPermSectionLabel}><ShieldCheck size={12} />Права доступа</div>
-            <div className={s.empPermChecklist}>
-              {BASE_PERMISSIONS.map(p => {
-                const checked = perms.includes(p);
-                return (
-                  <label key={p} className={`${s.empPermCheckItem} ${checked ? s.empPermCheckItemActive : ''} ${isDismissed ? s.empPermCheckItemDisabled : ''}`}>
-                    <input type="checkbox" checked={checked} disabled={isDismissed}
-                      onChange={() => togglePerm(p)} className={s.empPermCheckbox} />
-                    <div>
-                      <span className={s.empPermCheckLabel}>{PERMISSION_LABEL[p]}</span>
-                      <span className={s.empPermCheckDesc}>{PERMISSION_DESCRIPTION[p]}</span>
-                    </div>
-                  </label>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Chapan module permissions */}
-          <div className={s.empField}>
-            <div className={s.empPermModuleDivider}>Модуль Чапан</div>
-            <div className={s.empPermChecklist}>
-              {CHAPAN_PERMISSIONS.map(p => {
-                const checked = perms.includes(p);
-                return (
-                  <label key={p} className={`${s.empPermCheckItem} ${checked ? s.empPermCheckItemActive : ''} ${isDismissed ? s.empPermCheckItemDisabled : ''}`}>
-                    <input type="checkbox" checked={checked} disabled={isDismissed}
-                      onChange={() => togglePerm(p)} className={s.empPermCheckbox} />
-                    <div>
-                      <span className={s.empPermCheckLabel}>{PERMISSION_LABEL[p]}</span>
-                      <span className={s.empPermCheckDesc}>{PERMISSION_DESCRIPTION[p]}</span>
-                    </div>
-                  </label>
-                );
-              })}
-            </div>
+            <RoleAccessFields
+              roleId={roleId}
+              onRoleChange={setRoleId}
+              overrides={overrides}
+              onOverridesChange={setOverrides}
+              disabled={isDismissed}
+            />
           </div>
 
           {/* Save */}
           {!isDismissed && (
             <div className={s.empDrawerActions}>
               <button type="button" className={s.empCancelBtn} onClick={onClose}>Отмена</button>
-              <button type="submit" className={s.empSubmitBtn} disabled={updateEmployee.isPending || (!permsDirty && dept === employee.department)}>
+              <button type="submit" className={s.empSubmitBtn} disabled={updateEmployee.isPending || !dirty || !roleId}>
                 {updateEmployee.isPending ? 'Сохранение...' : 'Сохранить'}
               </button>
             </div>
@@ -680,8 +621,8 @@ function CompanyAccessSection() {
                   <tr>
                     <th>Сотрудник</th>
                     <th>Отдел</th>
-                    <th>Права</th>
-                    <th></th>
+                    <th>Роль</th>
+                    <th aria-label="Действия"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -704,9 +645,10 @@ function CompanyAccessSection() {
                       <td style={{ color: 'var(--text-secondary)', fontSize: 12 }}>{emp.department}</td>
                       <td>
                         <div className={s.empPermTags}>
-                          {emp.permissions.map(p => (
-                            <span key={p} className={s.empPermTag}>{PERMISSION_LABEL[p]}</span>
-                          ))}
+                          <span className={s.empPermTag}>{emp.role_name ?? 'Без роли'}</span>
+                          {emp.overrides.length > 0 && (
+                            <span className={s.empPermTag}>+{emp.overrides.length} правок</span>
+                          )}
                         </div>
                       </td>
                       <td>
@@ -1315,6 +1257,8 @@ export default function SettingsPage() {
         return true;
       case 'organization':
         return access.isAdmin && access.hasCompanyAccess;
+      case 'roles':
+        return access.isAdmin && access.hasCompanyAccess;
       case 'templates':
         return access.hasCompanyAccess;
       case 'integrations':
@@ -1372,6 +1316,13 @@ export default function SettingsPage() {
               {section === 'profile' && <ProfileSection />}
               {section === 'organization' && <OrgSection />}
               {section === 'company-access' && <CompanyAccessSection />}
+              {section === 'roles' && (
+                <div className={s.section}>
+                  <div className={s.sectionBody}>
+                    <RolesManager />
+                  </div>
+                </div>
+              )}
               {section === 'appearance' && <AppearanceSection />}
               {section === 'security' && <SecuritySection />}
               {section === 'api' && <ApiSection />}

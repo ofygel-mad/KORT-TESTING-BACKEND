@@ -39,7 +39,7 @@ async function isEmptyDatabase() {
 
 async function ensureBootstrapOwner() {
   const existingOwner = await prisma.membership.findFirst({
-    where: { role: 'owner', status: 'active' },
+    where: { isOwner: true, status: 'active' },
     include: { user: true, org: true },
     orderBy: { joinedAt: 'asc' },
   });
@@ -77,16 +77,12 @@ async function ensureBootstrapOwner() {
       data: {
         userId: user.id,
         orgId: org.id,
-        role: 'owner',
+        isOwner: true,
         status: 'active',
         source: 'company_registration',
         joinedAt: new Date(),
         employeeAccountStatus: 'active',
       },
-    });
-
-    await tx.chapanProfile.create({
-      data: { orgId: org.id },
     });
 
     return tx.membership.findUniqueOrThrow({
@@ -110,7 +106,7 @@ export async function serviceRoutes(app: FastifyInstance) {
     }
 
     const membership = await ensureBootstrapOwner() ?? await prisma.membership.findFirst({
-      where: { role: 'owner', status: 'active' },
+      where: { isOwner: true, status: 'active' },
       include: { user: true, org: true },
       orderBy: { joinedAt: 'asc' },
     });
@@ -135,7 +131,7 @@ export async function serviceRoutes(app: FastifyInstance) {
       },
     });
 
-    const caps = buildCapabilities('owner', true, []);
+    const caps = buildCapabilities(true, true, []);
 
     return reply.send({
       access,
@@ -159,14 +155,12 @@ export async function serviceRoutes(app: FastifyInstance) {
         currency: org.currency,
         onboarding_completed: org.onboardingCompleted,
       },
-      role: 'owner',
       capabilities: caps,
       membership: {
         companyId: org.id,
         companyName: org.name,
         companySlug: org.slug,
         status: 'active',
-        role: 'owner',
         source: 'manual',
         requestId: null,
         inviteToken: null,
@@ -199,8 +193,8 @@ export async function serviceRoutes(app: FastifyInstance) {
     // 5. accounting
     const [invoices, orders, leads, deals, tasks, customers, entries, gaps] =
       await prisma.$transaction([
-        prisma.chapanInvoice.deleteMany({ where: { orgId: body.orgId } }),
-        prisma.chapanOrder.deleteMany({ where: { orgId: body.orgId } }),
+        prisma.invoice.deleteMany({ where: { orgId: body.orgId } }),
+        prisma.order.deleteMany({ where: { orgId: body.orgId } }),
         prisma.lead.deleteMany({ where: { orgId: body.orgId } }),
         prisma.deal.deleteMany({ where: { orgId: body.orgId } }),
         prisma.task.deleteMany({ where: { orgId: body.orgId } }),

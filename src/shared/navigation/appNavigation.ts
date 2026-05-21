@@ -7,7 +7,10 @@ import {
   Factory,
   FolderOpen,
   Layers,
+  Package,
   Settings,
+  ShoppingCart,
+  Truck,
   User,
   Users,
   Warehouse,
@@ -19,13 +22,15 @@ export type ShortcutNavItemId =
   | 'deals'
   | 'customers'
   | 'tasks'
+  | 'sales'
   | 'warehouse'
   | 'production'
+  | 'logistics'
+  | 'products'
   | 'finance'
   | 'employees'
   | 'reports'
-  | 'documents'
-  | 'chapan';
+  | 'documents';
 
 export interface ShortcutNavItem {
   id: ShortcutNavItemId;
@@ -103,6 +108,15 @@ export const SHORTCUT_NAV_ITEMS: ShortcutNavItem[] = [
     planTier: 'advanced',
   },
   {
+    id: 'sales',
+    to: '/sales',
+    icon: ShoppingCart,
+    label: 'Продажи',
+    description: 'Заказы, возвраты, архив и каналы продаж.',
+    color: '#D0B06A',
+    planTier: 'basic',
+  },
+  {
     id: 'warehouse',
     to: '/warehouse',
     icon: Warehouse,
@@ -116,9 +130,27 @@ export const SHORTCUT_NAV_ITEMS: ShortcutNavItem[] = [
     to: '/production',
     icon: Factory,
     label: 'Производство',
-    description: 'Отдельный производственный модуль находится в подготовке.',
+    description: 'Цех, производственные задачи и готовая продукция.',
     color: '#F59E0B',
     planTier: 'advanced',
+  },
+  {
+    id: 'logistics',
+    to: '/logistics',
+    icon: Truck,
+    label: 'Логистика',
+    description: 'Отправка заказов и отслеживание доставки.',
+    color: '#6BA8D6',
+    planTier: 'advanced',
+  },
+  {
+    id: 'products',
+    to: '/products',
+    icon: Package,
+    label: 'Продукты',
+    description: 'Каталог товаров, поля, фото и импорт.',
+    color: '#9B8FD4',
+    planTier: 'basic',
   },
   {
     id: 'finance',
@@ -134,7 +166,7 @@ export const SHORTCUT_NAV_ITEMS: ShortcutNavItem[] = [
     to: '/employees',
     icon: Building2,
     label: 'Сотрудники',
-    description: 'Команда, роли и права доступа.',
+    description: 'Команда и права доступа.',
     color: '#8FA4C8',
     planTier: 'advanced',
   },
@@ -152,18 +184,9 @@ export const SHORTCUT_NAV_ITEMS: ShortcutNavItem[] = [
     to: '/documents',
     icon: FolderOpen,
     label: 'Документы',
-    description: 'Рабочие документы и генерация файлов.',
+    description: 'Рабочие документы, накладные и генерация файлов.',
     color: '#8AA7FF',
     planTier: 'advanced',
-  },
-  {
-    id: 'chapan',
-    to: '/workzone/chapan',
-    icon: Layers,
-    label: 'Чапан',
-    description: 'Рабочая зона ателье и связанных внутренних процессов.',
-    color: '#D0B06A',
-    planTier: 'industrial',
   },
 ];
 
@@ -182,12 +205,10 @@ export const SIDEBAR_NAV_SECTIONS: SidebarNavSection[] = [
   },
   {
     label: 'Операции',
-    items: pickShortcutNavItems('warehouse', 'production', 'finance', 'employees'),
+    items: pickShortcutNavItems('sales', 'warehouse', 'production', 'logistics', 'products', 'finance', 'employees'),
   },
   {
     label: 'Аналитика',
     items: pickShortcutNavItems('reports', 'documents'),
   },
 ];
-
-export const CHAPAN_NAV_ITEM = SHORTCUT_NAV_MAP.chapan;

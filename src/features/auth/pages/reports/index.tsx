@@ -5,10 +5,10 @@ import { useDeals } from '@/entities/deal/queries';
 import { useOrders } from '@/entities/order/queries';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { exportToCSV } from '@/shared/lib/export';
-import { calculateChapanOrderFinancials } from '@/shared/lib/chapanFinancials';
+import { calculateOrderFinancials } from '@/shared/lib/orderFinancials';
 
 function orderTotalDue(o: { totalAmount?: number; orderDiscount?: number; deliveryFee?: number; bankCommissionPercent?: number; bankCommissionAmount?: number }) {
-  return calculateChapanOrderFinancials({
+  return calculateOrderFinancials({
     itemsSubtotal: o.totalAmount ?? 0,
     orderDiscount: o.orderDiscount,
     deliveryFee: o.deliveryFee,

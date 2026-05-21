@@ -1,13 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { ordersApi, usersApi, productionApi, chapanSettingsApi, invoicesApi, changeRequestsApi, attachmentsApi, returnsApi, chapanClientsApi } from './api';
+import { ordersApi, usersApi, productionApi, operationsSettingsApi, invoicesApi, changeRequestsApi, attachmentsApi, returnsApi, clientsApi } from './api';
 import { warehouseKeys } from '../warehouse/queries';
 import type {
   CreateOrderDto,
   UpdateOrderDto,
   AddPaymentDto,
-  ChapanCatalogs,
-  ChapanProfile,
+  OperationsCatalogs,
+  OperationsSettings,
   CreateOrderItemDto,
   InvoiceDocumentPayload,
   CreateReturnDto,
@@ -17,23 +17,23 @@ import { readApiErrorMessage } from '@/shared/api/errors';
 // ── Query keys ────────────────────────────────────────────────────────────────
 
 export const orderKeys = {
-  all: ['chapan_orders'] as const,
+  all: ['orders'] as const,
   list: (filters?: object) => [...orderKeys.all, filters] as const,
   detail: (id: string) => [...orderKeys.all, id] as const,
   warehouseState: (id: string) => [...orderKeys.all, id, 'warehouse-state'] as const,
   warehouseStates: (ids: string[]) => [...orderKeys.all, 'warehouse-states', ids] as const,
-  production: ['chapan_production'] as const,
+  production: ['production'] as const,
   productionList: (filters?: object) => [...orderKeys.production, filters] as const,
-  invoices: ['chapan_invoices'] as const,
-  invoiceList: (filters?: object) => ['chapan_invoices', filters] as const,
-  invoiceDetail: (id: string) => ['chapan_invoices', id] as const,
-  settings: ['chapan_settings'] as const,
-  catalogs: ['chapan_catalogs'] as const,
-  clients: ['chapan_clients'] as const,
-  changeRequests: ['chapan_change_requests'] as const,
-  returns: ['chapan_returns'] as const,
-  returnsList: (filters?: object) => ['chapan_returns', filters] as const,
-  returnDetail: (id: string) => ['chapan_returns', id] as const,
+  invoices: ['invoices'] as const,
+  invoiceList: (filters?: object) => ['invoices', filters] as const,
+  invoiceDetail: (id: string) => ['invoices', id] as const,
+  settings: ['operations_settings'] as const,
+  catalogs: ['operations_catalogs'] as const,
+  clients: ['clients'] as const,
+  changeRequests: ['change_requests'] as const,
+  returns: ['returns'] as const,
+  returnsList: (filters?: object) => ['returns', filters] as const,
+  returnDetail: (id: string) => ['returns', id] as const,
 };
 
 // ── Orders ────────────────────────────────────────────────────────────────────
@@ -525,24 +525,24 @@ export const useRouteSingleItem = () => {
 
 // ── Settings ──────────────────────────────────────────────────────────────────
 
-export const useChapanCatalogs = () =>
+export const useOperationsCatalogs = () =>
   useQuery({
     queryKey: orderKeys.catalogs,
-    queryFn: () => chapanSettingsApi.getCatalogs(),
+    queryFn: () => operationsSettingsApi.getCatalogs(),
     staleTime: 5 * 60_000,  // catalogs rarely change
   });
 
-export const useChapanProfile = () =>
+export const useOperationsSettings = () =>
   useQuery({
     queryKey: orderKeys.settings,
-    queryFn: () => chapanSettingsApi.getProfile(),
+    queryFn: () => operationsSettingsApi.getProfile(),
     staleTime: 5 * 60_000,
   });
 
 export const useSaveCatalogs = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: Partial<ChapanCatalogs>) => chapanSettingsApi.saveCatalogs(data),
+    mutationFn: (data: Partial<OperationsCatalogs>) => operationsSettingsApi.saveCatalogs(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: orderKeys.catalogs });
       toast.success('Каталог сохранён');
@@ -554,7 +554,7 @@ export const useSaveCatalogs = () => {
 export const useSaveProfile = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (data: Partial<ChapanProfile>) => chapanSettingsApi.updateProfile(data),
+    mutationFn: (data: Partial<OperationsSettings>) => operationsSettingsApi.updateProfile(data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: orderKeys.settings });
       toast.success('Профиль сохранён');
@@ -565,7 +565,7 @@ export const useSaveProfile = () => {
 export const useUpdateBankCommission = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (percent: number) => chapanSettingsApi.updateBankCommission(percent),
+    mutationFn: (percent: number) => operationsSettingsApi.updateBankCommission(percent),
     onSuccess: (_data, percent) => {
       qc.invalidateQueries({ queryKey: orderKeys.settings });
       toast.success(`Ставка комиссии банка сохранена: ${percent}%`);
@@ -574,10 +574,10 @@ export const useUpdateBankCommission = () => {
   });
 };
 
-export const useChapanClients = () =>
+export const useSettingsClients = () =>
   useQuery({
     queryKey: orderKeys.clients,
-    queryFn: () => chapanSettingsApi.getClients(),
+    queryFn: () => operationsSettingsApi.getClients(),
     staleTime: 2 * 60_000,
   });
 
@@ -624,7 +624,7 @@ export function useTrashOrder() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: orderKeys.all });
-      qc.invalidateQueries({ queryKey: ['chapan-orders-trash'] });
+      qc.invalidateQueries({ queryKey: ['orders-trash'] });
     },
   });
 }
@@ -635,7 +635,7 @@ export function useRestoreFromTrash() {
     mutationFn: (id: string) => ordersApi.restoreFromTrash(id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: orderKeys.all });
-      qc.invalidateQueries({ queryKey: ['chapan-orders-trash'] });
+      qc.invalidateQueries({ queryKey: ['orders-trash'] });
     },
   });
 }
@@ -645,14 +645,14 @@ export function usePermanentDelete() {
   return useMutation({
     mutationFn: (id: string) => ordersApi.permanentDelete(id),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['chapan-orders-trash'] });
+      qc.invalidateQueries({ queryKey: ['orders-trash'] });
     },
   });
 }
 
 export function useTrashedOrders() {
   return useQuery({
-    queryKey: ['chapan-orders-trash'],
+    queryKey: ['orders-trash'],
     queryFn: () => ordersApi.listTrashed(),
     staleTime: 60_000,
   });
@@ -670,7 +670,7 @@ export function useChangeEmail() {
 
 export function useOrgManagers() {
   return useQuery({
-    queryKey: ['chapan_org_managers'],
+    queryKey: ['org_managers'],
     queryFn: () => ordersApi.listManagers(),
     staleTime: 5 * 60_000,
   });
@@ -744,28 +744,28 @@ export const useDeleteReturnDraft = () => {
 
 // ── Chapan Clients (new CRM section) ────────────────────────────────────────
 
-export const useChapanClientsList = (params?: Parameters<typeof chapanClientsApi.list>[0]) =>
+export const useClientsList = (params?: Parameters<typeof clientsApi.list>[0]) =>
   useQuery({
-    queryKey: ['chapan_clients_v2', params],
-    queryFn: () => chapanClientsApi.list(params),
+    queryKey: ['clients', params],
+    queryFn: () => clientsApi.list(params),
     staleTime: 60_000,
   });
 
-export const useChapanClientDetail = (id: string | undefined) =>
+export const useClientDetail = (id: string | undefined) =>
   useQuery({
-    queryKey: ['chapan_clients_v2', id],
-    queryFn: () => chapanClientsApi.get(id!),
+    queryKey: ['clients', id],
+    queryFn: () => clientsApi.get(id!),
     enabled: Boolean(id),
     staleTime: 30_000,
   });
 
-export const useUpdateChapanClient = () => {
+export const useUpdateClient = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...data }: { id: string } & Parameters<typeof chapanClientsApi.update>[1]) =>
-      chapanClientsApi.update(id, data),
+    mutationFn: ({ id, ...data }: { id: string } & Parameters<typeof clientsApi.update>[1]) =>
+      clientsApi.update(id, data),
     onSuccess: (_data, { id }) => {
-      qc.invalidateQueries({ queryKey: ['chapan_clients_v2'] });
+      qc.invalidateQueries({ queryKey: ['clients'] });
       toast.success('Клиент обновлён');
     },
     onError: (error) => toast.error(readApiErrorMessage(error, 'Не удалось сохранить изменения')),

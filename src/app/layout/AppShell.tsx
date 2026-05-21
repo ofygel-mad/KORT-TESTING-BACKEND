@@ -6,7 +6,9 @@ import { Sidebar } from './Sidebar';
 import { Topbar } from './Topbar';
 import { MobileNav } from './MobileNav';
 import { CommandPalette } from '../../widgets/command-palette/CommandPalette';
+import InvoicesDrawer, { type FilterTab } from '@/features/auth/pages/documents/InvoicesDrawer';
 import { useCommandPalette } from '@/shared/stores/commandPalette';
+import { useOperationsUiStore } from '@/shared/stores/operationsUi';
 import { useKeyboardShortcuts } from '@/shared/hooks/useKeyboardShortcuts';
 import { ShortcutsModal } from '@/shared/ui/ShortcutsModal';
 import { useIsMobile } from '@/shared/hooks/useIsMobile';
@@ -46,6 +48,9 @@ function OfflineBanner() {
 export function AppShell() {
   const { isOpen, toggle } = useCommandPalette();
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const invoicesDrawerOpen = useOperationsUiStore((s) => s.invoicesDrawerOpen);
+  const invoicesDrawerFilter = useOperationsUiStore((s) => s.invoicesDrawerFilter);
+  const setInvoicesDrawerOpen = useOperationsUiStore((s) => s.setInvoicesDrawerOpen);
   const isMobile = useIsMobile();
   const location = useLocation();
   const user = useAuthStore((s) => s.user);
@@ -127,6 +132,13 @@ export function AppShell() {
       {isMobile && <MobileNav />}
       {isOpen && <CommandPalette />}
       <ShortcutsModal open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+      {invoicesDrawerOpen && (
+        <InvoicesDrawer
+          open={invoicesDrawerOpen}
+          onClose={() => setInvoicesDrawerOpen(false)}
+          initialFilter={invoicesDrawerFilter as FilterTab}
+        />
+      )}
     </div>
   );
 }

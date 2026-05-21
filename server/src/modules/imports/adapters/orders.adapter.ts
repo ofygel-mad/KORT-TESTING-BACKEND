@@ -2,13 +2,13 @@
  * adapters/orders.adapter.ts
  *
  * Imports production orders from scanned file rows.
- * Creates ChapanClient + ChapanOrder + ChapanOrderItem records.
+ * Creates Customer + Order + OrderItem records.
  * Also emits accounting sync event per payment.
  */
 
 import { prisma } from '../../../lib/prisma.js';
-import { syncChapanPayment } from '../../accounting/accounting.sync.js';
-import { parseOrderItemNumber } from '../../chapan/order-item-number.js';
+import { syncPayment } from '../../accounting/accounting.sync.js';
+import { parseOrderItemNumber } from '../../orders/order-item-number.js';
 
 export interface OrderRow {
   order_number?: string;
@@ -85,7 +85,7 @@ export async function importOrders(
   for (const [orderNumber, items] of orderGroups) {
     try {
       // Check if order already exists
-      const existing = await prisma.chapanOrder.findFirst({
+      const existing = await prisma.order.findFirst({
         where: { orgId, orderNumber },
       });
       if (existing) {
@@ -103,11 +103,11 @@ export async function importOrders(
 
       // Find or create client
       let client = phone
-        ? await prisma.chapanClient.findFirst({ where: { orgId, phone } })
+        ? await prisma.customer.findFirst({ where: { orgId, phone } })
         : null;
 
       if (!client) {
-        client = await prisma.chapanClient.create({
+        client = await prisma.customer.create({
           data: { orgId, fullName: customerName, phone: phone || '—' },
         });
       }
@@ -115,7 +115,7 @@ export async function importOrders(
       const totalAmount = parseNum(firstRow.total_amount) || items.reduce((s, r) => s + parseNum(r.unit_price) * parseNum(r.quantity || 1), 0);
       const paidAmount = totalAmount; // assume paid if imported from a sales sheet
 
-      const order = await prisma.chapanOrder.create({
+      const order = await prisma.order.create({
         data: {
           orgId,
           orderNumber,
@@ -164,7 +164,7 @@ export async function importOrders(
         }
         usedPositions.add(position);
 
-        await prisma.chapanOrderItem.create({
+        await prisma.orderItem.create({
           data: {
             orderId: order.id,
             position,
@@ -179,7 +179,7 @@ export async function importOrders(
 
       // Emit accounting event for the payment
       if (paidAmount > 0 && firstRow.payment_method) {
-        await syncChapanPayment({
+        await syncPayment({
           orgId,
           orderId: order.id,
           orderNumber,

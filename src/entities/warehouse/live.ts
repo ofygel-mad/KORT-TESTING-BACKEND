@@ -152,7 +152,7 @@ export function useWarehouseFoundationLiveSync(
 
       if (failCountRef.current >= 2) {
         failCountRef.current = 0;
-        apiClient.get('/chapan/orders?limit=1').catch(() => {
+        apiClient.get('/orders?limit=1').catch(() => {
           // auth refresh is handled by axios interceptors
         });
       }

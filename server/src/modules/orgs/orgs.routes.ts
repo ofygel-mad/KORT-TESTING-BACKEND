@@ -9,7 +9,7 @@ export async function orgsRoutes(app: FastifyInstance) {
 
   // PATCH /api/v1/organization
   app.patch('/organization', {
-    preHandler: [app.authenticate, app.resolveOrg, app.requireRole('admin', 'owner')],
+    preHandler: [app.authenticate, app.resolveOrg, app.requireCompanyAdmin()],
   }, async (request) => {
     return orgsService.updateOrganization(request.orgId, request.body as Record<string, unknown>);
   });

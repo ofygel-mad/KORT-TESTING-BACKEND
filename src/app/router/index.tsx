@@ -6,11 +6,10 @@ import { ErrorBoundary } from '@/shared/ui/ErrorBoundary';
 import { isChunkLoadError, reloadForChunkErrorOnce } from '@/shared/lib/browser';
 import { useAuthStore } from '@/shared/stores/auth';
 import { usePlan, planIncludes, PLAN_LABELS, type OrgMode } from '@/shared/hooks/usePlan';
-import { useRole } from '@/shared/hooks/useRole';
 import { useEmployeePermissions } from '@/shared/hooks/useEmployeePermissions';
-import { useChapanPermissions } from '@/shared/hooks/useChapanPermissions';
-import ChapanKaspiStagePage from '@/features/auth/pages/workzone/chapan/kaspi-orders/ChapanKaspiStagePage';
-import ChapanKaspiStockPage from '@/features/auth/pages/workzone/chapan/kaspi-orders/ChapanKaspiStockPage';
+import type { Permission } from '@/entities/employee/types';
+import KaspiStagePage from '@/features/auth/pages/sales/channels/kaspi/KaspiStagePage';
+import KaspiStockPage from '@/features/auth/pages/sales/channels/kaspi/KaspiStockPage';
 
 import { Settings } from 'lucide-react';
 
@@ -46,7 +45,6 @@ const WarehousePage  = makePage(() => import('@/features/auth/pages/warehouse'))
 const WarehouseTwinPage = makePage(() => import('@/features/auth/pages/warehouse/Twin'));
 const WarehouseOperationsPage = makePage(() => import('@/features/auth/pages/warehouse/Operations'));
 const WarehouseControlTowerPage = makePage(() => import('@/features/auth/pages/warehouse/ControlTower'));
-const ProductionPage = makePage(() => import('@/features/auth/pages/production'));
 const FinancePage    = makePage(() => import('@/features/auth/pages/finance'));
 const EmployeesPage  = makePage(() => import('@/features/auth/pages/employees'));
 const ReportsPage    = makePage(() => import('@/features/auth/pages/reports'));
@@ -65,26 +63,42 @@ const LoginPage         = makePage(() => import('@/features/auth/pages/auth/logi
 const AcceptInvitePage  = makePage(() => import('@/features/auth/pages/auth/accept-invite'));
 const ResetPasswordPage = makePage(() => import('@/features/auth/pages/auth/reset-password'));
 
-// Chapan Workzone — own layout
-const ChapanShell             = makePage(() => import('@/features/auth/pages/workzone/chapan/ChapanShell'));
-const ChapanWarehousePage     = makePage(() => import('@/features/auth/pages/workzone/chapan/warehouse/WarehousePage'));
-const ChapanCatalogPage       = makePage(() => import('@/features/auth/pages/workzone/chapan/catalog/ChapanCatalog'));
-const ChapanOrdersPage        = makePage(() => import('@/features/auth/pages/workzone/chapan/orders/ChapanOrders'));
-const ChapanKaspiOrdersPage   = makePage(() => import('@/features/auth/pages/workzone/chapan/kaspi-orders/ChapanKaspiOrders'));
-const ChapanKaspiOrderPage    = makePage(() => import('@/features/auth/pages/workzone/chapan/kaspi-orders/ChapanKaspiOrderDetail'));
-const ChapanNewOrderPage      = makePage(() => import('@/features/auth/pages/workzone/chapan/orders/ChapanNewOrder'));
-const ChapanOrderDetailPage   = makePage(() => import('@/features/auth/pages/workzone/chapan/orders/ChapanOrderDetail'));
-const ChapanEditOrderPage     = makePage(() => import('@/features/auth/pages/workzone/chapan/orders/ChapanEditOrder'));
-const ChapanProductionPage    = makePage(() => import('@/features/auth/pages/workzone/chapan/production/ChapanProduction'));
-const ChapanReadyPage         = makePage(() => import('@/features/auth/pages/workzone/chapan/ready/ChapanReady'));
-const ChapanInvoicesPage      = makePage(() => import('@/features/auth/pages/workzone/chapan/invoices/ChapanInvoices'));
-const ChapanReturnsPage       = makePage(() => import('@/features/auth/pages/workzone/chapan/returns/ChapanReturns'));
-const ChapanArchivePage       = makePage(() => import('@/features/auth/pages/workzone/chapan/archive/ChapanArchive'));
-const ChapanShippingPage      = makePage(() => import('@/features/auth/pages/workzone/chapan/shipping/ChapanShipping'));
-const ChapanAnalyticsPage     = makePage(() => import('@/features/auth/pages/workzone/chapan/analytics/ChapanAnalytics'));
-const ChapanPurchasePage      = makePage(() => import('@/features/auth/pages/workzone/chapan/purchase/ChapanPurchase'));
-const ChapanClientsPage       = makePage(() => import('@/features/auth/pages/workzone/chapan/clients/ChapanClients'));
-const ChapanClientDetailPage  = makePage(() => import('@/features/auth/pages/workzone/chapan/clients/ChapanClientDetail'));
+// Sales (orders, archive, returns, Kaspi channel)
+const OrdersPage        = makePage(() => import('@/features/auth/pages/sales/OrdersPage'));
+const NewOrderPage      = makePage(() => import('@/features/auth/pages/sales/NewOrderPage'));
+const OrderDetailPage   = makePage(() => import('@/features/auth/pages/sales/OrderDetailPage'));
+const EditOrderPage     = makePage(() => import('@/features/auth/pages/sales/EditOrderPage'));
+const OrderTrashPage    = makePage(() => import('@/features/auth/pages/sales/OrderTrashPage'));
+const ArchivePage       = makePage(() => import('@/features/auth/pages/sales/ArchivePage'));
+const ReturnsPage       = makePage(() => import('@/features/auth/pages/sales/returns/ReturnsPage'));
+const KaspiOrdersPage   = makePage(() => import('@/features/auth/pages/sales/channels/kaspi/KaspiOrdersPage'));
+const KaspiOrderDetailPage = makePage(() => import('@/features/auth/pages/sales/channels/kaspi/KaspiOrderDetailPage'));
+
+// Production (workshop + ready stage)
+const ProductionFloorPage = makePage(() => import('@/features/auth/pages/production/ProductionFloorPage'));
+const ReadyPage           = makePage(() => import('@/features/auth/pages/production/ReadyPage'));
+
+// Logistics (shipping)
+const LogisticsPage = makePage(() => import('@/features/auth/pages/logistics/LogisticsPage'));
+
+// Products catalog
+const ProductsPage = makePage(() => import('@/features/auth/pages/products/ProductsPage'));
+
+// Warehouse stock + purchase
+const WarehouseStockPage = makePage(() => import('@/features/auth/pages/warehouse/stock/WarehousePage'));
+const PurchasePage       = makePage(() => import('@/features/auth/pages/warehouse/purchase/PurchasePage'));
+
+// Documents (invoices)
+const InvoicesPage = makePage(() => import('@/features/auth/pages/documents/InvoicesPage'));
+
+// Reports (analytics)
+const AnalyticsPage = makePage(() => import('@/features/auth/pages/reports/AnalyticsPage'));
+
+// CRM customer detail (rich order history)
+const ClientDetailPage = makePage(() => import('@/features/auth/pages/crm/customers/ClientDetailPage'));
+
+// Operations settings (catalogs, delivery defaults, clients reference)
+const OperationsSettingsPage = makePage(() => import('@/features/auth/pages/settings/OperationsSettingsPage'));
 
 function RootIndex() {
   const user = useAuthStore((s) => s.user);
@@ -97,7 +111,6 @@ function RequireAuth({ children }: { children: ReactNode }) {
   if (!user) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
-
 
 function RequireOrg({ children }: { children: ReactNode }) {
   const user = useAuthStore((s) => s.user);
@@ -206,7 +219,7 @@ function PermissionDenied() {
           Нет доступа
         </div>
         <div style={{ fontSize: 14, color: 'var(--text-secondary)', maxWidth: 360, lineHeight: 1.5 }}>
-          У вас нет прав для просмотра этого раздела. Обратитесь к руководителю.
+          У вас нет прав для просмотра этого раздела. Обратитесь к администратору.
         </div>
       </div>
       <NavLink
@@ -231,64 +244,14 @@ function PermissionDenied() {
   );
 }
 
-type PermissionCheck =
-  | 'sales' | 'warehouse' | 'production' | 'financial' | 'team' | 'chapan'
-  | 'chapan_orders' | 'chapan_production' | 'chapan_ready' | 'chapan_archive' | 'chapan_shipping'
-  | 'chapan_analytics' | 'chapan_purchase' | 'chapan_clients';
-
 /**
- * Ограничивает доступ к маршруту для сотрудников без нужного права.
- * Владельцы и пользователи без employee_permissions (admin/manager) проходят свободно.
+ * Restricts a route to holders of a given scope.action permission.
+ * Owners and company admins pass automatically (handled inside `can`).
  */
-function RequirePermission({ check, children }: { check: PermissionCheck; children: ReactNode }) {
-  const { isOwner, isAdmin } = useRole();
-  const perms = useEmployeePermissions();
-  const chapan = useChapanPermissions();
-
-  // Владельцы и admins — всегда пропускаем
-  if (isOwner || isAdmin) return <>{children}</>;
-
-  // Пользователи без employee_permissions (manager/viewer без флагов) — пропускаем
-  if (perms.permissions.length === 0) return <>{children}</>;
-
-  let allowed = false;
-  switch (check) {
-    case 'sales':             allowed = perms.canAccessSales; break;
-    case 'warehouse':         allowed = perms.canAccessWarehouse; break;
-    case 'production':        allowed = perms.canAccessProduction; break;
-    case 'financial':         allowed = perms.canAccessFinancial; break;
-    case 'team':              allowed = perms.canManageTeam; break;
-    case 'chapan':            allowed = chapan.hasAnyAccess; break;
-    case 'chapan_orders':     allowed = chapan.canAccessOrders; break;
-    case 'chapan_production': allowed = chapan.canAccessProduction; break;
-    case 'chapan_ready':      allowed = chapan.canAccessReady; break;
-    case 'chapan_archive':    allowed = chapan.canAccessArchive; break;
-    case 'chapan_shipping':   allowed = chapan.canAccessShipping; break;
-    case 'chapan_analytics':  allowed = chapan.canAccessAnalytics; break;
-    case 'chapan_purchase':   allowed = chapan.canAccessPurchase; break;
-    case 'chapan_clients':    allowed = chapan.canAccessClients; break;
-  }
-
-  if (!allowed) return <PermissionDenied />;
+function RequirePermission({ check, children }: { check: Permission; children: ReactNode }) {
+  const { can } = useEmployeePermissions();
+  if (!can(check)) return <PermissionDenied />;
   return <>{children}</>;
-}
-
-/**
- * Редирект на первый доступный раздел Чапана.
- * Используется как index-route вместо жёсткого Navigate to="orders".
- */
-function ChapanDefaultRedirect() {
-  const user = useAuthStore((s) => s.user);
-  const { canAccessOrders, canAccessProduction, canAccessReady, canAccessArchive } = useChapanPermissions();
-
-  if (!user) return null; // Wait for bootstrap to complete
-
-  if (canAccessOrders)     return <Navigate to="orders"     replace />;
-  if (canAccessProduction) return <Navigate to="production" replace />;
-  if (canAccessReady)      return <Navigate to="ready"      replace />;
-  if (canAccessArchive)    return <Navigate to="archive"    replace />;
-
-  return <PermissionDenied />;
 }
 
 export const appRouter = createBrowserRouter([
@@ -301,65 +264,150 @@ export const appRouter = createBrowserRouter([
         index: true,
         element: <RootIndex />,
       },
+      // ── CRM ──
       {
         path: 'crm/leads',
-        element: <RequireAuth><RequireOrg><RequirePermission check="sales"><LeadsPage /></RequirePermission></RequireOrg></RequireAuth>,
+        element: <RequireAuth><RequireOrg><RequirePermission check="customers.read"><LeadsPage /></RequirePermission></RequireOrg></RequireAuth>,
       },
       {
         path: 'crm/deals',
-        element: <RequireAuth><RequireOrg><RequirePlan tier="advanced"><RequirePermission check="sales"><DealsPage /></RequirePermission></RequirePlan></RequireOrg></RequireAuth>,
+        element: <RequireAuth><RequireOrg><RequirePlan tier="advanced"><RequirePermission check="customers.read"><DealsPage /></RequirePermission></RequirePlan></RequireOrg></RequireAuth>,
       },
       {
         path: 'crm/customers',
-        element: <RequireAuth><RequireOrg><RequirePermission check="sales"><CustomersPage /></RequirePermission></RequireOrg></RequireAuth>,
+        element: <RequireAuth><RequireOrg><RequirePermission check="customers.read"><CustomersPage /></RequirePermission></RequireOrg></RequireAuth>,
+      },
+      {
+        path: 'crm/customers/:id',
+        element: <RequireAuth><RequireOrg><RequirePermission check="customers.read"><ClientDetailPage /></RequirePermission></RequireOrg></RequireAuth>,
       },
       {
         path: 'crm/tasks',
-        element: <RequireAuth><RequireOrg><RequirePlan tier="advanced"><RequirePermission check="sales"><TasksPage /></RequirePermission></RequirePlan></RequireOrg></RequireAuth>,
+        element: <RequireAuth><RequireOrg><RequirePlan tier="advanced"><RequirePermission check="customers.read"><TasksPage /></RequirePermission></RequirePlan></RequireOrg></RequireAuth>,
+      },
+      // ── Sales (orders) ──
+      {
+        path: 'sales',
+        element: <RequireAuth><RequireOrg><RequirePermission check="orders.read"><OrdersPage /></RequirePermission></RequireOrg></RequireAuth>,
       },
       {
+        path: 'sales/new',
+        element: <RequireAuth><RequireOrg><RequirePermission check="orders.write"><NewOrderPage /></RequirePermission></RequireOrg></RequireAuth>,
+      },
+      {
+        path: 'sales/archive',
+        element: <RequireAuth><RequireOrg><RequirePermission check="orders.read"><ArchivePage /></RequirePermission></RequireOrg></RequireAuth>,
+      },
+      {
+        path: 'sales/trash',
+        element: <RequireAuth><RequireOrg><RequirePermission check="orders.admin"><OrderTrashPage /></RequirePermission></RequireOrg></RequireAuth>,
+      },
+      {
+        path: 'sales/returns',
+        element: <RequireAuth><RequireOrg><RequirePermission check="returns.read"><ReturnsPage /></RequirePermission></RequireOrg></RequireAuth>,
+      },
+      {
+        path: 'sales/kaspi',
+        element: <RequireAuth><RequireOrg><RequirePermission check="orders.read"><KaspiOrdersPage /></RequirePermission></RequireOrg></RequireAuth>,
+        children: [
+          { index: true, element: <Navigate to="new" replace /> },
+          { path: 'new', element: <KaspiStagePage stage="new" /> },
+          { path: 'in-progress', element: <KaspiStagePage stage="in_progress" /> },
+          { path: 'completed', element: <KaspiStagePage stage="completed" /> },
+          { path: 'cancelled', element: <KaspiStagePage stage="cancelled" /> },
+          { path: 'issues', element: <KaspiStagePage stage="issues" /> },
+          { path: 'stock', element: <KaspiStockPage /> },
+          { path: ':externalOrderId', element: <KaspiOrderDetailPage /> },
+        ],
+      },
+      {
+        path: 'sales/:id',
+        element: <RequireAuth><RequireOrg><RequirePermission check="orders.read"><OrderDetailPage /></RequirePermission></RequireOrg></RequireAuth>,
+      },
+      {
+        path: 'sales/:id/edit',
+        element: <RequireAuth><RequireOrg><RequirePermission check="orders.write"><EditOrderPage /></RequirePermission></RequireOrg></RequireAuth>,
+      },
+      // ── Warehouse ──
+      {
         path: 'warehouse',
-        element: <RequireAuth><RequireOrg><RequirePermission check="warehouse"><WarehousePage /></RequirePermission></RequireOrg></RequireAuth>,
+        element: <RequireAuth><RequireOrg><RequirePermission check="warehouse.read"><WarehousePage /></RequirePermission></RequireOrg></RequireAuth>,
+      },
+      {
+        path: 'warehouse/stock',
+        element: <RequireAuth><RequireOrg><RequirePermission check="warehouse.read"><WarehouseStockPage /></RequirePermission></RequireOrg></RequireAuth>,
+      },
+      {
+        path: 'warehouse/purchase',
+        element: <RequireAuth><RequireOrg><RequirePermission check="purchase.read"><PurchasePage /></RequirePermission></RequireOrg></RequireAuth>,
       },
       {
         path: 'warehouse/twin',
-        element: <RequireAuth><RequireOrg><RequirePermission check="warehouse"><WarehouseTwinPage /></RequirePermission></RequireOrg></RequireAuth>,
+        element: <RequireAuth><RequireOrg><RequirePermission check="warehouse.read"><WarehouseTwinPage /></RequirePermission></RequireOrg></RequireAuth>,
       },
       {
         path: 'warehouse/control-tower',
-        element: <RequireAuth><RequireOrg><RequirePermission check="warehouse"><WarehouseControlTowerPage /></RequirePermission></RequireOrg></RequireAuth>,
+        element: <RequireAuth><RequireOrg><RequirePermission check="warehouse.read"><WarehouseControlTowerPage /></RequirePermission></RequireOrg></RequireAuth>,
       },
       {
         path: 'warehouse/operations',
-        element: <RequireAuth><RequireOrg><RequirePermission check="warehouse"><WarehouseOperationsPage /></RequirePermission></RequireOrg></RequireAuth>,
+        element: <RequireAuth><RequireOrg><RequirePermission check="warehouse.read"><WarehouseOperationsPage /></RequirePermission></RequireOrg></RequireAuth>,
       },
-      {
-        path: 'warehouse/:id',
-        element: <RequireAuth><RequireOrg><RequirePermission check="warehouse"><ChapanOrderDetailPage /></RequirePermission></RequireOrg></RequireAuth>,
-      },
+      // ── Production ──
       {
         path: 'production',
-        element: <RequireAuth><RequireOrg><RequirePlan tier="advanced"><RequirePermission check="production"><ProductionPage /></RequirePermission></RequirePlan></RequireOrg></RequireAuth>,
+        element: <RequireAuth><RequireOrg><RequirePermission check="production.read"><ProductionFloorPage /></RequirePermission></RequireOrg></RequireAuth>,
       },
       {
+        path: 'production/ready',
+        element: <RequireAuth><RequireOrg><RequirePermission check="production.read"><ReadyPage /></RequirePermission></RequireOrg></RequireAuth>,
+      },
+      // ── Logistics ──
+      {
+        path: 'logistics',
+        element: <RequireAuth><RequireOrg><RequirePermission check="logistics.read"><LogisticsPage /></RequirePermission></RequireOrg></RequireAuth>,
+      },
+      {
+        path: 'logistics/:id',
+        element: <RequireAuth><RequireOrg><RequirePermission check="logistics.read"><OrderDetailPage /></RequirePermission></RequireOrg></RequireAuth>,
+      },
+      // ── Products ──
+      {
+        path: 'products',
+        element: <RequireAuth><RequireOrg><RequirePermission check="products.read"><ProductsPage /></RequirePermission></RequireOrg></RequireAuth>,
+      },
+      // ── Finance / Reports / Documents ──
+      {
         path: 'finance',
-        element: <RequireAuth><RequireOrg><RequirePlan tier="advanced"><RequirePermission check="financial"><FinancePage /></RequirePermission></RequirePlan></RequireOrg></RequireAuth>,
+        element: <RequireAuth><RequireOrg><RequirePlan tier="advanced"><RequirePermission check="reports.read"><FinancePage /></RequirePermission></RequirePlan></RequireOrg></RequireAuth>,
       },
       {
         path: 'employees',
-        element: <RequireAuth><RequireOrg><RequirePlan tier="advanced"><RequirePermission check="team"><EmployeesPage /></RequirePermission></RequirePlan></RequireOrg></RequireAuth>,
+        element: <RequireAuth><RequireOrg><RequirePlan tier="advanced"><RequirePermission check="company.admin"><EmployeesPage /></RequirePermission></RequirePlan></RequireOrg></RequireAuth>,
       },
       {
         path: 'reports',
-        element: <RequireAuth><RequireOrg><RequirePlan tier="advanced"><RequirePermission check="financial"><ReportsPage /></RequirePermission></RequirePlan></RequireOrg></RequireAuth>,
+        element: <RequireAuth><RequireOrg><RequirePlan tier="advanced"><RequirePermission check="reports.read"><ReportsPage /></RequirePermission></RequirePlan></RequireOrg></RequireAuth>,
+      },
+      {
+        path: 'reports/analytics',
+        element: <RequireAuth><RequireOrg><RequirePlan tier="advanced"><RequirePermission check="reports.read"><AnalyticsPage /></RequirePermission></RequirePlan></RequireOrg></RequireAuth>,
       },
       {
         path: 'documents',
-        element: <RequireAuth><RequireOrg><RequirePlan tier="advanced"><RequirePermission check="financial"><DocumentsPage /></RequirePermission></RequirePlan></RequireOrg></RequireAuth>,
+        element: <RequireAuth><RequireOrg><RequirePlan tier="advanced"><RequirePermission check="documents.read"><DocumentsPage /></RequirePermission></RequirePlan></RequireOrg></RequireAuth>,
+      },
+      {
+        path: 'documents/invoices',
+        element: <RequireAuth><RequireOrg><RequirePermission check="invoices.read"><InvoicesPage /></RequirePermission></RequireOrg></RequireAuth>,
       },
       {
         path: 'settings',
         element: <RequireAuth><SettingsPage /></RequireAuth>,
+      },
+      {
+        path: 'settings/operations',
+        element: <RequireAuth><RequireOrg><RequirePermission check="company.admin"><OperationsSettingsPage /></RequirePermission></RequireOrg></RequireAuth>,
       },
       {
         path: 'settings/:section',
@@ -374,136 +422,6 @@ export const appRouter = createBrowserRouter([
     element: <RequireAuth><OnboardingPage /></RequireAuth>,
   },
 
-  // ── Chapan Workzone — own shell, own layout ────────────
-  {
-    path: '/workzone/chapan',
-    element: <RequireAuth><RequirePlan tier="industrial"><RequirePermission check="chapan"><ChapanShell /></RequirePermission></RequirePlan></RequireAuth>,
-    children: [
-      {
-        index: true,
-        element: <ChapanDefaultRedirect />,
-      },
-      {
-        path: 'orders',
-        element: <RequirePermission check="chapan_orders"><ChapanOrdersPage /></RequirePermission>,
-      },
-      {
-        path: 'kaspi-orders',
-        element: <RequirePermission check="chapan_orders"><ChapanKaspiOrdersPage /></RequirePermission>,
-        children: [
-          {
-            index: true,
-            element: <Navigate to="new" replace />,
-          },
-          {
-            path: 'new',
-            element: <ChapanKaspiStagePage stage="new" />,
-          },
-          {
-            path: 'in-progress',
-            element: <ChapanKaspiStagePage stage="in_progress" />,
-          },
-          {
-            path: 'completed',
-            element: <ChapanKaspiStagePage stage="completed" />,
-          },
-          {
-            path: 'cancelled',
-            element: <ChapanKaspiStagePage stage="cancelled" />,
-          },
-          {
-            path: 'issues',
-            element: <ChapanKaspiStagePage stage="issues" />,
-          },
-          {
-            path: 'stock',
-            element: <ChapanKaspiStockPage />,
-          },
-          {
-            path: ':externalOrderId',
-            element: <ChapanKaspiOrderPage />,
-          },
-        ],
-      },
-      {
-        path: 'orders/new',
-        element: <RequirePermission check="chapan_orders"><ChapanNewOrderPage /></RequirePermission>,
-      },
-      {
-        path: 'orders/:id',
-        element: <RequirePermission check="chapan_orders"><ChapanOrderDetailPage /></RequirePermission>,
-      },
-      {
-        path: 'orders/:id/edit',
-        element: <RequirePermission check="chapan_orders"><ChapanEditOrderPage /></RequirePermission>,
-      },
-      {
-        path: 'production',
-        element: <RequirePermission check="chapan_production"><ChapanProductionPage /></RequirePermission>,
-      },
-      {
-        path: 'ready',
-        element: <RequirePermission check="chapan_ready"><ChapanReadyPage /></RequirePermission>,
-      },
-      {
-        path: 'ready/:id',
-        element: <RequirePermission check="chapan_ready"><ChapanOrderDetailPage /></RequirePermission>,
-      },
-      {
-        path: 'invoices',
-        element: <ChapanInvoicesPage />,
-      },
-      {
-        path: 'returns',
-        element: <ChapanReturnsPage />,
-      },
-      {
-        path: 'shipping',
-        element: <RequirePermission check="chapan_shipping"><ChapanShippingPage /></RequirePermission>,
-      },
-      {
-        path: 'shipping/:id',
-        element: <RequirePermission check="chapan_shipping"><ChapanOrderDetailPage /></RequirePermission>,
-      },
-      {
-        path: 'archive',
-        element: <RequirePermission check="chapan_archive"><ChapanArchivePage /></RequirePermission>,
-      },
-      {
-        path: 'archive/:id',
-        element: <RequirePermission check="chapan_archive"><ChapanOrderDetailPage /></RequirePermission>,
-      },
-      {
-        path: 'warehouse',
-        element: <ChapanWarehousePage />,
-      },
-      {
-        path: 'catalog',
-        element: <ChapanCatalogPage />,
-      },
-      {
-        path: 'analytics',
-        element: <RequirePermission check="chapan_analytics"><ChapanAnalyticsPage /></RequirePermission>,
-      },
-      {
-        path: 'purchase',
-        element: <RequirePermission check="chapan_purchase"><ChapanPurchasePage /></RequirePermission>,
-      },
-      {
-        path: 'clients',
-        element: <RequirePermission check="chapan_clients"><ChapanClientsPage /></RequirePermission>,
-      },
-      {
-        path: 'clients/:id',
-        element: <RequirePermission check="chapan_clients"><ChapanClientDetailPage /></RequirePermission>,
-      },
-      {
-        path: 'settings',
-        element: <Navigate to="../orders" replace />,
-      },
-    ],
-  },
-
   // ── Auth ───────────────────────────────────────────────
   { path: '/auth/login',         element: <LoginPage /> },
   { path: '/auth/register',      element: <Navigate to="/" replace /> },
@@ -512,6 +430,9 @@ export const appRouter = createBrowserRouter([
 
   // ── Dev panel — service password, no normal auth ──────
   { path: '/dev', element: <DevPanelPage /> },
+
+  // ── Legacy Chapan workzone URLs → redirect home ───────
+  { path: '/workzone/*', element: <Navigate to="/" replace /> },
 
   // ── Fallback ───────────────────────────────────────────
   { path: '*', element: <Navigate to="/" replace /> },

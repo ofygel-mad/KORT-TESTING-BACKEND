@@ -7,49 +7,27 @@ import type {
   User,
 } from '../stores/auth';
 
-export type EmployeePermission =
-  | 'full_access'
-  | 'financial_report'
-  | 'sales'
-  | 'production'
-  | 'warehouse_manager'
-  | 'observer'
-  | 'chapan_full_access'
-  | 'chapan_access_orders'
-  | 'chapan_access_production'
-  | 'chapan_access_ready'
-  | 'chapan_access_archive'
-  | 'chapan_access_warehouse_nav'
-  | 'chapan_manage_production'
-  | 'chapan_confirm_invoice'
-  | 'chapan_warehouse_operator'
-  | 'chapan_shipping'
-  | 'chapan_manage_settings';
+// Permission model lives in entities/employee — imported + re-exported for back-compat.
+import type { Permission, Employee, PermissionOverride } from '@/entities/employee/types';
+export type EmployeePermission = Permission;
 
 export type EmployeeAccountStatus = 'active' | 'pending_first_login' | 'dismissed';
 
-export interface EmployeeRecord {
-  id: string;
-  full_name: string;
-  phone: string;
-  department: string;
-  permissions: EmployeePermission[];
-  account_status: EmployeeAccountStatus;
-  added_by_id: string;
-  added_by_name: string;
-  created_at: string;
-}
+// EmployeeRecord is the backend serializeEmployee shape — same as entities Employee.
+export type EmployeeRecord = Employee;
 
 export interface CreateEmployeePayload {
   phone: string;
   full_name: string;
   department: string;
-  permissions: EmployeePermission[];
+  roleId: string;
+  overrides?: PermissionOverride[];
 }
 
 export interface UpdateEmployeePayload {
   department?: string;
-  permissions?: EmployeePermission[];
+  roleId?: string;
+  overrides?: PermissionOverride[];
 }
 
 export interface FirstLoginResponse {

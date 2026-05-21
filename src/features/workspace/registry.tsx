@@ -36,20 +36,21 @@ export interface WorkspaceWidgetDefinition {
 const SECTION_BY_KIND: Partial<Record<WorkspaceWidgetKind, string>> = Object.fromEntries(
   SIDEBAR_NAV_SECTIONS.flatMap((s) => s.items.map((item) => [item.id, s.label])),
 );
-SECTION_BY_KIND.chapan = 'Кабинеты';
 
 const TILE_PREVIEWS: Record<WorkspaceWidgetKind, ComponentType<{ tileId: string }>> = {
   leads: LeadsTilePreview,
   deals: DealsTilePreview,
   customers: CustomersTilePreview,
   tasks: TasksTilePreview,
+  sales: ChapanTilePreview,
   warehouse: WarehouseTilePreview,
   production: ProductionTilePreview,
+  logistics: ChapanTilePreview,
+  products: ChapanTilePreview,
   finance: FinanceTilePreview,
   employees: EmployeesTilePreview,
   reports: ReportsTilePreview,
   documents: DocumentsTilePreview,
-  chapan: ChapanTilePreview,
 };
 
 function toWidgetDefinition(item: ShortcutNavItem): WorkspaceWidgetDefinition {

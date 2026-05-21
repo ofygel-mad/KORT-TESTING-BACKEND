@@ -12,7 +12,6 @@ import {
 import { useAuthStore } from '@/shared/stores/auth';
 import {
   CANVAS_NAV_ITEM,
-  CHAPAN_NAV_ITEM,
   SETTINGS_NAV_ITEM,
   SIDEBAR_NAV_SECTIONS,
 } from '@/shared/navigation/appNavigation';
@@ -165,18 +164,9 @@ export function MobileNav() {
               {planIncludes(plan, 'industrial') && (
                 <div className={styles.drawerSection}>
                   <div className={styles.drawerSectionLabel}>Кабинеты</div>
-                  <NavLink
-                    to={CHAPAN_NAV_ITEM.to}
-                    className={({ isActive }) =>
-                      `${styles.drawerItem} ${isActive ? styles.drawerItemActive : ''}`
-                    }
-                    onClick={closeDrawer}
-                  >
-                    <span className={styles.drawerItemIcon}>
-                      <CHAPAN_NAV_ITEM.icon size={16} />
-                    </span>
-                    {CHAPAN_NAV_ITEM.label}
-                  </NavLink>
+                  <div className={styles.drawerItem} style={{ opacity: 0.5 }}>
+                    Пока пусто
+                  </div>
                 </div>
               )}
 

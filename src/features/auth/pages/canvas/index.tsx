@@ -31,9 +31,8 @@ import { useIsMobile } from '@/shared/hooks/useIsMobile';
 import { useAuthStore } from '@/shared/stores/auth';
 import { useRole } from '@/shared/hooks/useRole';
 import { useEmployeePermissions } from '@/shared/hooks/useEmployeePermissions';
-import { useChapanPermissions } from '@/shared/hooks/useChapanPermissions';
+import { useOperationsAccess } from '@/shared/hooks/useOperationsAccess';
 import {
-  CHAPAN_NAV_ITEM,
   SETTINGS_NAV_ITEM,
   SIDEBAR_NAV_SECTIONS,
   type ShortcutNavItemId,
@@ -78,7 +77,7 @@ function MobileMenuCard({ item }: { item: MobileMenuItem }) {
 function useCanAccessNavItem(id: ShortcutNavItemId): boolean {
   const { isOwner, isAdmin } = useRole();
   const perms = useEmployeePermissions();
-  const chapan = useChapanPermissions();
+  const chapan = useOperationsAccess();
 
   if (isOwner || isAdmin) return true;
   if (perms.permissions.length === 0) return true; // обычный member
@@ -99,7 +98,9 @@ function useCanAccessNavItem(id: ShortcutNavItemId): boolean {
       return perms.canAccessFinancial;
     case 'employees':
       return perms.canManageTeam;
-    case 'chapan':
+    case 'sales':
+    case 'logistics':
+    case 'products':
       return chapan.hasAnyAccess;
     default:
       return true;
@@ -117,7 +118,7 @@ export default function CanvasPage() {
   const navigate = useNavigate();
   const { isOwner, isAdmin } = useRole();
   const perms = useEmployeePermissions();
-  const chapan = useChapanPermissions();
+  const chapan = useOperationsAccess();
 
   const hasEmployeePerms = perms.permissions.length > 0 && !isOwner && !isAdmin;
 
@@ -189,22 +190,6 @@ export default function CanvasPage() {
             </section>
           ))}
 
-          {planIncludes(plan, 'industrial') && (!hasEmployeePerms || chapan.hasAnyAccess) && (
-            <section className={styles.mobileSection}>
-              <div className={styles.mobileSectionLabel}>Кабинеты</div>
-              <div className={styles.mobileSectionGrid}>
-                <MobileMenuCard
-                  item={{
-                    to: CHAPAN_NAV_ITEM.to,
-                    label: CHAPAN_NAV_ITEM.label,
-                    description: CHAPAN_NAV_ITEM.description,
-                    color: CHAPAN_NAV_ITEM.color,
-                    icon: CHAPAN_NAV_ITEM.icon,
-                  }}
-                />
-              </div>
-            </section>
-          )}
         </div>
 
         <div className={styles.mobileFooter}>

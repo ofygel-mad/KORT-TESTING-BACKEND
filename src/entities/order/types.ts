@@ -1,5 +1,5 @@
 // ── Chapan Order types — synced with backend schema ──────────────────────────
-// Backend model: ChapanOrder, ChapanOrderItem, ChapanProductionTask, ChapanPayment, ChapanActivity
+// Backend model: Order, OrderItem, ProductionTask, ChapanPayment, ChapanActivity
 
 import type { InvoiceStatus } from './invoice.types';
 
@@ -15,7 +15,7 @@ export type Priority = 'normal' | 'urgent' | 'vip';
 // New domain model: urgency and demanding are independent
 export type Urgency = 'normal' | 'urgent';
 
-export interface ChapanOrder {
+export interface Order {
   id: string;
   orgId: string;
   orderNumber: string;
@@ -275,7 +275,7 @@ export interface CreateOrderDto {
   clientName: string;          // required
   clientPhone: string;         // required (can be empty if clientPhoneForeign is provided)
   clientPhoneForeign?: string; // optional: for non-Kazakhstan numbers
-  clientId?: string;           // optional: link to existing ChapanClient
+  clientId?: string;           // optional: link to existing Customer
   priority: Priority;
   urgency?: Urgency;
   isDemandingClient?: boolean;
@@ -351,21 +351,14 @@ export interface AddPaymentDto {
 // ── Settings/Catalogs ─────────────────────────────────────────────────────────
 
 // Backend returns string[] for catalogs (not {id,name}[])
-export interface ChapanCatalogs {
+export interface OperationsCatalogs {
   productCatalog: string[];
   sizeCatalog: string[];
   workers: string[];
   paymentMethodCatalog: string[];   // Sprint 4: user-managed payment methods
 }
 
-export interface ChapanProfile {
-  displayName: string | null;
-  descriptor: string | null;
-  orderPrefix: string | null;
-  publicIntakeTitle: string | null;
-  publicIntakeDescription: string | null;
-  publicIntakeEnabled: boolean;
-  supportLabel: string | null;
+export interface OperationsSettings {
   kazpostDeliveryFee: number;
   railDeliveryFee: number;
   airDeliveryFee: number;
@@ -376,7 +369,7 @@ export interface ChapanProfile {
 
 export type ChangeRequestStatus = 'pending' | 'approved' | 'rejected';
 
-export interface ChapanChangeRequest {
+export interface ChangeRequest {
   id: string;
   orderId: string;
   orgId: string;
@@ -413,7 +406,7 @@ export type {
   InvoiceDocumentRow,
   InvoiceDocumentSourceOrder,
   InvoiceDocumentPayload,
-  ChapanInvoice,
+  Invoice,
 } from './invoice.types';
 
 export type {
@@ -421,8 +414,8 @@ export type {
   ReturnStatus,
   ReturnItemCondition,
   ReturnRefundMethod,
-  ChapanReturnItem,
-  ChapanReturn,
+  ReturnItem,
+  Return,
   CreateReturnItemDto,
   CreateReturnDto,
 } from './returns.types';
@@ -434,8 +427,8 @@ export {
 } from './returns.types';
 
 export type {
-  ChapanClient,
-  ChapanClientAggregated,
-  ChapanClientDetail,
-  ChapanClientsListParams,
+  Customer,
+  CustomerAggregated,
+  CustomerDetail,
+  CustomersListParams,
 } from './client.types';

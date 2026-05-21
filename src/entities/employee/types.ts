@@ -1,94 +1,158 @@
 // Backend: /api/v1/company/employees
 // Note: prefix is /api/v1/company NOT /api/v1/employees
 
-export type EmployeePermission =
-  | 'full_access'
-  | 'financial_report'
-  | 'sales'
-  | 'production'
-  | 'warehouse_manager'
-  | 'observer'
-  // ─── Чапан ───
-  | 'chapan_full_access'
-  | 'chapan_access_orders'
-  | 'chapan_access_production'
-  | 'chapan_access_ready'
-  | 'chapan_access_archive'
-  | 'chapan_access_warehouse_nav'
-  | 'chapan_manage_production'
-  | 'chapan_confirm_invoice'
-  | 'chapan_warehouse_operator'
-  | 'chapan_manage_settings';
+// ── Permission model: scope.action ───────────────────────────────────────────
+// Owners (User.is_owner) bypass all checks. 'company.admin' grants full access.
+
+export type Permission =
+  | 'orders.read' | 'orders.write' | 'orders.admin'
+  | 'invoices.read' | 'invoices.write' | 'invoices.confirm'
+  | 'warehouse.read' | 'warehouse.write' | 'warehouse.admin'
+  | 'production.read' | 'production.write' | 'production.manage'
+  | 'logistics.read' | 'logistics.write'
+  | 'customers.read' | 'customers.write'
+  | 'products.read' | 'products.write' | 'products.admin'
+  | 'purchase.read' | 'purchase.write'
+  | 'returns.read' | 'returns.write'
+  | 'reports.read'
+  | 'documents.read' | 'documents.write'
+  | 'company.admin';
+
+// Back-compat alias — many call sites still import EmployeePermission.
+export type EmployeePermission = Permission;
+
+export const ALL_PERMISSIONS: Permission[] = [
+  'orders.read', 'orders.write', 'orders.admin',
+  'invoices.read', 'invoices.write', 'invoices.confirm',
+  'warehouse.read', 'warehouse.write', 'warehouse.admin',
+  'production.read', 'production.write', 'production.manage',
+  'logistics.read', 'logistics.write',
+  'customers.read', 'customers.write',
+  'products.read', 'products.write', 'products.admin',
+  'purchase.read', 'purchase.write',
+  'returns.read', 'returns.write',
+  'reports.read',
+  'documents.read', 'documents.write',
+  'company.admin',
+];
+
+// ── RBAC: roles + per-member overrides ────────────────────────────────────────
+
+export type PermissionEffect = 'allow' | 'deny';
+
+export interface PermissionOverride {
+  permission: Permission;
+  effect: PermissionEffect;
+}
+
+export interface Role {
+  id: string;
+  key: string;
+  name: string;
+  description: string;
+  is_system: boolean;
+  scope: 'system' | 'custom';
+  permissions: Permission[];
+}
+
+export interface CreateRoleDto {
+  name: string;
+  description?: string;
+  permissions: Permission[];
+}
+
+export interface UpdateRoleDto {
+  name?: string;
+  description?: string;
+  permissions?: Permission[];
+}
 
 export interface Employee {
   id: string;                   // userId
   full_name: string;
   phone: string | null;
   department: string;
-  permissions: EmployeePermission[];
+  role_id: string | null;
+  role_name: string | null;
+  overrides: PermissionOverride[];
+  permissions: Permission[];    // effective = role + overrides
   status: 'active' | 'dismissed';
   isPendingFirstLogin?: boolean;
   addedByName: string | null;
   joinedAt: string;
 }
 
-export const PERMISSION_LABEL: Record<EmployeePermission, string> = {
-  full_access: 'Полный доступ',
-  financial_report: 'Финансы',
-  sales: 'Продажи',
-  production: 'Производство',
-  warehouse_manager: 'Завсклад',
-  observer: 'Наблюдатель',
-  chapan_full_access: 'Чапан: полный доступ',
-  chapan_access_orders: 'Чапан: Заказы',
-  chapan_access_production: 'Чапан: Производство',
-  chapan_access_ready: 'Чапан: Готово',
-  chapan_access_archive: 'Чапан: Архив',
-  chapan_access_warehouse_nav: 'Чапан: Ссылка на Склад',
-  chapan_manage_production: 'Чапан: Управление производством',
-  chapan_confirm_invoice: 'Чапан: Подтверждение накладных',
-  chapan_warehouse_operator: 'Чапан: Сотрудник склада',
-  chapan_manage_settings: 'Чапан: Настройки модуля',
-};
+// ── Permission matrix — drives the Settings → Employees access editor ─────────
+// Each row is a module; columns are read / write / admin actions.
 
-export const PERMISSION_DESCRIPTION: Record<EmployeePermission, string> = {
-  full_access: 'Все функции, включая API и вебхуки.',
-  financial_report: 'Excel-импорт/экспорт, финансовая аналитика.',
-  sales: 'Лиды, сделки, заявки, сводки.',
-  production: 'Раздел производства.',
-  warehouse_manager: 'Приёмка, хранение, отгрузка.',
-  observer: 'Просмотр без права редактирования.',
-  chapan_full_access: 'Все разделы модуля Чапан без ограничений.',
-  chapan_access_orders: 'Просмотр, создание и редактирование заказов.',
-  chapan_access_production: 'Производственные задачи и ход выполнения.',
-  chapan_access_ready: 'Готовые заказы, передача и выдача.',
-  chapan_access_archive: 'Архивные заказы и возврат из архива.',
-  chapan_access_warehouse_nav: 'Видит кнопку перехода на Склад из модуля Чапан.',
-  chapan_manage_production: 'Назначение исполнителей и управление этапами.',
-  chapan_confirm_invoice: 'Подтверждение отгрузок по накладным со стороны Чапана.',
-  chapan_warehouse_operator: 'Приёмка и отправка заказов на складе.',
-  chapan_manage_settings: 'Изменение настроек рабочего модуля Чапан.',
-};
+export type PermissionAction = 'read' | 'write' | 'admin';
 
-export const BASE_PERMISSIONS: EmployeePermission[] = [
-  'full_access', 'financial_report', 'sales', 'production', 'warehouse_manager', 'observer',
+export interface PermissionMatrixRow {
+  module: string;
+  label: string;
+  read?: Permission;
+  write?: Permission;
+  admin?: Permission;
+  adminLabel?: string; // override the "Администрирование" column label
+}
+
+export const PERMISSION_MATRIX: PermissionMatrixRow[] = [
+  { module: 'orders', label: 'Заказы', read: 'orders.read', write: 'orders.write', admin: 'orders.admin' },
+  { module: 'invoices', label: 'Накладные', read: 'invoices.read', write: 'invoices.write', admin: 'invoices.confirm', adminLabel: 'Подтверждение' },
+  { module: 'warehouse', label: 'Склад', read: 'warehouse.read', write: 'warehouse.write', admin: 'warehouse.admin' },
+  { module: 'production', label: 'Производство', read: 'production.read', write: 'production.write', admin: 'production.manage', adminLabel: 'Управление' },
+  { module: 'logistics', label: 'Логистика', read: 'logistics.read', write: 'logistics.write' },
+  { module: 'customers', label: 'Клиенты', read: 'customers.read', write: 'customers.write' },
+  { module: 'products', label: 'Продукты', read: 'products.read', write: 'products.write', admin: 'products.admin' },
+  { module: 'purchase', label: 'Закуп', read: 'purchase.read', write: 'purchase.write' },
+  { module: 'returns', label: 'Возвраты', read: 'returns.read', write: 'returns.write' },
+  { module: 'reports', label: 'Отчёты', read: 'reports.read' },
+  { module: 'documents', label: 'Документы', read: 'documents.read', write: 'documents.write' },
 ];
 
-export const CHAPAN_PERMISSIONS: EmployeePermission[] = [
-  'chapan_full_access', 'chapan_access_orders', 'chapan_access_production',
-  'chapan_access_ready', 'chapan_access_archive', 'chapan_access_warehouse_nav',
-  'chapan_manage_production', 'chapan_confirm_invoice', 'chapan_warehouse_operator',
-  'chapan_manage_settings',
-];
+// Special standalone permission — full company management (replaces the admin role).
+export const COMPANY_ADMIN_PERMISSION: Permission = 'company.admin';
+
+export const PERMISSION_LABEL: Record<Permission, string> = {
+  'orders.read': 'Заказы: просмотр',
+  'orders.write': 'Заказы: изменение',
+  'orders.admin': 'Заказы: администрирование',
+  'invoices.read': 'Накладные: просмотр',
+  'invoices.write': 'Накладные: изменение',
+  'invoices.confirm': 'Накладные: подтверждение',
+  'warehouse.read': 'Склад: просмотр',
+  'warehouse.write': 'Склад: изменение',
+  'warehouse.admin': 'Склад: администрирование',
+  'production.read': 'Производство: просмотр',
+  'production.write': 'Производство: изменение',
+  'production.manage': 'Производство: управление',
+  'logistics.read': 'Логистика: просмотр',
+  'logistics.write': 'Логистика: изменение',
+  'customers.read': 'Клиенты: просмотр',
+  'customers.write': 'Клиенты: изменение',
+  'products.read': 'Продукты: просмотр',
+  'products.write': 'Продукты: изменение',
+  'products.admin': 'Продукты: администрирование',
+  'purchase.read': 'Закуп: просмотр',
+  'purchase.write': 'Закуп: изменение',
+  'returns.read': 'Возвраты: просмотр',
+  'returns.write': 'Возвраты: изменение',
+  'reports.read': 'Отчёты: просмотр',
+  'documents.read': 'Документы: просмотр',
+  'documents.write': 'Документы: изменение',
+  'company.admin': 'Администратор компании',
+};
 
 export interface CreateEmployeeDto {
   phone: string;       // +7XXXXXXXXXX format
   full_name: string;
   department: string;
-  permissions: EmployeePermission[];
+  roleId: string;
+  overrides?: PermissionOverride[];
 }
 
 export interface UpdateEmployeeDto {
   department?: string;
-  permissions?: EmployeePermission[];
+  roleId?: string;
+  overrides?: PermissionOverride[];
 }

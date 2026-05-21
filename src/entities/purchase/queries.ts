@@ -5,7 +5,7 @@ import type { CreateManualInvoiceDto, UpdateManualInvoiceDto } from './types';
 import { readApiErrorMessage } from '@/shared/api/errors';
 
 const purchaseKeys = {
-  all: ['chapan-purchase'] as const,
+  all: ['purchase'] as const,
   list: (type?: string, archived?: boolean) => [...purchaseKeys.all, 'list', type, archived ?? false] as const,
   detail: (id: string) => [...purchaseKeys.all, 'detail', id] as const,
 };

@@ -574,7 +574,7 @@ async function tryResolveShortageAlerts(orgId: string, itemId: string) {
           data: { status: 'resolved', resolvedAt: new Date() },
         });
         // Unblock production tasks for this chapan order
-        await prisma.chapanProductionTask.updateMany({
+        await prisma.productionTask.updateMany({
           where: { orderId: alert.sourceId, isBlocked: true },
           data: { isBlocked: false, blockReason: null },
         });
@@ -927,7 +927,7 @@ export async function reserveOrderWarehouseItems(
   orderId: string,
   actorName = 'system',
 ): Promise<WarehouseOrderReservationSummary> {
-  const order = await prisma.chapanOrder.findFirst({
+  const order = await prisma.order.findFirst({
     where: { id: orderId, orgId },
     include: { items: true },
   });
@@ -1130,7 +1130,7 @@ export async function checkOrderBOM(
   chapanOrderId: string,
   reserve = true,
 ): Promise<ShortageReport> {
-  const order = await prisma.chapanOrder.findFirst({
+  const order = await prisma.order.findFirst({
     where: { id: chapanOrderId, orgId },
     include: { items: true },
   });
@@ -1238,13 +1238,13 @@ export async function checkOrderBOM(
       .map((i) => `${i.itemName} (нужно ещё ${i.shortage} ${i.unit})`)
       .join('; ');
 
-    await prisma.chapanProductionTask.updateMany({
+    await prisma.productionTask.updateMany({
       where: { orderId: chapanOrderId },
       data: { isBlocked: true, blockReason: `Нехватка материалов: ${shortageNames}` },
     });
   } else if (neededMap.size > 0) {
     // All good — unblock any previously blocked tasks
-    await prisma.chapanProductionTask.updateMany({
+    await prisma.productionTask.updateMany({
       where: { orderId: chapanOrderId, isBlocked: true },
       data: { isBlocked: false, blockReason: null },
     });
@@ -1345,7 +1345,7 @@ export async function consumeSimpleOrderReservations(
 
   // Accumulation Method fallback: no reservation found — look up warehouse items by variantKey
   // and create direct 'out' movements (handles case where item was unverified at routing time)
-  const order = await prisma.chapanOrder.findFirst({
+  const order = await prisma.order.findFirst({
     where: { id: orderId, orgId },
     include: { items: { where: { fulfillmentMode: 'warehouse' } } },
   });
@@ -2062,7 +2062,7 @@ export async function syncFromOrders(
   orgId: string,
   authorName: string,
 ): Promise<{ createdItemIds: string[]; matchedItemIds: string[]; scannedOrders: number }> {
-  const activeOrders = await prisma.chapanOrder.findMany({
+  const activeOrders = await prisma.order.findMany({
     where: {
       orgId,
       status: { notIn: ['shipped', 'delivered', 'closed', 'cancelled'] },

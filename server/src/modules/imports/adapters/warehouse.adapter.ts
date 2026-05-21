@@ -138,18 +138,18 @@ export async function importCatalog(
     if (!name) { result.skipped++; continue; }
 
     try {
-      // Upsert ChapanCatalogProduct
-      await prisma.chapanCatalogProduct.upsert({
-        where: { orgId_name: { orgId, name } },
+      // Upsert WarehouseProductCatalog
+      await prisma.warehouseProductCatalog.upsert({
+        where: { orgId_normalizedName: { orgId, normalizedName: name.toLowerCase() } },
         update: {},
-        create: { orgId, name },
+        create: { orgId, name, normalizedName: name.toLowerCase() },
       });
 
       // Build size entries
       if (row.size_range?.trim()) {
         // e.g. "42-58" → individual sizes or store as-is
         const sizeStr = row.size_range.trim();
-        await prisma.chapanCatalogSize.upsert({
+        await prisma.productSize.upsert({
           where: { orgId_name: { orgId, name: sizeStr } },
           update: {},
           create: { orgId, name: sizeStr },

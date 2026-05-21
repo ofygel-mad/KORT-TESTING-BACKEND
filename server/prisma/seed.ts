@@ -1,9 +1,10 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { SYSTEM_ROLES } from '../src/modules/auth/system-roles.js';
 
 const prisma = new PrismaClient();
 
-const OWNER_EMAIL = 'admin@kort.local';
+const OWNER_EMAIL = process.env.SEED_OWNER_EMAIL ?? 'admin@kort.local';
 const OWNER_PHONE = '+77010000001';
 const OWNER_ID = 'u-owner';
 const ORG_ID = 'org-workspace';
@@ -11,7 +12,7 @@ const ORG_SLUG = 'workspace';
 const EMPLOYEE_ID = 'u-employee-pending';
 const EMPLOYEE_PHONE = '+77010000003';
 
-const OWNER_PASSWORD = await bcrypt.hash('demo1234', 10);
+const OWNER_PASSWORD = await bcrypt.hash(process.env.SEED_OWNER_PASSWORD ?? 'demo1234', 10);
 const EMPLOYEE_PASSWORD = await bcrypt.hash(EMPLOYEE_PHONE, 10);
 
 function ago(days: number, hours = 0): Date {
@@ -78,22 +79,47 @@ async function upsertSeedOrganization() {
   } as const;
 
   if (existing) {
-    return prisma.organization.update({
-      where: { id: existing.id },
-      data,
-    });
+    return prisma.organization.update({ where: { id: existing.id }, data });
   }
 
-  return prisma.organization.create({
-    data: {
-      id: ORG_ID,
-      ...data,
-    },
-  });
+  return prisma.organization.create({ data: { id: ORG_ID, ...data } });
+}
+
+/** Seeds (or refreshes) the shared system roles — orgId = null, isSystem = true. */
+async function seedSystemRoles(): Promise<Record<string, string>> {
+  const ids: Record<string, string> = {};
+  for (const def of SYSTEM_ROLES) {
+    const existing = await prisma.role.findFirst({
+      where: { orgId: null, key: def.key },
+    });
+    if (existing) {
+      const updated = await prisma.role.update({
+        where: { id: existing.id },
+        data: { name: def.name, description: def.description, permissions: def.permissions, isSystem: true },
+      });
+      ids[def.key] = updated.id;
+    } else {
+      const created = await prisma.role.create({
+        data: {
+          orgId: null,
+          key: def.key,
+          name: def.name,
+          description: def.description,
+          permissions: def.permissions,
+          isSystem: true,
+        },
+      });
+      ids[def.key] = created.id;
+    }
+  }
+  return ids;
 }
 
 async function main() {
   console.log('Seeding database...');
+
+  const roleIds = await seedSystemRoles();
+  console.log(`  System roles: ${Object.keys(roleIds).length}`);
 
   const owner = await upsertSeedUser({
     id: OWNER_ID,
@@ -106,10 +132,12 @@ async function main() {
 
   const org = await upsertSeedOrganization();
 
+  // Owner — isOwner bypasses every permission check; no role needed.
   await prisma.membership.upsert({
     where: { userId_orgId: { userId: owner.id, orgId: org.id } },
     update: {
-      role: 'owner',
+      isOwner: true,
+      roleId: null,
       status: 'active',
       source: 'company_registration',
       joinedAt: ago(90),
@@ -119,7 +147,7 @@ async function main() {
     create: {
       userId: owner.id,
       orgId: org.id,
-      role: 'owner',
+      isOwner: true,
       status: 'active',
       source: 'company_registration',
       joinedAt: ago(90),
@@ -136,15 +164,16 @@ async function main() {
     status: 'active',
   });
 
+  // Demo employee — Warehouse Manager system role.
   await prisma.membership.upsert({
     where: { userId_orgId: { userId: employee.id, orgId: org.id } },
     update: {
-      role: 'manager',
+      isOwner: false,
+      roleId: roleIds.warehouse_manager ?? null,
       status: 'active',
       source: 'admin_added',
       joinedAt: ago(15),
       department: 'Склад',
-      employeePermissions: ['warehouse_manager'],
       employeeAccountStatus: 'pending_first_login',
       addedById: owner.id,
       addedByName: owner.fullName,
@@ -152,34 +181,19 @@ async function main() {
     create: {
       userId: employee.id,
       orgId: org.id,
-      role: 'manager',
+      isOwner: false,
+      roleId: roleIds.warehouse_manager ?? null,
       status: 'active',
       source: 'admin_added',
       joinedAt: ago(15),
       department: 'Склад',
-      employeePermissions: ['warehouse_manager'],
       employeeAccountStatus: 'pending_first_login',
       addedById: owner.id,
       addedByName: owner.fullName,
     },
   });
 
-  await prisma.chapanProfile.upsert({
-    where: { orgId: org.id },
-    update: {
-      displayName: 'Workspace',
-      descriptor: 'Operations',
-      orderPrefix: 'ORD',
-    },
-    create: {
-      orgId: org.id,
-      displayName: 'Workspace',
-      descriptor: 'Operations',
-      orderPrefix: 'ORD',
-    },
-  });
-
-  await prisma.chapanCatalogSize.createMany({
+  await prisma.productSize.createMany({
     data: ['XS', 'S', 'M', 'L', 'XL', 'XXL', '44', '46', '48', '50', '52', '54'].map((name) => ({
       orgId: org.id,
       name,
@@ -188,10 +202,7 @@ async function main() {
   });
 
   const existingCustomer = await prisma.customer.findFirst({
-    where: {
-      orgId: org.id,
-      email: 'aidana@example.kz',
-    },
+    where: { orgId: org.id, email: 'aidana@example.kz' },
   });
 
   if (existingCustomer) {
@@ -221,7 +232,7 @@ async function main() {
   console.log('');
   console.log('  Owner login:');
   console.log(`    Email:    ${OWNER_EMAIL}`);
-  console.log('    Password: demo1234');
+  console.log(`    Password: ${process.env.SEED_OWNER_PASSWORD ?? 'demo1234'}`);
 }
 
 main()

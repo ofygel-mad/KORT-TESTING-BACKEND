@@ -46,7 +46,6 @@ export async function submitMembershipRequest(userId: string, fullName: string, 
       companyName: org.name,
       companySlug: org.slug,
       status: membership.status,
-      role: 'viewer',
       source: 'request',
       requestId: membershipRequest.id,
       inviteToken: null,
@@ -59,7 +58,7 @@ export async function submitMembershipRequest(userId: string, fullName: string, 
 async function ensurePendingMembership(userId: string, orgId: string) {
   return prisma.membership.upsert({
     where: { userId_orgId: { userId, orgId } },
-    create: { userId, orgId, role: 'viewer', status: 'pending', source: 'request' },
+    create: { userId, orgId, status: 'pending', source: 'request' },
     update: { status: 'pending', source: 'request' },
   });
 }
@@ -107,6 +106,13 @@ export async function approveRequest(requestId: string, orgId: string) {
   if (!req) throw new NotFoundError('MembershipRequest', requestId);
   if (req.orgId !== orgId) throw new ForbiddenError('Запрос не принадлежит текущей организации.');
 
+  // Resolve the requested role — a system role or this org's custom role.
+  const role = req.requestedRole
+    ? await prisma.role.findFirst({
+        where: { key: req.requestedRole, OR: [{ orgId: null }, { orgId: req.orgId }] },
+      })
+    : null;
+
   await prisma.$transaction(async (tx) => {
     await tx.membershipRequest.update({
       where: { id: requestId },
@@ -118,15 +124,15 @@ export async function approveRequest(requestId: string, orgId: string) {
       create: {
         userId: req.userId,
         orgId: req.orgId,
-        role: req.requestedRole,
+        roleId: role?.id ?? null,
         status: 'active',
         source: 'request',
         joinedAt: new Date(),
       },
       update: {
-        role: req.requestedRole,
         status: 'active',
         joinedAt: new Date(),
+        roleId: role?.id ?? undefined,
       },
     });
 
@@ -153,7 +159,6 @@ export async function rejectRequest(requestId: string, orgId: string) {
       create: {
         userId: req.userId,
         orgId: req.orgId,
-        role: 'viewer',
         status: 'rejected',
         source: 'request',
       },

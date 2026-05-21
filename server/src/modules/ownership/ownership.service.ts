@@ -7,11 +7,8 @@ import {
   ValidationError,
 } from '../../lib/errors.js';
 
-const FALLBACK_OWNER_ROLES = ['admin', 'manager', 'viewer'] as const;
-
 export const transferOwnershipSchema = z.object({
   target_user_id: z.string().min(1),
-  previous_owner_role: z.enum(FALLBACK_OWNER_ROLES).default('admin'),
 });
 
 export type TransferOwnershipInput = z.infer<typeof transferOwnershipSchema>;
@@ -38,7 +35,7 @@ export async function transferOwnership(
       prisma.membership.findMany({
         where: {
           orgId,
-          role: 'owner',
+          isOwner: true,
           status: 'active',
           NOT: { employeeAccountStatus: 'dismissed' },
         },
@@ -54,7 +51,7 @@ export async function transferOwnership(
     throw new NotFoundError('Organization', orgId);
   }
 
-  if (!currentOwnerMembership || currentOwnerMembership.role !== 'owner') {
+  if (!currentOwnerMembership || !currentOwnerMembership.isOwner) {
     throw new ForbiddenError('Передавать владение может только текущий владелец организации.');
   }
 
@@ -76,15 +73,20 @@ export async function transferOwnership(
     throw new ValidationError('Нельзя передать владение уволенному сотруднику.');
   }
 
-  if (targetMembership.role === 'owner') {
+  if (targetMembership.isOwner) {
     throw new ConflictError('Этот участник уже является владельцем организации.');
   }
+
+  // Demoted owner keeps company-admin access so they aren't locked out.
+  const adminRole = await prisma.role.findFirst({
+    where: { key: 'admin', OR: [{ orgId: null }, { orgId }] },
+  });
 
   await prisma.$transaction(async (tx) => {
     await tx.membership.update({
       where: { id: targetMembership.id },
       data: {
-        role: 'owner',
+        isOwner: true,
         status: 'active',
         employeeAccountStatus: 'active',
       },
@@ -93,9 +95,10 @@ export async function transferOwnership(
     await tx.membership.update({
       where: { id: currentOwnerMembership.id },
       data: {
-        role: input.previous_owner_role,
+        isOwner: false,
         status: 'active',
         employeeAccountStatus: 'active',
+        roleId: adminRole?.id ?? null,
       },
     });
 
@@ -119,7 +122,6 @@ export async function transferOwnership(
       id: currentOwnerMembership.userId,
       full_name: currentOwnerMembership.user.fullName,
       email: currentOwnerMembership.user.email,
-      next_role: input.previous_owner_role,
     },
     new_owner: {
       id: targetMembership.userId,

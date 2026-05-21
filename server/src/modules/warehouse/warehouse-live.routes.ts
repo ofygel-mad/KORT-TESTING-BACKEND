@@ -299,7 +299,7 @@ export const warehouseLiveRoutes: FastifyPluginAsync = async (app) => {
       orgId: query.orgId,
     });
 
-    const order = await prisma.chapanOrder.findFirst({
+    const order = await prisma.order.findFirst({
       where: {
         id: query.orderId,
         orgId: query.orgId,

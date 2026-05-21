@@ -2074,7 +2074,7 @@ export async function getOutboxRuntimeStatus(orgId: string) {
 }
 
 export async function buildWarehouseOrderSnapshot(db: Tx, orgId: string, orderId: string) {
-  const order = await db.chapanOrder.findFirst({
+  const order = await db.order.findFirst({
     where: { id: orderId, orgId },
     include: {
       items: true,

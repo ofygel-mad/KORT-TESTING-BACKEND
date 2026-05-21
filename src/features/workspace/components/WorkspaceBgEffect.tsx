@@ -121,6 +121,27 @@ export const WorkspaceBgEffect = memo(function WorkspaceBgEffect({ onFlightTileP
     });
     runtimeRef.current = runtime;
 
+    // A runtime is rebuilt whenever `performance` / `onFlightTileProjection`
+    // change identity. The resize + setState effects below are keyed on scene
+    // state — NOT on the runtime instance — so they do NOT re-run for a
+    // replacement runtime. Without this, a fresh runtime is left un-sized
+    // (a 300×150 buffer stretched fullscreen, camera aspect stuck at 1) and
+    // un-synced (default theme/mode) until the next unrelated scene change.
+    // Initialise it here so it is correct on creation; the effects below
+    // continue to handle subsequent updates.
+    const layer = layerRef.current;
+    if (layer.clientWidth > 0 && layer.clientHeight > 0) {
+      runtime.resize(layer.clientWidth, layer.clientHeight);
+    }
+    const store = useWorkspaceStore.getState();
+    runtime.setState({
+      theme: store.sceneTheme,
+      themeAuto: store.sceneThemeAuto,
+      flightMode: store.sceneMode === 'flight',
+      terrainMode: store.sceneTerrainMode,
+      tiles: getSceneTiles(store.tiles, store.viewportSize, store.hoveredTileId),
+    });
+
     return () => {
       runtime.dispose();
       runtimeRef.current = null;

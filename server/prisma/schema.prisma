@@ -13,8 +13,8 @@ datasource db {
 
 model User {
   id        String   @id @default(cuid())
-  email     String?  @unique          // nullable — phone-only employees may have no email
-  phone     String?  @unique          // unique: used as login identifier for employees
+  email     String?  @unique // nullable — phone-only employees may have no email
+  phone     String?  @unique // unique: used as login identifier for employees
   fullName  String   @map("full_name")
   avatarUrl String?  @map("avatar_url")
   password  String
@@ -59,28 +59,28 @@ model RefreshToken {
 }
 
 model AccountingEntry {
-  id            String   @id @default(cuid())
-  orgId         String   @map("org_id")
-  seq           Int
-  type          String
-  amount        Float
-  currency      String   @default("KZT")
-  category      String
-  account       String
-  counterparty  String?
-  sourceModule  String?  @map("source_module")
-  sourceId      String?  @map("source_id")
-  sourceLabel   String?  @map("source_label")
-  period        String
-  author        String
-  prevHash      String?  @map("prev_hash")
-  hash          String   @unique
-  isReconciled  Boolean  @default(false) @map("is_reconciled")
-  reconciledAt  DateTime? @map("reconciled_at")
-  reconciledBy  String?  @map("reconciled_by")
-  tags          String[] @default([])
-  notes         String?
-  createdAt     DateTime @default(now()) @map("created_at")
+  id           String    @id @default(cuid())
+  orgId        String    @map("org_id")
+  seq          Int
+  type         String
+  amount       Float
+  currency     String    @default("KZT")
+  category     String
+  account      String
+  counterparty String?
+  sourceModule String?   @map("source_module")
+  sourceId     String?   @map("source_id")
+  sourceLabel  String?   @map("source_label")
+  period       String
+  author       String
+  prevHash     String?   @map("prev_hash")
+  hash         String    @unique
+  isReconciled Boolean   @default(false) @map("is_reconciled")
+  reconciledAt DateTime? @map("reconciled_at")
+  reconciledBy String?   @map("reconciled_by")
+  tags         String[]  @default([])
+  notes        String?
+  createdAt    DateTime  @default(now()) @map("created_at")
 
   org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
@@ -112,17 +112,17 @@ model AccountingGap {
 }
 
 model ImportTemplate {
-  id             String   @id @default(cuid())
-  orgId          String   @map("org_id")
+  id             String    @id @default(cuid())
+  orgId          String    @map("org_id")
   name           String
   target         String
   mapping        Json
-  headerRowIndex Int      @default(0) @map("header_row_index")
-  dataStartRow   Int      @default(1) @map("data_start_row")
-  sheetName      String?  @map("sheet_name")
-  usedCount      Int      @default(0) @map("used_count")
+  headerRowIndex Int       @default(0) @map("header_row_index")
+  dataStartRow   Int       @default(1) @map("data_start_row")
+  sheetName      String?   @map("sheet_name")
+  usedCount      Int       @default(0) @map("used_count")
   lastUsedAt     DateTime? @map("last_used_at")
-  createdAt      DateTime @default(now()) @map("created_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
 
   org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
@@ -136,29 +136,29 @@ model ImportTemplate {
 // ═══════════════════════════════════════════════════════════════
 
 model Organization {
-  id                  String   @id @default(cuid())
+  id                  String  @id @default(cuid())
   name                String
-  slug                String   @unique
-  mode                String   @default("basic") // basic | advanced | industrial
-  currency            String   @default("KZT")
+  slug                String  @unique
+  mode                String  @default("basic") // basic | advanced | industrial
+  currency            String  @default("KZT")
   industry            String?
-  onboardingCompleted Boolean  @default(false) @map("onboarding_completed")
+  onboardingCompleted Boolean @default(false) @map("onboarding_completed")
 
   // Extended org profile (Settings → Организация)
-  legalName   String? @map("legal_name")
-  bin         String?
-  iin         String?
-  legalForm   String? @map("legal_form")
-  director    String?
-  accountant  String?
-  address     String?
-  city        String?
-  phone       String?
-  email       String?
-  website     String?
-  bankName    String? @map("bank_name")
-  bankBik     String? @map("bank_bik")
-  bankAccount String? @map("bank_account")
+  legalName                   String? @map("legal_name")
+  bin                         String?
+  iin                         String?
+  legalForm                   String? @map("legal_form")
+  director                    String?
+  accountant                  String?
+  address                     String?
+  city                        String?
+  phone                       String?
+  email                       String?
+  website                     String?
+  bankName                    String? @map("bank_name")
+  bankBik                     String? @map("bank_bik")
+  bankAccount                 String? @map("bank_account")
   shipmentResponsibleName     String? @map("shipment_responsible_name")
   shipmentResponsiblePosition String? @map("shipment_responsible_position")
   transportOrganization       String? @map("transport_organization")
@@ -166,12 +166,22 @@ model Organization {
   attorneyDate                String? @map("attorney_date")
   attorneyIssuedBy            String? @map("attorney_issued_by")
 
+  // Operations: document numbering counters + delivery/commission defaults
+  orderCounter          Int   @default(0) @map("order_counter")
+  invoiceCounter        Int   @default(0) @map("invoice_counter")
+  requestCounter        Int   @default(0) @map("request_counter")
+  kazpostDeliveryFee    Int   @default(2000) @map("kazpost_delivery_fee")
+  railDeliveryFee       Int   @default(3000) @map("rail_delivery_fee")
+  airDeliveryFee        Int   @default(5000) @map("air_delivery_fee")
+  bankCommissionPercent Float @default(0) @map("bank_commission_percent")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   memberships        Membership[]
   invites            Invite[]
   membershipRequests MembershipRequest[]
+  roles              Role[]
 
   // CRM
   customers Customer[]
@@ -179,63 +189,60 @@ model Organization {
   deals     Deal[]
   tasks     Task[]
 
-  // Chapan workshop
-  chapanProfile  ChapanProfile?
-  chapanClients  ChapanClient[]
-  chapanOrders   ChapanOrder[]
-  chapanRequests ChapanRequest[]
-  chapanWorkers  ChapanWorker[]
-  chapanProducts ChapanCatalogProduct[]
-  chapanSizes    ChapanCatalogSize[]
-  chapanPaymentMethods ChapanCatalogPaymentMethod[]
-  chapanInvoices        ChapanInvoice[]
-  chapanReturns         ChapanReturn[]
-  chapanManualInvoices  ChapanManualInvoice[]
+  // Operations: orders, production, fulfillment
+  orders           Order[]
+  materialRequests MaterialRequest[]
+  workers          Worker[]
+  productSizes     ProductSize[]
+  paymentMethods   PaymentMethod[]
+  invoices         Invoice[]
+  returns          Return[]
+  manualInvoices   ManualInvoice[]
 
   // Warehouse
-  warehouseItems            WarehouseItem[]
-  warehouseCategories       WarehouseCategory[]
-  warehouseMovements        WarehouseMovement[]
-  warehouseReservations     WarehouseReservation[]
-  warehouseTransitZones     WarehouseTransitZone[]
-  warehouseTransitEntries   WarehouseTransitEntry[]
-  warehouseBomLines         WarehouseBOMLine[]
-  warehouseAlerts           WarehouseAlert[]
-  warehouseLots             WarehouseLot[]
-  warehouseLocations        WarehouseLocation[]
-  warehouseFieldDefinitions WarehouseFieldDefinition[]
-  warehouseProductCatalog   WarehouseProductCatalog[]
-  warehouseSites            WarehouseSite[]
-  warehouseZones            WarehouseZone[]
-  warehouseAisles           WarehouseAisle[]
-  warehouseRacks            WarehouseRack[]
-  warehouseBins             WarehouseBin[]
-  warehouseVariants         WarehouseVariant[]
-  warehouseStockLedgerEvents WarehouseStockLedgerEvent[]
-  warehouseStockBalances    WarehouseStockBalance[]
-  warehouseStockReservations WarehouseStockReservation[]
-  warehouseTasks            WarehouseTask[]
-  warehouseExceptions       WarehouseException[]
-  warehouseAssigneePools    WarehouseAssigneePool[]
-  warehouseTaskEvents       WarehouseTaskEvent[]
-  warehouseExceptionEvents  WarehouseExceptionEvent[]
-  warehouseLayoutVersions   WarehouseLayoutVersion[]
-  warehouseLayoutNodes      WarehouseLayoutNode[]
-  warehouseOperationDocuments WarehouseOperationDocument[]
-  warehouseSiteReadModels   WarehouseSiteReadModel[]
-  warehouseOrderReadModels  WarehouseOrderReadModel[]
-  warehouseOutboxRecords    WarehouseOutbox[]
+  warehouseItems                  WarehouseItem[]
+  warehouseCategories             WarehouseCategory[]
+  warehouseMovements              WarehouseMovement[]
+  warehouseReservations           WarehouseReservation[]
+  warehouseTransitZones           WarehouseTransitZone[]
+  warehouseTransitEntries         WarehouseTransitEntry[]
+  warehouseBomLines               WarehouseBOMLine[]
+  warehouseAlerts                 WarehouseAlert[]
+  warehouseLots                   WarehouseLot[]
+  warehouseLocations              WarehouseLocation[]
+  warehouseFieldDefinitions       WarehouseFieldDefinition[]
+  warehouseProductCatalog         WarehouseProductCatalog[]
+  warehouseSites                  WarehouseSite[]
+  warehouseZones                  WarehouseZone[]
+  warehouseAisles                 WarehouseAisle[]
+  warehouseRacks                  WarehouseRack[]
+  warehouseBins                   WarehouseBin[]
+  warehouseVariants               WarehouseVariant[]
+  warehouseStockLedgerEvents      WarehouseStockLedgerEvent[]
+  warehouseStockBalances          WarehouseStockBalance[]
+  warehouseStockReservations      WarehouseStockReservation[]
+  warehouseTasks                  WarehouseTask[]
+  warehouseExceptions             WarehouseException[]
+  warehouseAssigneePools          WarehouseAssigneePool[]
+  warehouseTaskEvents             WarehouseTaskEvent[]
+  warehouseExceptionEvents        WarehouseExceptionEvent[]
+  warehouseLayoutVersions         WarehouseLayoutVersion[]
+  warehouseLayoutNodes            WarehouseLayoutNode[]
+  warehouseOperationDocuments     WarehouseOperationDocument[]
+  warehouseSiteReadModels         WarehouseSiteReadModel[]
+  warehouseOrderReadModels        WarehouseOrderReadModel[]
+  warehouseOutboxRecords          WarehouseOutbox[]
   warehouseProjectionInboxRecords WarehouseProjectionInbox[]
-  warehouseLayoutPublishAudits WarehouseLayoutPublishAudit[]
-  accountingEntries    AccountingEntry[]
-  accountingGaps       AccountingGap[]
-  importTemplates      ImportTemplate[]
-  adCampaigns          AdCampaign[]
-  adDailyMetrics       AdDailyMetric[]
-  conversations        Conversation[]
-  chatAttachments      ChatAttachment[]
-  kaspiConnections     KaspiConnection[]
-  kaspiOrderLinks      KaspiOrderLink[]
+  warehouseLayoutPublishAudits    WarehouseLayoutPublishAudit[]
+  accountingEntries               AccountingEntry[]
+  accountingGaps                  AccountingGap[]
+  importTemplates                 ImportTemplate[]
+  adCampaigns                     AdCampaign[]
+  adDailyMetrics                  AdDailyMetric[]
+  conversations                   Conversation[]
+  chatAttachments                 ChatAttachment[]
+  kaspiConnections                KaspiConnection[]
+  kaspiOrderLinks                 KaspiOrderLink[]
 
   @@map("organizations")
 }
@@ -347,7 +354,7 @@ model AdDailyMetric {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   org      Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  campaign AdCampaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  campaign AdCampaign   @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 
   @@unique([campaignId, date])
   @@index([orgId, date])
@@ -359,31 +366,74 @@ model Membership {
   id     String @id @default(cuid())
   userId String @map("user_id")
   orgId  String @map("org_id")
-  role   String @default("viewer") // owner | admin | manager | viewer
 
   // Org membership lifecycle
   status   String    @default("pending") // pending | active | rejected
-  source   String    @default("manual")  // company_registration | admin_added | invite | request | manual
+  source   String    @default("manual") // company_registration | admin_added | invite | request | manual
   joinedAt DateTime? @map("joined_at")
 
+  // Org owner — the member who created the company. Bypasses all permission checks.
+  isOwner Boolean @default(false) @map("is_owner")
+
+  // RBAC: role gives a base permission set; per-member overrides refine it.
+  roleId String? @map("role_id")
+
   // Employee-specific fields (populated when source = 'admin_added')
-  department             String   @default("")
-  employeePermissions    String[] @default([]) @map("employee_permissions")
-  addedById              String?  @map("added_by_id") // userId of admin who created this employee
-  addedByName            String?  @map("added_by_name")
-  employeeAccountStatus  String   @default("active") @map("employee_account_status")
+  department            String  @default("")
+  addedById             String? @map("added_by_id") // userId of admin who created this employee
+  addedByName           String? @map("added_by_name")
+  employeeAccountStatus String  @default("active") @map("employee_account_status")
   // ^ values: active | pending_first_login | dismissed
   // 'dismissed' = fired, login blocked; 'pending_first_login' = phone+phone auth required
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  org  Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user                User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  org                 Organization               @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  role                Role?                      @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  permissionOverrides MemberPermissionOverride[]
 
   @@unique([userId, orgId])
   @@index([orgId])
+  @@index([roleId])
   @@map("memberships")
+}
+
+// RBAC role — a named bundle of scope.action permissions.
+// orgId = null → system role (shared, seeded, isSystem = true).
+// orgId set    → custom role created by that company.
+model Role {
+  id          String   @id @default(cuid())
+  orgId       String?  @map("org_id")
+  key         String // owner | admin | sales_manager | warehouse_manager | ...
+  name        String
+  description String?
+  isSystem    Boolean  @default(false) @map("is_system")
+  permissions String[] @default([]) // scope.action permission keys
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  org     Organization? @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  members Membership[]
+
+  @@unique([orgId, key])
+  @@index([orgId])
+  @@map("roles")
+}
+
+// Per-member refinement on top of the role's permission set.
+model MemberPermissionOverride {
+  id           String @id @default(cuid())
+  membershipId String @map("membership_id")
+  permission   String // scope.action permission key
+  effect       String // 'allow' | 'deny'
+
+  membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+
+  @@unique([membershipId, permission])
+  @@index([membershipId])
+  @@map("member_permission_overrides")
 }
 
 model Invite {
@@ -427,24 +477,27 @@ model MembershipRequest {
 // ═══════════════════════════════════════════════════════════════
 
 model Customer {
-  id          String   @id @default(cuid())
-  orgId       String   @map("org_id")
-  fullName    String   @map("full_name")
-  phone       String?
-  email       String?
-  companyName String?  @map("company_name")
-  status      String   @default("new")
-  source      String?  @default("manual")
-  notes       String?
-  tags        String[] @default([])
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id           String   @id @default(cuid())
+  orgId        String   @map("org_id")
+  fullName     String   @map("full_name")
+  phone        String?
+  email        String?
+  companyName  String?  @map("company_name")
+  status       String   @default("new")
+  source       String?  @default("manual")
+  customerType String   @default("retail") @map("customer_type") // retail | wholesale
+  notes        String?
+  tags         String[] @default([])
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
-  org   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  leads Lead[]
-  deals Deal[]
+  org    Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  leads  Lead[]
+  deals  Deal[]
+  orders Order[]
 
   @@index([orgId])
+  @@index([orgId, phone])
   @@map("customers")
 }
 
@@ -473,8 +526,8 @@ model Lead {
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
-  org      Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  customer Customer?    @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  org      Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  customer Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
   history  LeadHistory[]
 
   @@index([orgId, pipeline, stage])
@@ -614,33 +667,10 @@ model TaskActivity {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  CHAPAN WORKSHOP
+//  OPERATIONS: ORDERS, PRODUCTION, FULFILLMENT
 // ═══════════════════════════════════════════════════════════════
 
-model ChapanProfile {
-  id                      String  @id @default(cuid())
-  orgId                   String  @unique @map("org_id")
-  displayName             String  @default("Чапан") @map("display_name")
-  descriptor              String  @default("")
-  orderPrefix             String  @default("ЧП") @map("order_prefix")
-  orderCounter            Int     @default(0) @map("order_counter")
-  invoiceCounter          Int     @default(0) @map("invoice_counter")
-  requestCounter          Int     @default(0) @map("request_counter")
-  publicIntakeTitle       String  @default("Оставьте заявку на пошив") @map("public_intake_title")
-  publicIntakeDescription String  @default("") @map("public_intake_description")
-  publicIntakeEnabled     Boolean @default(true) @map("public_intake_enabled")
-  supportLabel            String  @default("") @map("support_label")
-  kazpostDeliveryFee      Int     @default(2000) @map("kazpost_delivery_fee")
-  railDeliveryFee         Int     @default(3000) @map("rail_delivery_fee")
-  airDeliveryFee          Int     @default(5000) @map("air_delivery_fee")
-  bankCommissionPercent   Float   @default(0) @map("bank_commission_percent")
-
-  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-
-  @@map("chapan_profiles")
-}
-
-model ChapanWorker {
+model Worker {
   id    String @id @default(cuid())
   orgId String @map("org_id")
   name  String
@@ -648,21 +678,10 @@ model ChapanWorker {
   org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
   @@unique([orgId, name])
-  @@map("chapan_workers")
+  @@map("workers")
 }
 
-model ChapanCatalogProduct {
-  id    String @id @default(cuid())
-  orgId String @map("org_id")
-  name  String
-
-  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-
-  @@unique([orgId, name])
-  @@map("chapan_catalog_products")
-}
-
-model ChapanCatalogSize {
+model ProductSize {
   id        String @id @default(cuid())
   orgId     String @map("org_id")
   name      String
@@ -672,43 +691,22 @@ model ChapanCatalogSize {
 
   @@unique([orgId, name])
   @@index([orgId, sortOrder])
-  @@map("chapan_catalog_sizes")
+  @@map("product_sizes")
 }
 
-model ChapanCatalogPaymentMethod {
-  id    String @id @default(cuid())
-  orgId String @map("org_id")
-  name  String
-  sortOrder Int @default(0) @map("sort_order")
+model PaymentMethod {
+  id        String @id @default(cuid())
+  orgId     String @map("org_id")
+  name      String
+  sortOrder Int    @default(0) @map("sort_order")
 
   org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
   @@unique([orgId, name])
-  @@map("chapan_catalog_payment_methods")
+  @@map("payment_methods")
 }
 
-model ChapanClient {
-  id            String   @id @default(cuid())
-  orgId         String   @map("org_id")
-  fullName      String   @map("full_name")
-  phone         String
-  email         String?
-  company       String?
-  notes         String?
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
-  crmCustomerId String?  @map("crm_customer_id")
-
-  org    Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  orders ChapanOrder[]
-
-  @@index([orgId])
-  @@index([orgId, phone])
-  @@index([crmCustomerId])
-  @@map("chapan_clients")
-}
-
-model ChapanRequest {
+model MaterialRequest {
   id               String    @id @default(cuid())
   orgId            String    @map("org_id")
   requestNumber    String    @map("request_number")
@@ -727,45 +725,45 @@ model ChapanRequest {
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime  @updatedAt @map("updated_at")
 
-  org   Organization        @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  items ChapanRequestItem[]
+  org   Organization          @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  items MaterialRequestItem[]
 
   @@index([orgId, status])
-  @@map("chapan_requests")
+  @@map("material_requests")
 }
 
-model ChapanRequestItem {
-  id               String  @id @default(cuid())
-  requestId        String  @map("request_id")
-  productName      String  @map("product_name")
-  size             String?
-  quantity         Int     @default(1)
-  notes            String?
+model MaterialRequestItem {
+  id          String  @id @default(cuid())
+  requestId   String  @map("request_id")
+  productName String  @map("product_name")
+  size        String?
+  quantity    Int     @default(1)
+  notes       String?
 
-  request ChapanRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  request MaterialRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
 
-  @@map("chapan_request_items")
+  @@map("material_request_items")
 }
 
-model ChapanOrder {
-  id            String    @id @default(cuid())
-  orgId         String    @map("org_id")
-  orderNumber   String    @map("order_number")
-  clientId      String    @map("client_id")
-  clientName    String    @map("client_name")
-  clientPhone        String    @map("client_phone")
-  clientPhoneForeign String?   @map("client_phone_foreign")
-  status        String    @default("new")
-  paymentStatus String    @default("not_paid") @map("payment_status")
-  priority      String    @default("normal")   // legacy: kept for backward compat; use urgency + isDemandingClient
-  urgency           String  @default("normal")  @map("urgency")          // normal | urgent
-  isDemandingClient Boolean @default(false)     @map("is_demanding_client")
-  totalAmount   Float     @default(0) @map("total_amount")
-  paidAmount    Float     @default(0) @map("paid_amount")
-  dueDate       DateTime? @map("due_date")
-  completedAt   DateTime? @map("completed_at")
-  cancelledAt   DateTime? @map("cancelled_at")
-  cancelReason  String?   @map("cancel_reason")
+model Order {
+  id                    String    @id @default(cuid())
+  orgId                 String    @map("org_id")
+  orderNumber           String    @map("order_number")
+  clientId              String    @map("client_id")
+  clientName            String    @map("client_name")
+  clientPhone           String    @map("client_phone")
+  clientPhoneForeign    String?   @map("client_phone_foreign")
+  status                String    @default("new")
+  paymentStatus         String    @default("not_paid") @map("payment_status")
+  priority              String    @default("normal") // legacy: kept for backward compat; use urgency + isDemandingClient
+  urgency               String    @default("normal")
+  isDemandingClient     Boolean   @default(false) @map("is_demanding_client")
+  totalAmount           Float     @default(0) @map("total_amount")
+  paidAmount            Float     @default(0) @map("paid_amount")
+  dueDate               DateTime? @map("due_date")
+  completedAt           DateTime? @map("completed_at")
+  cancelledAt           DateTime? @map("cancelled_at")
+  cancelReason          String?   @map("cancel_reason")
   streetAddress         String?   @map("street_address")
   city                  String?
   deliveryType          String?   @map("delivery_type")
@@ -781,40 +779,38 @@ model ChapanOrder {
   bankCommissionAmount  Float     @default(0) @map("bank_commission_amount")
   paymentBreakdown      Json?     @map("payment_breakdown")
   requiresInvoice       Boolean   @default(true) @map("requires_invoice")
-  isArchived      Boolean   @default(false) @map("is_archived")
-  archivedAt    DateTime? @map("archived_at")
-  deletedAt     DateTime? @map("deleted_at")   // soft-delete: set by manager, permanent delete by owner
-  hasReturns    Boolean   @default(false) @map("has_returns")
-  // Manager who owns/is credited for this order (for salary/bonus calculations).
-  // Null for orders created before this field was introduced.
-  managerId     String?   @map("manager_id")
-  managerName   String?   @map("manager_name")
-  customerType  String    @default("retail") @map("customer_type")  // retail | wholesale
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  isArchived            Boolean   @default(false) @map("is_archived")
+  archivedAt            DateTime? @map("archived_at")
+  deletedAt             DateTime? @map("deleted_at")
+  hasReturns            Boolean   @default(false) @map("has_returns")
+  managerId             String?   @map("manager_id")
+  managerName           String?   @map("manager_name")
+  customerType          String    @default("retail") @map("customer_type")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
 
-  org             Organization           @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  client          ChapanClient           @relation(fields: [clientId], references: [id])
-  items           ChapanOrderItem[]
-  productionTasks ChapanProductionTask[]
-  payments        ChapanPayment[]
-  transfer        ChapanTransfer?
-  activities      ChapanActivity[]
-  invoiceOrders   ChapanInvoiceOrder[]
-  unpaidAlerts    ChapanUnpaidAlert[]
-  changeRequests  ChapanChangeRequest[]
-  attachments     ChapanOrderAttachment[]
-  returns         ChapanReturn[]
+  org             Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  client          Customer          @relation(fields: [clientId], references: [id])
+  items           OrderItem[]
+  productionTasks ProductionTask[]
+  payments        Payment[]
+  transfer        OrderTransfer?
+  activities      OrderActivity[]
+  invoiceOrders   InvoiceOrder[]
+  unpaidAlerts    UnpaidAlert[]
+  changeRequests  ChangeRequest[]
+  attachments     OrderAttachment[]
+  returns         Return[]
 
   @@index([orgId, status])
   @@index([orgId, createdAt])
   @@index([orgId, paymentStatus])
   @@index([orgId, isArchived])
   @@index([clientId])
-  @@map("chapan_orders")
+  @@map("orders")
 }
 
-model ChapanOrderItem {
+model OrderItem {
   id                String  @id @default(cuid())
   orderId           String  @map("order_id")
   position          Int     @map("item_position")
@@ -828,20 +824,19 @@ model ChapanOrderItem {
   notes             String?
   workshopNotes     String? @map("workshop_notes")
   color             String?
-  // Smart catalog fields
   variantKey        String? @map("variant_key")
   attributesJson    Json?   @map("attributes_json")
   attributesSummary String? @map("attributes_summary")
 
-  order          ChapanOrder           @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  productionTask ChapanProductionTask?
+  order          Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productionTask ProductionTask?
 
   @@unique([orderId, position])
   @@index([orderId, position])
-  @@map("chapan_order_items")
+  @@map("order_items")
 }
 
-model ChapanProductionTask {
+model ProductionTask {
   id          String    @id @default(cuid())
   orderId     String    @map("order_id")
   orderItemId String    @unique @map("order_item_id")
@@ -857,16 +852,16 @@ model ChapanProductionTask {
   isBlocked   Boolean   @default(false) @map("is_blocked")
   blockReason String?   @map("block_reason")
 
-  order     ChapanOrder     @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  orderItem ChapanOrderItem @relation(fields: [orderItemId], references: [id])
+  order     Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id])
 
   @@index([orderId])
   @@index([status])
   @@index([orderId, status])
-  @@map("chapan_production_tasks")
+  @@map("production_tasks")
 }
 
-model ChapanChangeRequest {
+model ChangeRequest {
   id            String   @id @default(cuid())
   orderId       String   @map("order_id")
   orgId         String   @map("org_id")
@@ -879,31 +874,31 @@ model ChapanChangeRequest {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
-  order ChapanOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId])
   @@index([orgId, status])
-  @@map("chapan_change_requests")
+  @@map("change_requests")
 }
 
-model ChapanOrderAttachment {
+model OrderAttachment {
   id          String   @id @default(cuid())
   orderId     String   @map("order_id")
   orgId       String   @map("org_id")
   fileName    String   @map("file_name")
   mimeType    String   @map("mime_type")
   sizeBytes   Int      @map("size_bytes")
-  storagePath String   @map("storage_path")   // relative path inside UPLOAD_DIR
-  uploadedBy  String   @map("uploaded_by")     // user displayName
+  storagePath String   @map("storage_path")
+  uploadedBy  String   @map("uploaded_by")
   createdAt   DateTime @default(now()) @map("created_at")
 
-  order ChapanOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId])
-  @@map("chapan_order_attachments")
+  @@map("order_attachments")
 }
 
-model ChapanPayment {
+model Payment {
   id      String   @id @default(cuid())
   orderId String   @map("order_id")
   amount  Float
@@ -911,13 +906,13 @@ model ChapanPayment {
   notes   String?
   paidAt  DateTime @default(now()) @map("paid_at")
 
-  order ChapanOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId])
-  @@map("chapan_payments")
+  @@map("payments")
 }
 
-model ChapanTransfer {
+model OrderTransfer {
   id                 String    @id @default(cuid())
   orderId            String    @unique @map("order_id")
   confirmedByManager Boolean   @default(false) @map("confirmed_by_manager")
@@ -925,12 +920,12 @@ model ChapanTransfer {
   transferredAt      DateTime? @map("transferred_at")
   notes              String?
 
-  order ChapanOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
-  @@map("chapan_transfers")
+  @@map("order_transfers")
 }
 
-model ChapanActivity {
+model OrderActivity {
   id         String   @id @default(cuid())
   orderId    String   @map("order_id")
   type       String
@@ -939,93 +934,93 @@ model ChapanActivity {
   authorName String   @map("author_name")
   createdAt  DateTime @default(now()) @map("created_at")
 
-  order ChapanOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId])
   @@index([orderId, createdAt])
-  @@map("chapan_activities")
+  @@map("order_activities")
 }
 
-model ChapanUnpaidAlert {
-  id          String   @id @default(cuid())
-  orgId       String   @map("org_id")
-  orderId     String   @map("order_id")
-  orderNumber String   @map("order_number")
-  createdBy   String   @map("created_by")
-  createdAt   DateTime @default(now()) @map("created_at")
+model UnpaidAlert {
+  id          String    @id @default(cuid())
+  orgId       String    @map("org_id")
+  orderId     String    @map("order_id")
+  orderNumber String    @map("order_number")
+  createdBy   String    @map("created_by")
+  createdAt   DateTime  @default(now()) @map("created_at")
   resolvedAt  DateTime? @map("resolved_at")
-  resolvedBy  String?  @map("resolved_by")
+  resolvedBy  String?   @map("resolved_by")
 
-  order ChapanOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orgId])
   @@index([orderId])
   @@index([resolvedAt])
-  @@map("chapan_unpaid_alerts")
+  @@map("unpaid_alerts")
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  CHAPAN INVOICES (НАКЛАДНЫЕ)
+//  INVOICES (НАКЛАДНЫЕ)
 // ═══════════════════════════════════════════════════════════════
 
-model ChapanInvoice {
-  id                    String    @id @default(cuid())
-  orgId                 String    @map("org_id")
-  invoiceNumber         String    @map("invoice_number")
-  status                String    @default("pending_confirmation") // pending_confirmation | confirmed | rejected
-  createdById           String    @map("created_by_id")
-  createdByName         String    @map("created_by_name")
+model Invoice {
+  id            String @id @default(cuid())
+  orgId         String @map("org_id")
+  invoiceNumber String @map("invoice_number")
+  status        String @default("pending_confirmation") // pending_confirmation | confirmed | rejected
+  createdById   String @map("created_by_id")
+  createdByName String @map("created_by_name")
 
   seamstressConfirmed   Boolean   @default(false) @map("seamstress_confirmed")
   seamstressConfirmedAt DateTime? @map("seamstress_confirmed_at")
   seamstressConfirmedBy String?   @map("seamstress_confirmed_by")
 
-  warehouseConfirmed    Boolean   @default(false) @map("warehouse_confirmed")
-  warehouseConfirmedAt  DateTime? @map("warehouse_confirmed_at")
-  warehouseConfirmedBy  String?   @map("warehouse_confirmed_by")
+  warehouseConfirmed   Boolean   @default(false) @map("warehouse_confirmed")
+  warehouseConfirmedAt DateTime? @map("warehouse_confirmed_at")
+  warehouseConfirmedBy String?   @map("warehouse_confirmed_by")
 
-  rejectedAt            DateTime? @map("rejected_at")
-  rejectedBy            String?   @map("rejected_by")
-  rejectionReason       String?   @map("rejection_reason")
+  rejectedAt      DateTime? @map("rejected_at")
+  rejectedBy      String?   @map("rejected_by")
+  rejectionReason String?   @map("rejection_reason")
 
-  documentPayload       Json?     @map("document_payload")
-  notes                 String?
-  createdAt             DateTime  @default(now()) @map("created_at")
-  updatedAt             DateTime  @updatedAt @map("updated_at")
+  documentPayload Json?    @map("document_payload")
+  notes           String?
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
-  org   Organization       @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  items ChapanInvoiceOrder[]
+  org   Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  items InvoiceOrder[]
 
   @@unique([orgId, invoiceNumber])
   @@index([orgId, status])
   @@index([orgId, createdAt])
-  @@map("chapan_invoices")
+  @@map("invoices")
 }
 
-model ChapanInvoiceOrder {
+model InvoiceOrder {
   id        String @id @default(cuid())
   invoiceId String @map("invoice_id")
   orderId   String @map("order_id")
 
-  invoice ChapanInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  order   ChapanOrder   @relation(fields: [orderId], references: [id])
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  order   Order   @relation(fields: [orderId], references: [id])
 
   @@unique([invoiceId, orderId])
   @@index([orderId])
-  @@map("chapan_invoice_orders")
+  @@map("invoice_orders")
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  CHAPAN RETURNS (АКТЫ ВОЗВРАТА)
+//  RETURNS (АКТЫ ВОЗВРАТА)
 // ═══════════════════════════════════════════════════════════════
 
-model ChapanReturn {
+model Return {
   id                String    @id @default(cuid())
   orgId             String    @map("org_id")
   returnNumber      String    @map("return_number")
   orderId           String    @map("order_id")
   status            String    @default("draft") // draft | confirmed
-  reason            String    // defect | wrong_size | wrong_item | customer_refusal | other
+  reason            String // defect | wrong_size | wrong_item | customer_refusal | other
   reasonNotes       String?   @map("reason_notes")
   createdById       String    @map("created_by_id")
   createdByName     String    @map("created_by_name")
@@ -1036,36 +1031,36 @@ model ChapanReturn {
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
 
-  org   Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  order ChapanOrder       @relation(fields: [orderId], references: [id])
-  items ChapanReturnItem[]
+  org   Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  order Order        @relation(fields: [orderId], references: [id])
+  items ReturnItem[]
 
   @@unique([orgId, returnNumber])
   @@index([orgId, status])
   @@index([orgId, orderId])
   @@index([orgId, createdAt])
-  @@map("chapan_returns")
+  @@map("returns")
 }
 
-model ChapanReturnItem {
-  id              String  @id @default(cuid())
-  returnId        String  @map("return_id")
-  orderItemId     String? @map("order_item_id")
-  productName     String  @map("product_name")
+model ReturnItem {
+  id              String   @id @default(cuid())
+  returnId        String   @map("return_id")
+  orderItemId     String?  @map("order_item_id")
+  productName     String   @map("product_name")
   size            String
   color           String?
   gender          String?
-  qty             Int     @default(1)
-  unitPrice       Float   @map("unit_price")
-  refundAmount    Float   @map("refund_amount")
-  condition       String  @default("good") // good | defective | damaged
-  warehouseItemId String? @map("warehouse_item_id")
+  qty             Int      @default(1)
+  unitPrice       Float    @map("unit_price")
+  refundAmount    Float    @map("refund_amount")
+  condition       String   @default("good") // good | defective | damaged
+  warehouseItemId String?  @map("warehouse_item_id")
   createdAt       DateTime @default(now()) @map("created_at")
 
-  chapanReturn ChapanReturn @relation(fields: [returnId], references: [id], onDelete: Cascade)
+  returnRef Return @relation(fields: [returnId], references: [id], onDelete: Cascade)
 
   @@index([returnId])
-  @@map("chapan_return_items")
+  @@map("return_items")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1079,7 +1074,7 @@ model WarehouseCategory {
   color     String   @default("#888888")
   createdAt DateTime @default(now()) @map("created_at")
 
-  org   Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  org   Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
   items WarehouseItem[]
 
   @@unique([orgId, name])
@@ -1092,7 +1087,7 @@ model WarehouseLocation {
   orgId String @map("org_id")
   name  String
 
-  org   Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  org   Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
   items WarehouseItem[]
 
   @@unique([orgId, name])
@@ -1101,35 +1096,35 @@ model WarehouseLocation {
 }
 
 model WarehouseItem {
-  id                String   @id @default(cuid())
-  orgId             String   @map("org_id")
-  categoryId        String?  @map("category_id")
-  locationId        String?  @map("location_id")
-  sku               String?
-  name              String
-  unit              String   @default("шт")   // шт | кг | м | л | пар | рулон | лист
-  qty               Float    @default(0)
-  qtyBeginning      Float    @default(0)      @map("qty_beginning")
-  qtyReserved       Float    @default(0)      @map("qty_reserved")
-  verificationRequired Boolean @default(false) @map("verification_required")
-  qtyMin            Float    @default(0)      @map("qty_min")
-  qtyMax            Float?   @map("qty_max")
-  costPrice         Float?   @map("cost_price")
-  tags              String[] @default([])
-  notes             String?
-  qrCode            String?  @unique          @map("qr_code")
+  id                   String   @id @default(cuid())
+  orgId                String   @map("org_id")
+  categoryId           String?  @map("category_id")
+  locationId           String?  @map("location_id")
+  sku                  String?
+  name                 String
+  unit                 String   @default("шт") // шт | кг | м | л | пар | рулон | лист
+  qty                  Float    @default(0)
+  qtyBeginning         Float    @default(0) @map("qty_beginning")
+  qtyReserved          Float    @default(0) @map("qty_reserved")
+  verificationRequired Boolean  @default(false) @map("verification_required")
+  qtyMin               Float    @default(0) @map("qty_min")
+  qtyMax               Float?   @map("qty_max")
+  costPrice            Float?   @map("cost_price")
+  tags                 String[] @default([])
+  notes                String?
+  qrCode               String?  @unique @map("qr_code")
   // Smart catalog fields
-  productCatalogId  String?  @map("product_catalog_id")
-  variantKey        String?  @map("variant_key")
-  attributesJson    Json?    @map("attributes_json")
-  attributesSummary String?  @map("attributes_summary")
-  createdAt         DateTime @default(now())  @map("created_at")
-  updatedAt         DateTime @updatedAt       @map("updated_at")
+  productCatalogId     String?  @map("product_catalog_id")
+  variantKey           String?  @map("variant_key")
+  attributesJson       Json?    @map("attributes_json")
+  attributesSummary    String?  @map("attributes_summary")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
 
-  org            Organization              @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  category       WarehouseCategory?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  location       WarehouseLocation?        @relation(fields: [locationId], references: [id], onDelete: SetNull)
-  productCatalog WarehouseProductCatalog?  @relation(fields: [productCatalogId], references: [id], onDelete: SetNull)
+  org            Organization             @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  category       WarehouseCategory?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  location       WarehouseLocation?       @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  productCatalog WarehouseProductCatalog? @relation(fields: [productCatalogId], references: [id], onDelete: SetNull)
   movements      WarehouseMovement[]
   reservations   WarehouseReservation[]
   transitEntries WarehouseTransitEntry[]
@@ -1145,21 +1140,21 @@ model WarehouseItem {
 }
 
 model WarehouseMovement {
-  id        String   @id @default(cuid())
-  orgId     String   @map("org_id")
-  itemId    String   @map("item_id")
+  id         String   @id @default(cuid())
+  orgId      String   @map("org_id")
+  itemId     String   @map("item_id")
   // in | out | adjustment | write_off | return | transfer | reserved | reservation_released
-  type      String
-  qty       Float
-  qtyBefore Float    @map("qty_before")
-  qtyAfter  Float    @map("qty_after")
+  type       String
+  qty        Float
+  qtyBefore  Float    @map("qty_before")
+  qtyAfter   Float    @map("qty_after")
   // Reference to source document (chapan order, deal, etc.)
-  sourceId  String?  @map("source_id")
-  sourceType String? @map("source_type") // chapan_order | deal | manual
-  lotId     String?  @map("lot_id")
-  reason    String?
-  author    String
-  createdAt DateTime @default(now()) @map("created_at")
+  sourceId   String?  @map("source_id")
+  sourceType String?  @map("source_type") // chapan_order | deal | manual
+  lotId      String?  @map("lot_id")
+  reason     String?
+  author     String
+  createdAt  DateTime @default(now()) @map("created_at")
 
   org  Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
   item WarehouseItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
@@ -1170,15 +1165,15 @@ model WarehouseMovement {
 }
 
 model WarehouseReservation {
-  id        String   @id @default(cuid())
-  orgId     String   @map("org_id")
-  itemId    String   @map("item_id")
-  qty       Float
-  sourceId  String   @map("source_id")   // ChapanOrder.id or Deal.id
-  sourceType String  @map("source_type") // chapan_order | deal | manual
+  id         String   @id @default(cuid())
+  orgId      String   @map("org_id")
+  itemId     String   @map("item_id")
+  qty        Float
+  sourceId   String   @map("source_id") // ChapanOrder.id or Deal.id
+  sourceType String   @map("source_type") // chapan_order | deal | manual
   // active | released | fulfilled
-  status    String   @default("active")
-  createdAt DateTime @default(now()) @map("created_at")
+  status     String   @default("active")
+  createdAt  DateTime @default(now()) @map("created_at")
 
   org  Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
   item WarehouseItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
@@ -1198,7 +1193,7 @@ model WarehouseTransitZone {
   name      String   @default("Транзит")
   createdAt DateTime @default(now()) @map("created_at")
 
-  org     Organization           @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  org     Organization            @relation(fields: [orgId], references: [id], onDelete: Cascade)
   entries WarehouseTransitEntry[]
 
   @@index([orgId])
@@ -1210,18 +1205,18 @@ model WarehouseTransitEntry {
   orgId      String   @map("org_id")
   zoneId     String   @map("zone_id")
   itemId     String   @map("item_id")
-  orderId    String?  @map("order_id")   // ссылка на ChapanOrder (если по заказу)
+  orderId    String?  @map("order_id") // ссылка на ChapanOrder (если по заказу)
   qty        Float
   // in_transit | dispatched | cancelled
   status     String   @default("in_transit")
   // order_demand | workshop_direct | market_purchase
   sourceType String   @map("source_type")
   createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt      @map("updated_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
   org  Organization         @relation(fields: [orgId], references: [id], onDelete: Cascade)
   zone WarehouseTransitZone @relation(fields: [zoneId], references: [id], onDelete: Cascade)
-  item WarehouseItem         @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  item WarehouseItem        @relation(fields: [itemId], references: [id], onDelete: Cascade)
 
   @@index([orgId, status])
   @@index([orderId])
@@ -1230,12 +1225,12 @@ model WarehouseTransitEntry {
 
 // Bill of Materials: product SKU/name → list of warehouse items needed per unit
 model WarehouseBOMLine {
-  id          String @id @default(cuid())
-  orgId       String @map("org_id")
+  id         String @id @default(cuid())
+  orgId      String @map("org_id")
   // Key: matches ChapanCatalogProduct.name or WorkshopProduct.name
-  productKey  String @map("product_key")
-  itemId      String @map("item_id")
-  qtyPerUnit  Float  @map("qty_per_unit")
+  productKey String @map("product_key")
+  itemId     String @map("item_id")
+  qtyPerUnit Float  @map("qty_per_unit")
 
   org  Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
   item WarehouseItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
@@ -1246,17 +1241,17 @@ model WarehouseBOMLine {
 }
 
 model WarehouseAlert {
-  id        String   @id @default(cuid())
-  orgId     String   @map("org_id")
-  itemId    String   @map("item_id")
+  id         String    @id @default(cuid())
+  orgId      String    @map("org_id")
+  itemId     String    @map("item_id")
   // low_stock | shortage_for_order | predicted_shortage | expired_lot
-  type      String
-  sourceId  String?  @map("source_id")   // order id that triggered shortage
-  qtyNeed   Float?   @map("qty_need")
-  qtyHave   Float?   @map("qty_have")
+  type       String
+  sourceId   String?   @map("source_id") // order id that triggered shortage
+  qtyNeed    Float?    @map("qty_need")
+  qtyHave    Float?    @map("qty_have")
   // open | resolved | snoozed
-  status    String   @default("open")
-  createdAt DateTime @default(now()) @map("created_at")
+  status     String    @default("open")
+  createdAt  DateTime  @default(now()) @map("created_at")
   resolvedAt DateTime? @map("resolved_at")
 
   org  Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
@@ -1295,20 +1290,20 @@ model WarehouseFieldDefinition {
   orgId               String   @map("org_id")
   code                String
   label               String
-  entityScope         String   @default("both")  @map("entity_scope")    // warehouse_item | order_item | both
-  inputType           String   @map("input_type")                         // select | multiselect | text | number | boolean
-  isRequired          Boolean  @default(false)    @map("is_required")
-  isVariantAxis       Boolean  @default(false)    @map("is_variant_axis")
-  showInWarehouseForm Boolean  @default(true)     @map("show_in_warehouse_form")
-  showInOrderForm     Boolean  @default(true)     @map("show_in_order_form")
-  showInDocuments     Boolean  @default(true)     @map("show_in_documents")
-  affectsAvailability Boolean  @default(true)     @map("affects_availability")
-  sortOrder           Int      @default(0)        @map("sort_order")
-  isSystem            Boolean  @default(false)    @map("is_system")
-  createdAt           DateTime @default(now())    @map("created_at")
-  updatedAt           DateTime @updatedAt         @map("updated_at")
+  entityScope         String   @default("both") @map("entity_scope") // warehouse_item | order_item | both
+  inputType           String   @map("input_type") // select | multiselect | text | number | boolean
+  isRequired          Boolean  @default(false) @map("is_required")
+  isVariantAxis       Boolean  @default(false) @map("is_variant_axis")
+  showInWarehouseForm Boolean  @default(true) @map("show_in_warehouse_form")
+  showInOrderForm     Boolean  @default(true) @map("show_in_order_form")
+  showInDocuments     Boolean  @default(true) @map("show_in_documents")
+  affectsAvailability Boolean  @default(true) @map("affects_availability")
+  sortOrder           Int      @default(0) @map("sort_order")
+  isSystem            Boolean  @default(false) @map("is_system")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
 
-  org          Organization           @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  org          Organization            @relation(fields: [orgId], references: [id], onDelete: Cascade)
   options      WarehouseFieldOption[]
   productLinks WarehouseProductField[]
 
@@ -1318,13 +1313,13 @@ model WarehouseFieldDefinition {
 }
 
 model WarehouseFieldOption {
-  id           String   @id @default(cuid())
-  definitionId String   @map("definition_id")
+  id           String  @id @default(cuid())
+  definitionId String  @map("definition_id")
   value        String
   label        String
-  sortOrder    Int      @default(0) @map("sort_order")
-  colorHex     String?  @map("color_hex")
-  isActive     Boolean  @default(true) @map("is_active")
+  sortOrder    Int     @default(0) @map("sort_order")
+  colorHex     String? @map("color_hex")
+  isActive     Boolean @default(true) @map("is_active")
 
   definition WarehouseFieldDefinition @relation(fields: [definitionId], references: [id], onDelete: Cascade)
 
@@ -1341,9 +1336,9 @@ model WarehouseProductCatalog {
   isActive       Boolean  @default(true) @map("is_active")
   source         String?
   createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt      @map("updated_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
-  org            Organization           @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  org            Organization            @relation(fields: [orgId], references: [id], onDelete: Cascade)
   fieldLinks     WarehouseProductField[]
   warehouseItems WarehouseItem[]
   variants       WarehouseVariant[]
@@ -1376,7 +1371,7 @@ model WarehouseProductField {
   productId    String  @map("product_id")
   definitionId String  @map("definition_id")
   isRequired   Boolean @default(false) @map("is_required")
-  sortOrder    Int     @default(0)     @map("sort_order")
+  sortOrder    Int     @default(0) @map("sort_order")
 
   product    WarehouseProductCatalog  @relation(fields: [productId], references: [id], onDelete: Cascade)
   definition WarehouseFieldDefinition @relation(fields: [definitionId], references: [id], onDelete: Cascade)
@@ -1400,8 +1395,8 @@ model WarehouseSite {
   createdAt                DateTime @default(now()) @map("created_at")
   updatedAt                DateTime @updatedAt @map("updated_at")
 
-  org                    Organization               @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  publishedLayoutVersion WarehouseLayoutVersion?    @relation("WarehousePublishedLayout", fields: [publishedLayoutVersionId], references: [id], onDelete: SetNull)
+  org                    Organization                  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  publishedLayoutVersion WarehouseLayoutVersion?       @relation("WarehousePublishedLayout", fields: [publishedLayoutVersionId], references: [id], onDelete: SetNull)
   zones                  WarehouseZone[]
   aisles                 WarehouseAisle[]
   racks                  WarehouseRack[]
@@ -1441,15 +1436,15 @@ model WarehouseZone {
   createdAt          DateTime @default(now()) @map("created_at")
   updatedAt          DateTime @updatedAt @map("updated_at")
 
-  org        Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  site       WarehouseSite   @relation(fields: [warehouseSiteId], references: [id], onDelete: Cascade)
-  parentZone WarehouseZone?  @relation("WarehouseZoneHierarchy", fields: [parentZoneId], references: [id], onDelete: SetNull)
-  childZones WarehouseZone[] @relation("WarehouseZoneHierarchy")
-  aisles     WarehouseAisle[]
-  racks      WarehouseRack[]
-  bins       WarehouseBin[]
-  tasks      WarehouseTask[]
-  exceptions WarehouseException[]
+  org         Organization          @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  site        WarehouseSite         @relation(fields: [warehouseSiteId], references: [id], onDelete: Cascade)
+  parentZone  WarehouseZone?        @relation("WarehouseZoneHierarchy", fields: [parentZoneId], references: [id], onDelete: SetNull)
+  childZones  WarehouseZone[]       @relation("WarehouseZoneHierarchy")
+  aisles      WarehouseAisle[]
+  racks       WarehouseRack[]
+  bins        WarehouseBin[]
+  tasks       WarehouseTask[]
+  exceptions  WarehouseException[]
   layoutNodes WarehouseLayoutNode[]
 
   @@unique([warehouseSiteId, code])
@@ -1470,9 +1465,9 @@ model WarehouseAisle {
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
-  org   Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  site  WarehouseSite @relation(fields: [warehouseSiteId], references: [id], onDelete: Cascade)
-  zone  WarehouseZone @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  org   Organization    @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  site  WarehouseSite   @relation(fields: [warehouseSiteId], references: [id], onDelete: Cascade)
+  zone  WarehouseZone   @relation(fields: [zoneId], references: [id], onDelete: Cascade)
   racks WarehouseRack[]
   bins  WarehouseBin[]
 
@@ -1495,10 +1490,10 @@ model WarehouseRack {
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
-  org     Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  site    WarehouseSite  @relation(fields: [warehouseSiteId], references: [id], onDelete: Cascade)
-  zone    WarehouseZone  @relation(fields: [zoneId], references: [id], onDelete: Cascade)
-  aisle   WarehouseAisle? @relation(fields: [aisleId], references: [id], onDelete: SetNull)
+  org     Organization     @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  site    WarehouseSite    @relation(fields: [warehouseSiteId], references: [id], onDelete: Cascade)
+  zone    WarehouseZone    @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  aisle   WarehouseAisle?  @relation(fields: [aisleId], references: [id], onDelete: SetNull)
   shelves WarehouseShelf[]
   bins    WarehouseBin[]
 
@@ -1517,7 +1512,7 @@ model WarehouseShelf {
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 
-  rack WarehouseRack @relation(fields: [rackId], references: [id], onDelete: Cascade)
+  rack WarehouseRack  @relation(fields: [rackId], references: [id], onDelete: Cascade)
   bins WarehouseBin[]
 
   @@unique([rackId, levelIndex])
@@ -1525,38 +1520,38 @@ model WarehouseShelf {
 }
 
 model WarehouseBin {
-  id                  String   @id @default(cuid())
-  orgId               String   @map("org_id")
-  warehouseSiteId     String   @map("warehouse_site_id")
-  zoneId              String   @map("zone_id")
-  aisleId             String?  @map("aisle_id")
-  rackId              String?  @map("rack_id")
-  shelfId             String?  @map("shelf_id")
-  code                String
-  status              String   @default("active")
-  binType             String   @default("standard") @map("bin_type")
-  capacityUnits       Float?   @map("capacity_units")
-  capacityWeight      Float?   @map("capacity_weight")
-  capacityVolume      Float?   @map("capacity_volume")
-  pickFaceEnabled     Boolean  @default(false) @map("pick_face_enabled")
-  createdAt           DateTime @default(now()) @map("created_at")
-  updatedAt           DateTime @updatedAt @map("updated_at")
+  id              String   @id @default(cuid())
+  orgId           String   @map("org_id")
+  warehouseSiteId String   @map("warehouse_site_id")
+  zoneId          String   @map("zone_id")
+  aisleId         String?  @map("aisle_id")
+  rackId          String?  @map("rack_id")
+  shelfId         String?  @map("shelf_id")
+  code            String
+  status          String   @default("active")
+  binType         String   @default("standard") @map("bin_type")
+  capacityUnits   Float?   @map("capacity_units")
+  capacityWeight  Float?   @map("capacity_weight")
+  capacityVolume  Float?   @map("capacity_volume")
+  pickFaceEnabled Boolean  @default(false) @map("pick_face_enabled")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
-  org                   Organization                @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  site                  WarehouseSite               @relation(fields: [warehouseSiteId], references: [id], onDelete: Cascade)
-  zone                  WarehouseZone               @relation(fields: [zoneId], references: [id], onDelete: Cascade)
-  aisle                 WarehouseAisle?             @relation(fields: [aisleId], references: [id], onDelete: SetNull)
-  rack                  WarehouseRack?              @relation(fields: [rackId], references: [id], onDelete: SetNull)
-  shelf                 WarehouseShelf?             @relation(fields: [shelfId], references: [id], onDelete: SetNull)
-  stockLedgerEventsFrom WarehouseStockLedgerEvent[] @relation("WarehouseLedgerEventFromBin")
-  stockLedgerEventsTo   WarehouseStockLedgerEvent[] @relation("WarehouseLedgerEventToBin")
-  stockBalances         WarehouseStockBalance[]
+  org                    Organization                          @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  site                   WarehouseSite                         @relation(fields: [warehouseSiteId], references: [id], onDelete: Cascade)
+  zone                   WarehouseZone                         @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  aisle                  WarehouseAisle?                       @relation(fields: [aisleId], references: [id], onDelete: SetNull)
+  rack                   WarehouseRack?                        @relation(fields: [rackId], references: [id], onDelete: SetNull)
+  shelf                  WarehouseShelf?                       @relation(fields: [shelfId], references: [id], onDelete: SetNull)
+  stockLedgerEventsFrom  WarehouseStockLedgerEvent[]           @relation("WarehouseLedgerEventFromBin")
+  stockLedgerEventsTo    WarehouseStockLedgerEvent[]           @relation("WarehouseLedgerEventToBin")
+  stockBalances          WarehouseStockBalance[]
   reservationAllocations WarehouseStockReservationAllocation[]
-  taskBins              WarehouseTask[]             @relation("WarehouseTaskBin")
-  sourceTasks           WarehouseTask[]             @relation("WarehouseTaskSourceBin")
-  targetTasks           WarehouseTask[]             @relation("WarehouseTaskTargetBin")
-  exceptions            WarehouseException[]
-  layoutNodes           WarehouseLayoutNode[]
+  taskBins               WarehouseTask[]                       @relation("WarehouseTaskBin")
+  sourceTasks            WarehouseTask[]                       @relation("WarehouseTaskSourceBin")
+  targetTasks            WarehouseTask[]                       @relation("WarehouseTaskTargetBin")
+  exceptions             WarehouseException[]
+  layoutNodes            WarehouseLayoutNode[]
 
   @@unique([warehouseSiteId, code])
   @@index([orgId, warehouseSiteId, zoneId, status])
@@ -1635,10 +1630,10 @@ model WarehouseStockBalance {
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
-  org     Organization     @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  site    WarehouseSite    @relation(fields: [warehouseSiteId], references: [id], onDelete: Cascade)
-  variant WarehouseVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
-  bin     WarehouseBin     @relation(fields: [binId], references: [id], onDelete: Cascade)
+  org                    Organization                          @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  site                   WarehouseSite                         @relation(fields: [warehouseSiteId], references: [id], onDelete: Cascade)
+  variant                WarehouseVariant                      @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  bin                    WarehouseBin                          @relation(fields: [binId], references: [id], onDelete: Cascade)
   reservationAllocations WarehouseStockReservationAllocation[]
 
   @@unique([orgId, warehouseSiteId, variantId, binId, stockStatus])
@@ -1647,25 +1642,25 @@ model WarehouseStockBalance {
 }
 
 model WarehouseStockReservation {
-  id                        String   @id @default(cuid())
-  orgId                     String   @map("org_id")
-  warehouseSiteId           String   @map("warehouse_site_id")
-  variantId                 String   @map("variant_id")
-  sourceType                String   @map("source_type")
-  sourceId                  String   @map("source_id")
-  sourceLineId              String?  @map("source_line_id")
-  qtyReserved               Float    @map("qty_reserved")
-  status                    String   @default("active")
-  idempotencyKey            String   @map("idempotency_key")
-  compatibilityReservationId String? @map("compatibility_reservation_id")
-  releasedAt                DateTime? @map("released_at")
-  consumedAt                DateTime? @map("consumed_at")
-  createdAt                 DateTime @default(now()) @map("created_at")
-  updatedAt                 DateTime @updatedAt @map("updated_at")
+  id                         String    @id @default(cuid())
+  orgId                      String    @map("org_id")
+  warehouseSiteId            String    @map("warehouse_site_id")
+  variantId                  String    @map("variant_id")
+  sourceType                 String    @map("source_type")
+  sourceId                   String    @map("source_id")
+  sourceLineId               String?   @map("source_line_id")
+  qtyReserved                Float     @map("qty_reserved")
+  status                     String    @default("active")
+  idempotencyKey             String    @map("idempotency_key")
+  compatibilityReservationId String?   @map("compatibility_reservation_id")
+  releasedAt                 DateTime? @map("released_at")
+  consumedAt                 DateTime? @map("consumed_at")
+  createdAt                  DateTime  @default(now()) @map("created_at")
+  updatedAt                  DateTime  @updatedAt @map("updated_at")
 
-  org         Organization                         @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  site        WarehouseSite                        @relation(fields: [warehouseSiteId], references: [id], onDelete: Cascade)
-  variant     WarehouseVariant                     @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  org         Organization                          @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  site        WarehouseSite                         @relation(fields: [warehouseSiteId], references: [id], onDelete: Cascade)
+  variant     WarehouseVariant                      @relation(fields: [variantId], references: [id], onDelete: Cascade)
   allocations WarehouseStockReservationAllocation[]
   tasks       WarehouseTask[]
 
@@ -1683,9 +1678,9 @@ model WarehouseStockReservationAllocation {
   qtyReserved    Float    @map("qty_reserved")
   createdAt      DateTime @default(now()) @map("created_at")
 
-  reservation WarehouseStockReservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
-  stockBalance WarehouseStockBalance    @relation(fields: [stockBalanceId], references: [id], onDelete: Cascade)
-  bin         WarehouseBin              @relation(fields: [binId], references: [id], onDelete: Cascade)
+  reservation  WarehouseStockReservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  stockBalance WarehouseStockBalance     @relation(fields: [stockBalanceId], references: [id], onDelete: Cascade)
+  bin          WarehouseBin              @relation(fields: [binId], references: [id], onDelete: Cascade)
 
   @@index([reservationId])
   @@index([stockBalanceId])
@@ -1693,27 +1688,27 @@ model WarehouseStockReservationAllocation {
 }
 
 model WarehouseLayoutVersion {
-  id               String    @id @default(cuid())
-  orgId            String    @map("org_id")
-  warehouseSiteId  String    @map("warehouse_site_id")
-  versionNo        Int       @map("version_no")
-  state            String    @default("draft")
-  basedOnVersionId String?   @map("based_on_version_id")
-  validationStatus String    @default("not_validated") @map("validation_status")
-  validationSummaryJson Json? @map("validation_summary_json")
-  validatedAt      DateTime? @map("validated_at")
-  publishedAt      DateTime? @map("published_at")
-  createdBy        String?   @map("created_by")
-  notes            String?
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @updatedAt @map("updated_at")
+  id                    String    @id @default(cuid())
+  orgId                 String    @map("org_id")
+  warehouseSiteId       String    @map("warehouse_site_id")
+  versionNo             Int       @map("version_no")
+  state                 String    @default("draft")
+  basedOnVersionId      String?   @map("based_on_version_id")
+  validationStatus      String    @default("not_validated") @map("validation_status")
+  validationSummaryJson Json?     @map("validation_summary_json")
+  validatedAt           DateTime? @map("validated_at")
+  publishedAt           DateTime? @map("published_at")
+  createdBy             String?   @map("created_by")
+  notes                 String?
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
 
-  org             Organization             @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  site            WarehouseSite            @relation(fields: [warehouseSiteId], references: [id], onDelete: Cascade)
-  publishedBySites WarehouseSite[]         @relation("WarehousePublishedLayout")
-  basedOnVersion  WarehouseLayoutVersion?  @relation("WarehouseLayoutVersionLineage", fields: [basedOnVersionId], references: [id], onDelete: SetNull)
-  derivedVersions WarehouseLayoutVersion[] @relation("WarehouseLayoutVersionLineage")
-  layoutNodes     WarehouseLayoutNode[]
+  org              Organization             @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  site             WarehouseSite            @relation(fields: [warehouseSiteId], references: [id], onDelete: Cascade)
+  publishedBySites WarehouseSite[]          @relation("WarehousePublishedLayout")
+  basedOnVersion   WarehouseLayoutVersion?  @relation("WarehouseLayoutVersionLineage", fields: [basedOnVersionId], references: [id], onDelete: SetNull)
+  derivedVersions  WarehouseLayoutVersion[] @relation("WarehouseLayoutVersionLineage")
+  layoutNodes      WarehouseLayoutNode[]
 
   @@unique([warehouseSiteId, versionNo])
   @@index([orgId, warehouseSiteId, state])
@@ -1756,17 +1751,17 @@ model WarehouseTask {
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
-  org         Organization             @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  site        WarehouseSite            @relation(fields: [warehouseSiteId], references: [id], onDelete: Cascade)
-  zone        WarehouseZone?           @relation(fields: [zoneId], references: [id], onDelete: SetNull)
-  bin         WarehouseBin?            @relation("WarehouseTaskBin", fields: [binId], references: [id], onDelete: SetNull)
-  sourceBin   WarehouseBin?            @relation("WarehouseTaskSourceBin", fields: [sourceBinId], references: [id], onDelete: SetNull)
-  targetBin   WarehouseBin?            @relation("WarehouseTaskTargetBin", fields: [targetBinId], references: [id], onDelete: SetNull)
-  variant     WarehouseVariant?        @relation(fields: [variantId], references: [id], onDelete: SetNull)
-  reservation WarehouseStockReservation? @relation(fields: [reservationId], references: [id], onDelete: SetNull)
-  assigneePool WarehouseAssigneePool?  @relation(fields: [assigneePoolId], references: [id], onDelete: SetNull)
-  exceptions  WarehouseException[]
-  events      WarehouseTaskEvent[]
+  org          Organization               @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  site         WarehouseSite              @relation(fields: [warehouseSiteId], references: [id], onDelete: Cascade)
+  zone         WarehouseZone?             @relation(fields: [zoneId], references: [id], onDelete: SetNull)
+  bin          WarehouseBin?              @relation("WarehouseTaskBin", fields: [binId], references: [id], onDelete: SetNull)
+  sourceBin    WarehouseBin?              @relation("WarehouseTaskSourceBin", fields: [sourceBinId], references: [id], onDelete: SetNull)
+  targetBin    WarehouseBin?              @relation("WarehouseTaskTargetBin", fields: [targetBinId], references: [id], onDelete: SetNull)
+  variant      WarehouseVariant?          @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  reservation  WarehouseStockReservation? @relation(fields: [reservationId], references: [id], onDelete: SetNull)
+  assigneePool WarehouseAssigneePool?     @relation(fields: [assigneePoolId], references: [id], onDelete: SetNull)
+  exceptions   WarehouseException[]
+  events       WarehouseTaskEvent[]
 
   @@unique([orgId, warehouseSiteId, externalKey])
   @@index([orgId, warehouseSiteId, status, taskType])
@@ -1808,14 +1803,14 @@ model WarehouseException {
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
-  org     Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  site    WarehouseSite     @relation(fields: [warehouseSiteId], references: [id], onDelete: Cascade)
-  zone    WarehouseZone?    @relation(fields: [zoneId], references: [id], onDelete: SetNull)
-  bin     WarehouseBin?     @relation(fields: [binId], references: [id], onDelete: SetNull)
-  task    WarehouseTask?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
-  variant WarehouseVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
-  ownerPool WarehouseAssigneePool? @relation(fields: [ownerPoolId], references: [id], onDelete: SetNull)
-  events  WarehouseExceptionEvent[]
+  org       Organization              @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  site      WarehouseSite             @relation(fields: [warehouseSiteId], references: [id], onDelete: Cascade)
+  zone      WarehouseZone?            @relation(fields: [zoneId], references: [id], onDelete: SetNull)
+  bin       WarehouseBin?             @relation(fields: [binId], references: [id], onDelete: SetNull)
+  task      WarehouseTask?            @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  variant   WarehouseVariant?         @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  ownerPool WarehouseAssigneePool?    @relation(fields: [ownerPoolId], references: [id], onDelete: SetNull)
+  events    WarehouseExceptionEvent[]
 
   @@unique([orgId, warehouseSiteId, externalKey])
   @@index([orgId, warehouseSiteId, status, severity])
@@ -1827,22 +1822,22 @@ model WarehouseException {
 }
 
 model WarehouseAssigneePool {
-  id                String   @id @default(cuid())
-  orgId             String   @map("org_id")
-  warehouseSiteId   String   @map("warehouse_site_id")
-  code              String
-  name              String
-  poolType          String   @map("pool_type")
-  active            Boolean  @default(true)
-  capacityLimit     Int?     @map("capacity_limit")
-  assignmentPolicy  String   @default("fifo") @map("assignment_policy") // fifo | round_robin | skill_match
-  slaTimeoutMin     Int      @default(60) @map("sla_timeout_min")
-  escalationPoolId  String?  @map("escalation_pool_id")
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
+  id               String   @id @default(cuid())
+  orgId            String   @map("org_id")
+  warehouseSiteId  String   @map("warehouse_site_id")
+  code             String
+  name             String
+  poolType         String   @map("pool_type")
+  active           Boolean  @default(true)
+  capacityLimit    Int?     @map("capacity_limit")
+  assignmentPolicy String   @default("fifo") @map("assignment_policy") // fifo | round_robin | skill_match
+  slaTimeoutMin    Int      @default(60) @map("sla_timeout_min")
+  escalationPoolId String?  @map("escalation_pool_id")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
 
-  org            Organization          @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  site           WarehouseSite         @relation(fields: [warehouseSiteId], references: [id], onDelete: Cascade)
+  org            Organization            @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  site           WarehouseSite           @relation(fields: [warehouseSiteId], references: [id], onDelete: Cascade)
   escalationPool WarehouseAssigneePool?  @relation("PoolEscalation", fields: [escalationPoolId], references: [id], onDelete: SetNull)
   escalatees     WarehouseAssigneePool[] @relation("PoolEscalation")
   tasks          WarehouseTask[]
@@ -1892,35 +1887,35 @@ model WarehouseExceptionEvent {
 }
 
 model WarehouseLayoutNode {
-  id              String    @id @default(cuid())
-  orgId           String    @map("org_id")
-  warehouseSiteId String    @map("warehouse_site_id")
-  layoutVersionId String    @map("layout_version_id")
-  zoneId          String?   @map("zone_id")
-  binId           String?   @map("bin_id")
-  parentNodeId    String?   @map("parent_node_id")
-  nodeType        String    @map("node_type")
-  domainType      String    @map("domain_type")
-  domainId        String    @map("domain_id")
+  id              String   @id @default(cuid())
+  orgId           String   @map("org_id")
+  warehouseSiteId String   @map("warehouse_site_id")
+  layoutVersionId String   @map("layout_version_id")
+  zoneId          String?  @map("zone_id")
+  binId           String?  @map("bin_id")
+  parentNodeId    String?  @map("parent_node_id")
+  nodeType        String   @map("node_type")
+  domainType      String   @map("domain_type")
+  domainId        String   @map("domain_id")
   label           String?
-  x               Float     @default(0)
-  y               Float     @default(0)
-  width           Float     @default(1)
-  height          Float     @default(1)
-  rotation        Float     @default(0)
-  zIndex          Int       @default(0) @map("z_index")
-  hidden          Boolean   @default(false)
-  metadataJson    Json?     @map("metadata_json")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  x               Float    @default(0)
+  y               Float    @default(0)
+  width           Float    @default(1)
+  height          Float    @default(1)
+  rotation        Float    @default(0)
+  zIndex          Int      @default(0) @map("z_index")
+  hidden          Boolean  @default(false)
+  metadataJson    Json?    @map("metadata_json")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
-  org           Organization         @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  site          WarehouseSite        @relation(fields: [warehouseSiteId], references: [id], onDelete: Cascade)
+  org           Organization           @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  site          WarehouseSite          @relation(fields: [warehouseSiteId], references: [id], onDelete: Cascade)
   layoutVersion WarehouseLayoutVersion @relation(fields: [layoutVersionId], references: [id], onDelete: Cascade)
-  zone          WarehouseZone?       @relation(fields: [zoneId], references: [id], onDelete: SetNull)
-  bin           WarehouseBin?        @relation(fields: [binId], references: [id], onDelete: SetNull)
-  parentNode    WarehouseLayoutNode? @relation("WarehouseLayoutNodeHierarchy", fields: [parentNodeId], references: [id], onDelete: SetNull)
-  childNodes    WarehouseLayoutNode[] @relation("WarehouseLayoutNodeHierarchy")
+  zone          WarehouseZone?         @relation(fields: [zoneId], references: [id], onDelete: SetNull)
+  bin           WarehouseBin?          @relation(fields: [binId], references: [id], onDelete: SetNull)
+  parentNode    WarehouseLayoutNode?   @relation("WarehouseLayoutNodeHierarchy", fields: [parentNodeId], references: [id], onDelete: SetNull)
+  childNodes    WarehouseLayoutNode[]  @relation("WarehouseLayoutNodeHierarchy")
 
   @@unique([layoutVersionId, domainType, domainId])
   @@index([orgId, warehouseSiteId, layoutVersionId])
@@ -1931,19 +1926,19 @@ model WarehouseLayoutNode {
 }
 
 model WarehouseOperationDocument {
-  id              String    @id @default(cuid())
-  orgId           String    @map("org_id")
-  warehouseSiteId String?   @map("warehouse_site_id")
-  orderId         String?   @map("order_id")
-  documentType    String    @map("document_type")
-  status          String    @default("posted")
-  idempotencyKey  String    @map("idempotency_key")
-  referenceNo     String?   @map("reference_no")
-  payload         Json?     @map("payload")
-  postedAt        DateTime  @default(now()) @map("posted_at")
-  createdBy       String?   @map("created_by")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  id              String   @id @default(cuid())
+  orgId           String   @map("org_id")
+  warehouseSiteId String?  @map("warehouse_site_id")
+  orderId         String?  @map("order_id")
+  documentType    String   @map("document_type")
+  status          String   @default("posted")
+  idempotencyKey  String   @map("idempotency_key")
+  referenceNo     String?  @map("reference_no")
+  payload         Json?    @map("payload")
+  postedAt        DateTime @default(now()) @map("posted_at")
+  createdBy       String?  @map("created_by")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
   org  Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
   site WarehouseSite? @relation(fields: [warehouseSiteId], references: [id], onDelete: SetNull)
@@ -1955,16 +1950,16 @@ model WarehouseOperationDocument {
 }
 
 model WarehouseSiteReadModel {
-  id              String    @id @default(cuid())
-  orgId           String    @map("org_id")
-  warehouseSiteId String    @map("warehouse_site_id")
-  snapshotJson    Json      @map("snapshot_json")
-  status          String    @default("fresh")
-  lastEventId     String?   @map("last_event_id")
-  lastEventType   String?   @map("last_event_type")
-  refreshedAt     DateTime  @default(now()) @map("refreshed_at")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  id              String   @id @default(cuid())
+  orgId           String   @map("org_id")
+  warehouseSiteId String   @map("warehouse_site_id")
+  snapshotJson    Json     @map("snapshot_json")
+  status          String   @default("fresh")
+  lastEventId     String?  @map("last_event_id")
+  lastEventType   String?  @map("last_event_type")
+  refreshedAt     DateTime @default(now()) @map("refreshed_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
   org  Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
   site WarehouseSite @relation(fields: [warehouseSiteId], references: [id], onDelete: Cascade)
@@ -1975,17 +1970,17 @@ model WarehouseSiteReadModel {
 }
 
 model WarehouseOrderReadModel {
-  id              String    @id @default(cuid())
-  orgId           String    @map("org_id")
-  orderId         String    @map("order_id")
-  warehouseSiteId String?   @map("warehouse_site_id")
-  snapshotJson    Json      @map("snapshot_json")
-  status          String    @default("fresh")
-  lastEventId     String?   @map("last_event_id")
-  lastEventType   String?   @map("last_event_type")
-  refreshedAt     DateTime  @default(now()) @map("refreshed_at")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  id              String   @id @default(cuid())
+  orgId           String   @map("org_id")
+  orderId         String   @map("order_id")
+  warehouseSiteId String?  @map("warehouse_site_id")
+  snapshotJson    Json     @map("snapshot_json")
+  status          String   @default("fresh")
+  lastEventId     String?  @map("last_event_id")
+  lastEventType   String?  @map("last_event_type")
+  refreshedAt     DateTime @default(now()) @map("refreshed_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
   org  Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
   site WarehouseSite? @relation(fields: [warehouseSiteId], references: [id], onDelete: SetNull)
@@ -2019,15 +2014,15 @@ model WarehouseOutbox {
 }
 
 model WarehouseProjectionInbox {
-  id              String    @id @default(cuid())
-  orgId           String    @map("org_id")
-  warehouseSiteId String?   @map("warehouse_site_id")
+  id              String   @id @default(cuid())
+  orgId           String   @map("org_id")
+  warehouseSiteId String?  @map("warehouse_site_id")
   consumer        String
-  eventId         String    @map("event_id")
-  status          String    @default("processed")
-  payloadHash     String?   @map("payload_hash")
-  processedAt     DateTime  @default(now()) @map("processed_at")
-  createdAt       DateTime  @default(now()) @map("created_at")
+  eventId         String   @map("event_id")
+  status          String   @default("processed")
+  payloadHash     String?  @map("payload_hash")
+  processedAt     DateTime @default(now()) @map("processed_at")
+  createdAt       DateTime @default(now()) @map("created_at")
 
   org  Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
   site WarehouseSite? @relation(fields: [warehouseSiteId], references: [id], onDelete: SetNull)
@@ -2038,17 +2033,17 @@ model WarehouseProjectionInbox {
 }
 
 model WarehouseLayoutPublishAudit {
-  id                  String    @id @default(cuid())
-  orgId               String    @map("org_id")
-  warehouseSiteId     String    @map("warehouse_site_id")
-  layoutVersionId     String    @map("layout_version_id")
-  action              String    // publish | force_publish | rollback
-  actorName           String    @map("actor_name")
-  forceReason         String?   @map("force_reason")
-  previousVersionId   String?   @map("previous_version_id")
-  blockerSummaryJson  Json?     @map("blocker_summary_json")
-  impactedTaskCount   Int       @default(0) @map("impacted_task_count")
-  createdAt           DateTime  @default(now()) @map("created_at")
+  id                 String   @id @default(cuid())
+  orgId              String   @map("org_id")
+  warehouseSiteId    String   @map("warehouse_site_id")
+  layoutVersionId    String   @map("layout_version_id")
+  action             String // publish | force_publish | rollback
+  actorName          String   @map("actor_name")
+  forceReason        String?  @map("force_reason")
+  previousVersionId  String?  @map("previous_version_id")
+  blockerSummaryJson Json?    @map("blocker_summary_json")
+  impactedTaskCount  Int      @default(0) @map("impacted_task_count")
+  createdAt          DateTime @default(now()) @map("created_at")
 
   org  Organization  @relation(fields: [orgId], references: [id], onDelete: Cascade)
   site WarehouseSite @relation(fields: [warehouseSiteId], references: [id], onDelete: Cascade)
@@ -2062,7 +2057,7 @@ model Conversation {
   id        String   @id @default(cuid())
   orgId     String   @map("org_id")
   createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt      @map("updated_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   org          Organization              @relation(fields: [orgId], references: [id], onDelete: Cascade)
   participants ConversationParticipant[]
@@ -2108,10 +2103,10 @@ model Message {
   createdAt      DateTime    @default(now()) @map("created_at")
   readAt         DateTime?   @map("read_at")
 
-  conversation Conversation    @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender       User            @relation(fields: [senderId], references: [id])
-  replyTo      Message?        @relation("MessageReplies", fields: [replyToId], references: [id])
-  replies      Message[]       @relation("MessageReplies")
+  conversation Conversation     @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User             @relation(fields: [senderId], references: [id])
+  replyTo      Message?         @relation("MessageReplies", fields: [replyToId], references: [id])
+  replies      Message[]        @relation("MessageReplies")
   attachments  ChatAttachment[]
 
   @@index([conversationId, createdAt])
@@ -2137,31 +2132,30 @@ model ChatAttachment {
   @@map("chat_attachments")
 }
 
-
-model ChapanManualInvoice {
-  id            String   @id @default(cuid())
-  orgId         String   @map("org_id")
+model ManualInvoice {
+  id            String    @id @default(cuid())
+  orgId         String    @map("org_id")
   type          String
-  invoiceNum    String   @map("invoice_num")
+  invoiceNum    String    @map("invoice_num")
   title         String
   notes         String?
-  createdById   String   @map("created_by_id")
-  createdByName String   @map("created_by_name")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  createdById   String    @map("created_by_id")
+  createdByName String    @map("created_by_name")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
   archivedAt    DateTime? @map("archived_at")
 
-  org   Organization             @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  items ChapanManualInvoiceItem[]
+  org   Organization        @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  items ManualInvoiceItem[]
 
   @@unique([orgId, invoiceNum])
   @@index([orgId, type])
   @@index([orgId, createdAt])
   @@index([orgId, archivedAt])
-  @@map("chapan_manual_invoices")
+  @@map("manual_invoices")
 }
 
-model ChapanManualInvoiceItem {
+model ManualInvoiceItem {
   id          String   @id @default(cuid())
   invoiceId   String   @map("invoice_id")
   productName String   @map("product_name")
@@ -2173,8 +2167,8 @@ model ChapanManualInvoiceItem {
   unitPrice   Float    @map("unit_price")
   createdAt   DateTime @default(now()) @map("created_at")
 
-  invoice ChapanManualInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoice ManualInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
   @@index([invoiceId])
-  @@map("chapan_manual_invoice_items")
+  @@map("manual_invoice_items")
 }

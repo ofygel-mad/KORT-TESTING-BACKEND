@@ -1,10 +1,9 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { ChevronRight, LogOut } from 'lucide-react';
+import { ChevronRight, FolderClosed, LogOut } from 'lucide-react';
 import { useAuthStore } from '@/shared/stores/auth';
 import { KortLogo } from '@/shared/ui/KortLogo';
 import {
   CANVAS_NAV_ITEM,
-  CHAPAN_NAV_ITEM,
   SETTINGS_NAV_ITEM,
   SIDEBAR_NAV_SECTIONS,
   type ShortcutNavItem,
@@ -84,11 +83,10 @@ export function Sidebar({ chromeTone = 'dark' }: { chromeTone?: 'canvas' | 'dark
             <div className={styles.navDivider} />
             <div className={styles.navGroup}>
               <div className={styles.navGroupLabel}>Кабинеты</div>
-              <SidebarRouteItem
-                item={CHAPAN_NAV_ITEM}
-                className={styles.navItemChapan}
-                showChevron
-              />
+              <div className={styles.navItem} style={{ opacity: 0.5, cursor: 'default' }}>
+                <FolderClosed size={15} className={styles.navIcon} />
+                <span className={styles.navLabel}>Пока пусто</span>
+              </div>
             </div>
           </>
         )}

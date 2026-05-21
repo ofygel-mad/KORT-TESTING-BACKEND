@@ -2,10 +2,10 @@ import { createPortal } from 'react-dom';
 import { useState } from 'react';
 import { X, FileText, Sparkles, ArrowLeft, Download, Loader2, User, Phone, Calendar, Package } from 'lucide-react';
 import { useOrders } from '@/entities/order/queries';
-import type { ChapanOrder } from '@/entities/order/types';
+import type { Order } from '@/entities/order/types';
 import { apiClient } from '@/shared/api/client';
 import { useAuthStore } from '@/shared/stores/auth';
-import { calculateChapanOrderFinancials } from '@/shared/lib/chapanFinancials';
+import { calculateOrderFinancials } from '@/shared/lib/orderFinancials';
 import styles from './InvoiceModal.module.css';
 import { buildItemLine } from '@/shared/utils/itemLine';
 
@@ -29,7 +29,7 @@ function fmtMoney(n: number) {
 
 async function downloadInvoice(orderId: string, style: InvoiceStyle, orderNumber: string) {
   const currency = useAuthStore.getState().org?.currency ?? 'KZT';
-  const response = await apiClient.get(`/chapan/orders/${orderId}/invoice`, {
+  const response = await apiClient.get(`/orders/${orderId}/invoice`, {
     params: { style, currency },
     responseType: 'blob',
   });
@@ -136,9 +136,9 @@ function OrderListStep({ style, onClose }: { style: InvoiceStyle; onClose: () =>
 
   // Fetch ready orders (status: ready)
   const { data, isLoading, isError } = useOrders({ status: 'ready', limit: 200 });
-  const orders = (data as any)?.results as ChapanOrder[] | undefined;
+  const orders = (data as any)?.results as Order[] | undefined;
 
-  async function handleDownload(order: ChapanOrder) {
+  async function handleDownload(order: Order) {
     if (downloading) return;
     setDownloading(order.id);
     try {
@@ -250,7 +250,7 @@ function OrderListStep({ style, onClose }: { style: InvoiceStyle; onClose: () =>
 
           {/* Total + download indicator */}
           <div className={styles.orderCardBottom}>
-            <span className={styles.orderTotal}>{fmtMoney(calculateChapanOrderFinancials({
+            <span className={styles.orderTotal}>{fmtMoney(calculateOrderFinancials({
               itemsSubtotal: order.totalAmount,
               orderDiscount: order.orderDiscount,
               deliveryFee: order.deliveryFee,

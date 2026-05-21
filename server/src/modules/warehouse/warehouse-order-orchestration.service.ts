@@ -40,7 +40,7 @@ export async function consumeCanonicalWarehouseReservationsForOrder(
     const { consumeOrderWarehouseReservations } = await import('./warehouse.service.js');
     const summary = await consumeOrderWarehouseReservations(orgId, orderId, authorName || 'system');
 
-    await prisma.chapanActivity.create({
+    await prisma.orderActivity.create({
       data: {
         orderId,
         type: 'system',
@@ -60,7 +60,7 @@ export async function consumeCanonicalWarehouseReservationsForOrder(
       throw error;
     }
 
-    await prisma.chapanActivity.create({
+    await prisma.orderActivity.create({
       data: {
         orderId,
         type: 'system',
@@ -84,7 +84,7 @@ async function consumeCanonicalWarehouseReservationsForOrderTx(
   const { consumeOrderWarehouseReservationsTx } = await import('./warehouse.service.js');
   const summary = await consumeOrderWarehouseReservationsTx(tx, orgId, orderId, authorName || 'system');
 
-  await tx.chapanActivity.create({
+  await tx.orderActivity.create({
     data: {
       orderId,
       type: 'system',
@@ -112,7 +112,7 @@ async function releaseCanonicalWarehouseReservationsForOrderTx(
   const summary = await releaseOrderReservationsTx(tx, orgId, orderId, authorName || 'system');
 
   if (summary.releasedCanonicalCount > 0 || summary.releasedCompatibilityCount > 0) {
-    await tx.chapanActivity.create({
+    await tx.orderActivity.create({
       data: {
         orderId,
         type: 'system',

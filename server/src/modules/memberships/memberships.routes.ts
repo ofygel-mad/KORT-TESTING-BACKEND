@@ -2,6 +2,8 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import * as svc from './memberships.service.js';
 import { acceptInviteAndBuildSession } from '../auth/auth.service.js';
+import { prisma } from '../../lib/prisma.js';
+import { ValidationError } from '../../lib/errors.js';
 
 export async function membershipsRoutes(app: FastifyInstance) {
   // POST /api/v1/membership-requests
@@ -21,7 +23,7 @@ export async function membershipsRoutes(app: FastifyInstance) {
 
   // GET /api/v1/admin/membership-requests
   app.get('/admin/membership-requests', {
-    preHandler: [app.authenticate, app.resolveOrg, app.requireRole('admin', 'owner')],
+    preHandler: [app.authenticate, app.resolveOrg, app.requireCompanyAdmin()],
   }, async (request) => {
     const results = await svc.getAdminRequests(request.orgId);
     return { count: results.length, results };
@@ -29,7 +31,7 @@ export async function membershipsRoutes(app: FastifyInstance) {
 
   // POST /api/v1/admin/membership-requests/:id/approve
   app.post('/admin/membership-requests/:id/approve', {
-    preHandler: [app.authenticate, app.resolveOrg, app.requireRole('admin', 'owner')],
+    preHandler: [app.authenticate, app.resolveOrg, app.requireCompanyAdmin()],
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
     await svc.approveRequest(id, request.orgId);
@@ -38,7 +40,7 @@ export async function membershipsRoutes(app: FastifyInstance) {
 
   // POST /api/v1/admin/membership-requests/:id/reject
   app.post('/admin/membership-requests/:id/reject', {
-    preHandler: [app.authenticate, app.resolveOrg, app.requireRole('admin', 'owner')],
+    preHandler: [app.authenticate, app.resolveOrg, app.requireCompanyAdmin()],
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
     await svc.rejectRequest(id, request.orgId);
@@ -47,25 +49,30 @@ export async function membershipsRoutes(app: FastifyInstance) {
 
   // POST /api/v1/admin/invites
   app.post('/admin/invites', {
-    preHandler: [app.authenticate, app.resolveOrg, app.requireRole('admin', 'owner')],
+    preHandler: [app.authenticate, app.resolveOrg, app.requireCompanyAdmin()],
   }, async (request, reply) => {
     const { role, kind } = z.object({
-      role: z.enum(['owner', 'admin', 'manager', 'viewer']).default('manager'),
+      role: z.string().min(1).default('viewer'),
       kind: z.enum(['invite', 'referral']).default('referral'),
     }).parse(request.body);
 
-    // Need org name/slug — fetch it
-    const org = await import('../../lib/prisma.js').then(({ prisma }) =>
-      prisma.organization.findUniqueOrThrow({ where: { id: request.orgId } })
-    );
+    // The invite must grant a real role — a system role or this org's custom role.
+    const roleRecord = await prisma.role.findFirst({
+      where: { key: role, OR: [{ orgId: null }, { orgId: request.orgId }] },
+    });
+    if (!roleRecord) {
+      throw new ValidationError(`Роль «${role}» не найдена. Выберите существующую роль.`);
+    }
 
-    const result = await svc.createInvite(request.orgId, org.name, org.slug, request.userId, role, kind);
+    const org = await prisma.organization.findUniqueOrThrow({ where: { id: request.orgId } });
+
+    const result = await svc.createInvite(request.orgId, org.name, org.slug, request.userId, roleRecord.key, kind);
     return reply.send(result);
   });
 
   // GET /api/v1/admin/invites
   app.get('/admin/invites', {
-    preHandler: [app.authenticate, app.resolveOrg, app.requireRole('admin', 'owner')],
+    preHandler: [app.authenticate, app.resolveOrg, app.requireCompanyAdmin()],
   }, async (request) => {
     const results = await svc.listInvites(request.orgId);
     return { count: results.length, results };

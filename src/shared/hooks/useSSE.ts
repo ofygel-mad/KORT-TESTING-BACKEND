@@ -69,7 +69,7 @@ export function useSSE({ onNotification, onEntityUpdate, onConnected, enabled = 
       // the interceptor will clear auth and stop retries.
       if (failCountRef.current >= 2) {
         failCountRef.current = 0;
-        apiClient.get('/chapan/orders?limit=1').catch(() => {
+        apiClient.get('/orders?limit=1').catch(() => {
           // If axios refresh also failed, useAuthStore will be cleared by the
           // axios interceptor and `token` will become null — the effect will
           // re-run and skip connecting (guard at top of connect).

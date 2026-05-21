@@ -21,133 +21,71 @@ import { normalizeOrgCurrency } from '../../lib/currency.js';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const SHARED_CAPS = [
-  'customers:read', 'customers:write',
-  'deals:read', 'deals:write',
-  'tasks:read', 'tasks:write',
-  'reports.basic', 'customers.import',
-];
-
 const DUPLICATE_EMAIL_MESSAGE =
   'Этот email уже привязан к существующему аккаунту.';
 const DUPLICATE_PHONE_MESSAGE =
   'Этот номер телефона уже привязан к существующему аккаунту.';
 
-// ─── Capability builder ───────────────────────────────────────────────────────
+// ─── Permission model ─────────────────────────────────────────────────────────
 
 /**
- * Builds the capabilities array for a user session.
- * For employees added by admin, maps their permission checkboxes to capabilities.
- * For role-based users (owner/admin/manager), uses the role hierarchy.
+ * Canonical scope.action permission catalog.
+ * Owners (and members holding 'company.admin') implicitly hold all of these.
+ */
+export const ALL_PERMISSIONS = [
+  'orders.read', 'orders.write', 'orders.admin',
+  'invoices.read', 'invoices.write', 'invoices.confirm',
+  'warehouse.read', 'warehouse.write', 'warehouse.admin',
+  'production.read', 'production.write', 'production.manage',
+  'logistics.read', 'logistics.write',
+  'customers.read', 'customers.write',
+  'products.read', 'products.write', 'products.admin',
+  'purchase.read', 'purchase.write',
+  'returns.read', 'returns.write',
+  'reports.read',
+  'documents.read', 'documents.write',
+  'company.admin',
+] as const;
+
+export interface PermissionOverride {
+  permission: string;
+  effect: string; // 'allow' | 'deny'
+}
+
+/**
+ * Resolves the effective scope.action permission set for a membership:
+ *   effective = role.permissions + allow-overrides − deny-overrides
+ * Owners and holders of 'company.admin' implicitly hold every permission.
+ */
+export function resolveEffectivePermissions(
+  isOwner: boolean,
+  rolePermissions: string[] = [],
+  overrides: PermissionOverride[] = [],
+): string[] {
+  if (isOwner || rolePermissions.includes('company.admin')) {
+    return [...ALL_PERMISSIONS];
+  }
+  const set = new Set(rolePermissions);
+  for (const o of overrides) {
+    if (o.effect === 'allow') set.add(o.permission);
+    else if (o.effect === 'deny') set.delete(o.permission);
+  }
+  if (set.has('company.admin')) return [...ALL_PERMISSIONS];
+  return [...set];
+}
+
+/**
+ * Builds the effective capability list for a user session.
+ * Inactive memberships get nothing; otherwise the resolved permission set.
  */
 export function buildCapabilities(
-  role: string,
+  isOwner: boolean,
   active: boolean,
-  employeePermissions: string[] = [],
+  rolePermissions: string[] = [],
+  overrides: PermissionOverride[] = [],
 ): string[] {
   if (!active) return [];
-
-  // Owner and admin always get full caps regardless of employee_permissions
-  if (role === 'owner') {
-    return [
-      ...SHARED_CAPS,
-      'billing.manage', 'integrations.manage', 'audit.read',
-      'team.manage', 'automations.manage', 'chapan:read', 'chapan:write',
-    ];
-  }
-
-  if (role === 'admin') {
-    return [
-      ...SHARED_CAPS,
-      'integrations.manage', 'audit.read', 'team.manage', 'automations.manage',
-      'chapan:read', 'chapan:write',
-    ];
-  }
-
-  // Employee with explicit permission checkboxes
-  if (employeePermissions.length > 0) {
-    const caps = new Set<string>();
-
-    if (employeePermissions.includes('full_access')) {
-      // Same as owner — all capabilities
-      return [
-        ...SHARED_CAPS,
-        'billing.manage', 'integrations.manage', 'audit.read',
-        'team.manage', 'automations.manage', 'chapan:read', 'chapan:write',
-      ];
-    }
-
-    if (employeePermissions.includes('sales')) {
-      caps.add('customers:read');
-      caps.add('customers:write');
-      caps.add('deals:read');
-      caps.add('deals:write');
-      caps.add('tasks:read');
-      caps.add('tasks:write');
-      caps.add('reports.basic');
-    }
-
-    if (employeePermissions.includes('financial_report')) {
-      caps.add('reports.basic');
-      caps.add('customers.import');
-      caps.add('reports.financial');
-    }
-
-    if (employeePermissions.includes('production')) {
-      caps.add('chapan:read');
-      caps.add('chapan:write');
-      caps.add('tasks:read');
-      caps.add('tasks:write');
-    }
-
-    if (employeePermissions.includes('warehouse_manager')) {
-      caps.add('chapan:read');
-      caps.add('chapan:write');
-      caps.add('tasks:read');
-      caps.add('tasks:write');
-    }
-
-    // Chapan-specific granular permissions
-    if (employeePermissions.includes('chapan_full_access')) {
-      caps.add('chapan:read');
-      caps.add('chapan:write');
-    }
-    if (
-      employeePermissions.includes('chapan_access_orders') ||
-      employeePermissions.includes('chapan_access_production') ||
-      employeePermissions.includes('chapan_access_ready') ||
-      employeePermissions.includes('chapan_access_archive') ||
-      employeePermissions.includes('chapan_access_warehouse_nav') ||
-      employeePermissions.includes('chapan_manage_production') ||
-      employeePermissions.includes('chapan_confirm_invoice') ||
-      employeePermissions.includes('chapan_manage_settings')
-    ) {
-      caps.add('chapan:read');
-      caps.add('chapan:write');
-    }
-
-    if (employeePermissions.includes('observer')) {
-      // Read-only access to everything they have permission for
-      // Observer is additive: if they also have sales, they can read+write sales
-      // If observer ONLY, they get read-only across the board
-      const hasOtherPerms = employeePermissions.some(
-        (p) => p !== 'observer',
-      );
-      if (!hasOtherPerms) {
-        caps.add('customers:read');
-        caps.add('deals:read');
-        caps.add('tasks:read');
-        caps.add('reports.basic');
-        caps.add('chapan:read');
-      }
-    }
-
-    return Array.from(caps);
-  }
-
-  // Role-based (manager/viewer without explicit permissions)
-  if (role === 'manager') return SHARED_CAPS;
-  return ['reports.basic'];
+  return resolveEffectivePermissions(isOwner, rolePermissions, overrides);
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -225,7 +163,7 @@ async function createTokenPair(userId: string, email: string) {
 async function listActiveMembershipsForAuth(userId: string) {
   return prisma.membership.findMany({
     where: { userId, status: 'active' },
-    include: { org: true },
+    include: { org: true, role: true, permissionOverrides: true },
     orderBy: { joinedAt: 'desc' },
   });
 }
@@ -250,12 +188,13 @@ function pickAuthMembership<T extends { employeeAccountStatus: string }>(
 
 type MembershipRow = {
   orgId: string | null;
-  role: string;
+  isOwner: boolean;
   status: string;
   source: string | null;
   joinedAt?: Date | null;
   updatedAt?: Date;
-  employeePermissions?: string[];
+  rolePermissions?: string[];
+  permissionOverrides?: PermissionOverride[];
   employeeAccountStatus?: string;
 };
 
@@ -284,9 +223,13 @@ function buildSessionResponse(
   org: OrgRow,
 ) {
   const isActive = membership?.status === 'active';
-  const role = isActive ? membership!.role : 'viewer';
-  const employeePermissions = membership?.employeePermissions ?? [];
-  const isOwner = role === 'owner';
+  const isOwner = isActive ? (membership!.isOwner ?? false) : false;
+  const capabilities = buildCapabilities(
+    isOwner,
+    isActive,
+    membership?.rolePermissions ?? [],
+    membership?.permissionOverrides ?? [],
+  );
 
   return {
     access: tokens.access,
@@ -298,9 +241,9 @@ function buildSessionResponse(
       phone: user.phone,
       avatar_url: user.avatarUrl,
       status: user.status,
-      // New fields consumed by frontend useRole / useEmployeePermissions
+      // New fields consumed by frontend useEmployeePermissions
       is_owner: isOwner,
-      employee_permissions: employeePermissions,
+      employee_permissions: capabilities,
       account_status: membership?.employeeAccountStatus ?? 'active',
     },
     org: org
@@ -313,14 +256,12 @@ function buildSessionResponse(
           onboarding_completed: org.onboardingCompleted,
         }
       : null,
-    role,
-    capabilities: buildCapabilities(role, isActive, employeePermissions),
+    capabilities,
     membership: {
       companyId: membership?.orgId ?? null,
       companyName: org?.name ?? null,
       companySlug: org?.slug ?? null,
       status: membership?.status ?? 'none',
-      role: isActive ? membership!.role : null,
       source: membership?.source ?? null,
       requestId: null,
       inviteToken: null,
@@ -403,12 +344,13 @@ export async function login(identifier: {
     membership
       ? {
           orgId: membership.orgId,
-          role: membership.role,
+          isOwner: membership.isOwner,
           status: membership.status,
           source: membership.source,
           joinedAt: membership.joinedAt,
           updatedAt: membership.updatedAt,
-          employeePermissions: membership.employeePermissions,
+          rolePermissions: membership.role?.permissions ?? [],
+          permissionOverrides: membership.permissionOverrides ?? [],
           employeeAccountStatus: membership.employeeAccountStatus,
         }
       : null,
@@ -498,15 +440,13 @@ export async function registerCompany(data: {
           data: {
             userId: user.id,
             orgId: org.id,
-            role: 'owner',
+            isOwner: true,
             status: 'active',
             source: 'company_registration',
             joinedAt: new Date(),
             employeeAccountStatus: 'active',
           },
         });
-
-        await tx.chapanProfile.create({ data: { orgId: org.id } });
 
         return { user, org, membership };
       });
@@ -520,12 +460,13 @@ export async function registerCompany(data: {
         tokens,
         {
           orgId: result.membership.orgId,
-          role: result.membership.role,
+          isOwner: result.membership.isOwner,
           status: result.membership.status,
           source: result.membership.source,
           joinedAt: result.membership.joinedAt,
           updatedAt: result.membership.updatedAt,
-          employeePermissions: result.membership.employeePermissions,
+          rolePermissions: [],
+          permissionOverrides: [],
           employeeAccountStatus: result.membership.employeeAccountStatus,
         },
         result.org,
@@ -579,7 +520,7 @@ export async function bootstrap(userId: string, selectedOrgId?: string) {
 
   const memberships = await prisma.membership.findMany({
     where: { userId, status: 'active' },
-    include: { org: true },
+    include: { org: true, role: true, permissionOverrides: true },
     orderBy: { joinedAt: 'desc' },
   });
 
@@ -594,9 +535,13 @@ export async function bootstrap(userId: string, selectedOrgId?: string) {
     active = null;
   }
 
-  const role = active ? active.role : 'viewer';
-  const employeePermissions = active?.employeePermissions ?? [];
-  const isOwner = role === 'owner';
+  const isOwner = active ? (active.isOwner ?? false) : false;
+  const capabilities = buildCapabilities(
+    isOwner,
+    active !== null,
+    active?.role?.permissions ?? [],
+    active?.permissionOverrides ?? [],
+  );
 
   return {
     user: {
@@ -607,7 +552,7 @@ export async function bootstrap(userId: string, selectedOrgId?: string) {
       avatar_url: user.avatarUrl,
       status: user.status,
       is_owner: isOwner,
-      employee_permissions: employeePermissions,
+      employee_permissions: capabilities,
       account_status: active?.employeeAccountStatus ?? 'active',
     },
     org: active?.org
@@ -620,14 +565,12 @@ export async function bootstrap(userId: string, selectedOrgId?: string) {
           onboarding_completed: active.org.onboardingCompleted,
         }
       : null,
-    role,
-    capabilities: buildCapabilities(role, active !== null, employeePermissions),
+    capabilities,
     membership: {
       companyId: active?.orgId ?? null,
       companyName: active?.org?.name ?? null,
       companySlug: active?.org?.slug ?? null,
       status: active?.status ?? 'none',
-      role: active ? active.role : null,
       source: active?.source ?? null,
       requestId: null,
       inviteToken: null,
@@ -641,7 +584,7 @@ export async function bootstrap(userId: string, selectedOrgId?: string) {
       mode: m.org.mode,
       currency: normalizeOrgCurrency(m.org.currency),
       onboarding_completed: m.org.onboardingCompleted,
-      role: m.role,
+      is_owner: m.isOwner,
     })),
   };
 }
@@ -659,7 +602,17 @@ export async function acceptInviteAndBuildSession(
     throw new ValidationError('Срок действия приглашения истёк.');
   }
 
-  let membership: Awaited<ReturnType<typeof prisma.membership.upsert>>;
+  // Resolve the role the invite grants — system role or this org's custom role.
+  const inviteRole = invite.role
+    ? await prisma.role.findFirst({
+        where: { key: invite.role, OR: [{ orgId: null }, { orgId: invite.orgId }] },
+      })
+    : null;
+
+  let membership: Awaited<ReturnType<typeof prisma.membership.upsert>> & {
+    role?: { permissions: string[] } | null;
+    permissionOverrides?: PermissionOverride[];
+  };
 
   await prisma.$transaction(async (tx) => {
     await tx.invite.update({
@@ -672,18 +625,19 @@ export async function acceptInviteAndBuildSession(
       create: {
         userId,
         orgId: invite.orgId,
-        role: invite.role,
+        roleId: inviteRole?.id ?? null,
         status: invite.autoApprove ? 'active' : 'pending',
         source: 'invite',
         joinedAt: invite.autoApprove ? new Date() : null,
         employeeAccountStatus: 'active',
       },
       update: {
-        role: invite.role,
         status: invite.autoApprove ? 'active' : 'pending',
         source: 'invite',
         joinedAt: invite.autoApprove ? new Date() : undefined,
+        roleId: inviteRole?.id ?? undefined,
       },
+      include: { role: true, permissionOverrides: true },
     });
 
     await tx.user.update({
@@ -703,12 +657,13 @@ export async function acceptInviteAndBuildSession(
     tokens,
     {
       orgId: membership!.orgId,
-      role: membership!.role,
+      isOwner: membership!.isOwner,
       status: membership!.status,
       source: membership!.source,
       joinedAt: membership!.joinedAt,
       updatedAt: membership!.updatedAt,
-      employeePermissions: membership!.employeePermissions,
+      rolePermissions: membership!.role?.permissions ?? [],
+      permissionOverrides: membership!.permissionOverrides ?? [],
       employeeAccountStatus: membership!.employeeAccountStatus,
     },
     org,

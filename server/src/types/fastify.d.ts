@@ -10,7 +10,5 @@ declare module 'fastify' {
     userFullName: string;
     /** Active organization id (set by org-scope plugin) */
     orgId: string;
-    /** User's role within the active organization */
-    orgRole: string;
   }
 }

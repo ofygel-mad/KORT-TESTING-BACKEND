@@ -6,7 +6,7 @@ export async function employeesRoutes(app: FastifyInstance) {
     preHandler: [
       app.authenticate,
       app.resolveOrg,
-      app.requireRole('admin', 'owner'),
+      app.requireCompanyAdmin(),
     ],
   };
 

@@ -38,13 +38,15 @@ const DEFAULT_TILE_SIZE: Record<WorkspaceWidgetKind, { width: number; height: nu
   deals: TILE_SIZE,
   customers: TILE_SIZE,
   tasks: TILE_SIZE,
+  sales: TILE_SIZE,
   warehouse: TILE_SIZE,
   production: TILE_SIZE,
+  logistics: TILE_SIZE,
+  products: TILE_SIZE,
   finance: TILE_SIZE,
   employees: TILE_SIZE,
   reports: TILE_SIZE,
   documents: TILE_SIZE,
-  chapan: TILE_SIZE,
 };
 
 const TITLES = Object.fromEntries(
@@ -271,7 +273,7 @@ function sanitizeTile(raw: unknown, fallbackZIndex: number): WorkspaceTile | nul
   if (!isWorkspaceWidgetKind(tile.kind)) return null;
 
   const version = Math.max(1, Math.round(toFiniteNumber(tile.version, 1)));
-  const isLegacyProductionShortcut = tile.kind === 'chapan' && version < WORKSPACE_TILE_VERSION;
+  const isLegacyProductionShortcut = (tile.kind as string) === 'chapan' && version < WORKSPACE_TILE_VERSION;
   const kind: WorkspaceWidgetKind = isLegacyProductionShortcut ? 'production' : tile.kind;
   const size = DEFAULT_TILE_SIZE[kind];
   const fallbackCreatedAt = nowIsoString();

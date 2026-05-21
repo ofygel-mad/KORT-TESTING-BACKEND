@@ -1,5 +1,6 @@
 import { prisma } from '../../lib/prisma.js';
 import { ForbiddenError, NotFoundError } from '../../lib/errors.js';
+import { resolveEffectivePermissions } from '../auth/auth.service.js';
 
 /**
  * Returns the current user's profile.
@@ -12,6 +13,7 @@ export async function getMe(userId: string) {
   // Fetch the most relevant active membership to expose employee fields
   const membership = await prisma.membership.findFirst({
     where: { userId, status: 'active' },
+    include: { role: true, permissionOverrides: true },
     orderBy: { joinedAt: 'desc' },
   });
 
@@ -22,8 +24,14 @@ export async function getMe(userId: string) {
     phone: user.phone,
     avatar_url: user.avatarUrl,
     status: user.status,
-    is_owner: membership?.role === 'owner',
-    employee_permissions: membership?.employeePermissions ?? [],
+    is_owner: membership?.isOwner ?? false,
+    employee_permissions: membership
+      ? resolveEffectivePermissions(
+          membership.isOwner,
+          membership.role?.permissions ?? [],
+          membership.permissionOverrides,
+        )
+      : [],
     account_status: membership?.employeeAccountStatus ?? 'active',
   };
 }
@@ -35,7 +43,7 @@ export async function getMe(userId: string) {
 export async function getTeam(orgId: string) {
   const members = await prisma.membership.findMany({
     where: { orgId, status: 'active' },
-    include: { user: true },
+    include: { user: true, role: true, permissionOverrides: true },
     orderBy: { createdAt: 'asc' },
   });
 
@@ -45,26 +53,17 @@ export async function getTeam(orgId: string) {
     email: m.user.email,
     phone: m.user.phone,
     status: m.user.status,
-    role: m.role,
+    is_owner: m.isOwner,
     department: m.department,
     employee_account_status: m.employeeAccountStatus,
-    permissions: m.employeePermissions,
+    role_id: m.roleId,
+    role_name: m.role?.name ?? null,
+    permissions: resolveEffectivePermissions(
+      m.isOwner,
+      m.role?.permissions ?? [],
+      m.permissionOverrides,
+    ),
   }));
-}
-
-export async function updateUserRole(userId: string, orgId: string, role: string) {
-  const membership = await prisma.membership.findUnique({
-    where: { userId_orgId: { userId, orgId } },
-  });
-  if (!membership) throw new NotFoundError('Membership');
-  if (membership.role === 'owner') {
-    throw new ForbiddenError('Роль руководителя не может быть изменена.');
-  }
-
-  await prisma.membership.update({
-    where: { id: membership.id },
-    data: { role },
-  });
 }
 
 export async function activateUser(userId: string, orgId: string) {
@@ -88,7 +87,7 @@ export async function deactivateUser(userId: string, orgId: string) {
     where: { userId_orgId: { userId, orgId } },
   });
   if (!membership) throw new ForbiddenError('Пользователь не является членом текущей организации.');
-  if (membership.role === 'owner') {
+  if (membership.isOwner) {
     throw new ForbiddenError('Нельзя деактивировать руководителя.');
   }
 

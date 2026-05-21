@@ -183,7 +183,7 @@ export async function getSummary(orgId: string, period?: string) {
   ]);
 
   // Debts: chapan orders not fully paid
-  const debtOrders = await prisma.chapanOrder.findMany({
+  const debtOrders = await prisma.order.findMany({
     where: {
       orgId,
       status: { notIn: ['cancelled'] },
@@ -334,7 +334,7 @@ export async function getInventoryValue(orgId: string) {
 
 export async function getDebts(orgId: string) {
   // Receivable: chapan orders not fully paid
-  const orders = await prisma.chapanOrder.findMany({
+  const orders = await prisma.order.findMany({
     where: { orgId, status: { notIn: ['cancelled'] } },
     select: {
       id: true, orderNumber: true, clientName: true,
@@ -396,7 +396,7 @@ export async function detectAndSaveGaps(orgId: string) {
   }> = [];
 
   // GAP 1: Completed orders without accounting entry
-  const completedOrders = await prisma.chapanOrder.findMany({
+  const completedOrders = await prisma.order.findMany({
     where: { orgId, status: 'completed' },
     select: { id: true, orderNumber: true, totalAmount: true },
   });

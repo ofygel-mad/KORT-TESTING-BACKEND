@@ -510,7 +510,9 @@ export const WORKSPACE_WIDGET_ACCENTS: Record<WorkspaceWidgetKind | 'reports' | 
   reports: { accent: '#8de8c0', screen: '#10261e' },
   documents: { accent: '#9ab6ff', screen: '#151f34' },
   imports: { accent: '#ffb09d', screen: '#311712' },
-  chapan: { accent: '#ffe38f', screen: '#2e2612' },
+  sales: { accent: '#ffe38f', screen: '#2e2612' },
+  logistics: { accent: '#9fd4f0', screen: '#0f2230' },
+  products: { accent: '#c8baf0', screen: '#1d1733' },
 };
 
 export const WORKSPACE_WIDGET_SHELL_PROFILES: Record<WorkspaceWidgetKind | 'reports' | 'imports', WorkspaceWidgetShellProfile> = {
@@ -525,7 +527,9 @@ export const WORKSPACE_WIDGET_SHELL_PROFILES: Record<WorkspaceWidgetKind | 'repo
   reports: { depthFactor: 0.098, screenInset: 0.84, hoverLift: 0.98, introLift: 9.7 },
   documents: { depthFactor: 0.099, screenInset: 0.842, hoverLift: 1, introLift: 9.9 },
   imports: { depthFactor: 0.106, screenInset: 0.848, hoverLift: 1.01, introLift: 10.6 },
-  chapan: { depthFactor: 0.11, screenInset: 0.852, hoverLift: 1.06, introLift: 11.4 },
+  sales: { depthFactor: 0.11, screenInset: 0.852, hoverLift: 1.06, introLift: 11.4 },
+  logistics: { depthFactor: 0.104, screenInset: 0.846, hoverLift: 1.02, introLift: 10.4 },
+  products: { depthFactor: 0.107, screenInset: 0.849, hoverLift: 1.03, introLift: 10.7 },
 };
 
 export function getThemeByTime(): WorkspaceSceneTheme {

@@ -48,6 +48,7 @@ function serializeCustomerDetail(
     companyName: customer.companyName,
     status: customer.status,
     source: customer.source,
+    customerType: 'retail',
     notes: customer.notes,
     tags: customer.tags,
     createdAt: customer.createdAt,

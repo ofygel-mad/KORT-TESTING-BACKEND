@@ -3,5 +3,5 @@ import type { AnalyticsOverview } from './types';
 
 export const analyticsApi = {
   getOverview: (params?: { dateFrom?: string; dateTo?: string }) =>
-    api.get<AnalyticsOverview>('/chapan/analytics/overview', params),
+    api.get<AnalyticsOverview>('/analytics/overview', params),
 };

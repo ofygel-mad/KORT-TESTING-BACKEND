@@ -1,77 +1,72 @@
 import { useMemo } from 'react';
 import { useAuthStore } from '../stores/auth';
-import { useRole } from './useRole';
-import type { EmployeePermission } from '../api/contracts';
+import type { Permission } from '@/entities/employee/types';
 
 /**
- * Хук для проверки прав доступа сотрудника на основе системы чекбоксов.
+ * Access layer for the KORT permission model (scope.action).
  *
- * Логика приоритетов:
- * 1. Руководитель (is_owner) — абсолютные права, игнорирует все чекбоксы
- * 2. full_access — эквивалент руководителя, все разделы открыты
- * 3. Остальные права комбинируются: у одного сотрудника может быть
- *    и sales, и production одновременно
- * 4. observer — только просмотр во всех разрешённых разделах
+ * - Org owner (`user.is_owner`) bypasses every check.
+ * - `company.admin` permission grants full access (replaces the old admin role).
+ * - Everyone else holds an explicit list of scope.action permissions.
  *
- * Используется в SPA-компонентах для скрытия/блокировки элементов.
+ * Usage: `const { can } = useEmployeePermissions(); can('orders.write')`.
  */
 export function useEmployeePermissions() {
-  const { isOwner, isAdmin } = useRole();
+  const isOwner = useAuthStore((state) => state.user?.is_owner ?? false);
   const rawPermissions = useAuthStore((state) => state.user?.employee_permissions ?? []);
 
-  const perms = useMemo<EmployeePermission[]>(
-    () => rawPermissions as EmployeePermission[],
+  const perms = useMemo<Permission[]>(
+    () => rawPermissions as Permission[],
     [rawPermissions],
   );
 
-  const has = (p: EmployeePermission) => perms.includes(p);
+  const isCompanyAdmin = isOwner || perms.includes('company.admin');
 
-  // Владелец и полный доступ — абсолютные права
-  const isAbsolute = isOwner || has('full_access');
+  const can = useMemo(() => {
+    return (permission: Permission): boolean => {
+      if (isCompanyAdmin) return true;
+      return perms.includes(permission);
+    };
+  }, [isCompanyAdmin, perms]);
 
-  // Флаг «только просмотр» — observer без других прав (кроме full_access)
-  const isObserverOnly =
-    !isAbsolute &&
-    has('observer') &&
-    !has('sales') &&
-    !has('production') &&
-    !has('warehouse_manager') &&
-    !has('financial_report');
+  const canAny = useMemo(() => {
+    return (...permissions: Permission[]): boolean => {
+      if (isCompanyAdmin) return true;
+      return permissions.some((p) => perms.includes(p));
+    };
+  }, [isCompanyAdmin, perms]);
 
   return {
-    /** Права массивом для сериализации */
+    /** Raw permission list. */
     permissions: perms,
+    /** True for the org owner. */
+    isOwner,
+    /** True for owner or holders of `company.admin`. */
+    isCompanyAdmin,
+    /** Check a single permission. */
+    can,
+    /** Check whether any of the given permissions is held. */
+    canAny,
 
-    /** Может делать абсолютно всё (owner или full_access) */
-    isAbsolute,
-
-    /** Может управлять командой и настройками */
-    canManageTeam: isAbsolute || isAdmin,
-
-    /** Доступ к финансовым модулям (Excel-импорт/экспорт, аналитика) */
-    canAccessFinancial: isAbsolute || has('financial_report'),
-
-    /** Доступ к модулям продаж (лиды, сделки, заявки, сводки) */
-    canAccessSales: isAbsolute || has('sales'),
-
-    /** Доступ к разделу производства */
-    canAccessProduction: isAbsolute || has('production'),
-
-    /**
-     * Только просмотр — может видеть разрешённые разделы, но не может
-     * взаимодействовать или редактировать что-либо.
-     * Применяется СОВМЕСТНО с другими флагами доступа:
-     * проверяй сначала canAccessSales, потом — isObserverOnly.
-     */
-    isObserverOnly,
-
-    /** Может подключать API и Webhook-интеграции */
-    canManageIntegrations: isAbsolute,
-
-    /** Доступ к разделу склада */
-    canAccessWarehouse: isAbsolute || has('warehouse_manager'),
-
-    /** Может изменять данные (не observer) */
-    canEdit: !isObserverOnly,
+    // ── Legacy compatibility flags (deprecated) ──
+    // Kept so existing call sites keep working; prefer can()/canAny() directly.
+    /** @deprecated use isCompanyAdmin */
+    isAbsolute: isCompanyAdmin,
+    /** @deprecated use isCompanyAdmin */
+    canManageTeam: isCompanyAdmin,
+    /** @deprecated use isCompanyAdmin */
+    canManageIntegrations: isCompanyAdmin,
+    /** @deprecated use can('reports.read') */
+    canAccessFinancial: can('reports.read'),
+    /** @deprecated use canAny('orders.read', 'customers.read') */
+    canAccessSales: canAny('orders.read', 'customers.read'),
+    /** @deprecated use can('production.read') */
+    canAccessProduction: can('production.read'),
+    /** @deprecated use can('warehouse.read') */
+    canAccessWarehouse: can('warehouse.read'),
+    /** @deprecated observer role removed */
+    isObserverOnly: false,
+    /** @deprecated all permission holders can edit within their scope */
+    canEdit: true,
   };
 }

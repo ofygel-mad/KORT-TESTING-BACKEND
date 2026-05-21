@@ -7,7 +7,7 @@ import { WORKSPACE_WIDGETS } from '../registry';
 import { usePlan, planIncludes, PLAN_LABELS } from '@/shared/hooks/usePlan';
 import { useRole } from '@/shared/hooks/useRole';
 import { useEmployeePermissions } from '@/shared/hooks/useEmployeePermissions';
-import { useChapanPermissions } from '@/shared/hooks/useChapanPermissions';
+import { useOperationsAccess } from '@/shared/hooks/useOperationsAccess';
 import type { WorkspaceWidgetKind } from '../model/types';
 import type { ShortcutNavItemId } from '@/shared/navigation/appNavigation';
 import styles from './Workspace.module.css';
@@ -21,7 +21,7 @@ interface Props {
 function useCanAddWidget(id: ShortcutNavItemId): boolean {
   const { isOwner, isAdmin } = useRole();
   const perms = useEmployeePermissions();
-  const chapan = useChapanPermissions();
+  const chapan = useOperationsAccess();
 
   if (isOwner || isAdmin) return true;
   if (perms.permissions.length === 0) return true;
@@ -34,7 +34,7 @@ function useCanAddWidget(id: ShortcutNavItemId): boolean {
     case 'finance': case 'reports': case 'documents':
       return perms.canAccessFinancial;
     case 'employees': return perms.canManageTeam;
-    case 'chapan': return chapan.hasAnyAccess;
+    case 'sales': case 'logistics': case 'products': return chapan.hasAnyAccess;
     default: return true;
   }
 }
@@ -43,7 +43,7 @@ export function WorkspaceAddMenu({ open, onClose, onSelect }: Props) {
   const plan = usePlan();
   const { isOwner, isAdmin } = useRole();
   const perms = useEmployeePermissions();
-  const chapan = useChapanPermissions();
+  const chapan = useOperationsAccess();
   const hasEmployeePerms = perms.permissions.length > 0 && !isOwner && !isAdmin;
 
   useEffect(() => {
@@ -109,7 +109,7 @@ export function WorkspaceAddMenu({ open, onClose, onSelect }: Props) {
                   case 'finance': case 'reports': case 'documents':
                     return perms.canAccessFinancial;
                   case 'employees': return perms.canManageTeam;
-                  case 'chapan': return chapan.hasAnyAccess;
+                  case 'sales': case 'logistics': case 'products': return chapan.hasAnyAccess;
                   default: return true;
                 }
               }).map((widget) => {

@@ -3,7 +3,7 @@ import * as svc from './ownership.service.js';
 
 export async function ownershipRoutes(app: FastifyInstance) {
   app.post('/ownership/transfer', {
-    preHandler: [app.authenticate, app.resolveOrg, app.requireRole('owner')],
+    preHandler: [app.authenticate, app.resolveOrg, app.requireCompanyAdmin()],
   }, async (request, reply) => {
     const data = svc.transferOwnershipSchema.parse(request.body);
     const result = await svc.transferOwnership(request.userId, request.orgId, data);

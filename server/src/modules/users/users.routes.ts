@@ -25,19 +25,9 @@ export async function usersRoutes(app: FastifyInstance) {
     return { count: team.length, results: team };
   });
 
-  // PATCH /api/v1/users/:id/role
-  app.patch('/:id/role', {
-    preHandler: [app.authenticate, app.resolveOrg, app.requireRole('admin', 'owner')],
-  }, async (request, reply) => {
-    const { id } = request.params as { id: string };
-    const { role } = z.object({ role: z.enum(['owner', 'admin', 'manager', 'viewer']) }).parse(request.body);
-    await usersService.updateUserRole(id, request.orgId, role);
-    return reply.send({ ok: true });
-  });
-
   // POST /api/v1/users/:id/activate
   app.post('/:id/activate', {
-    preHandler: [app.authenticate, app.resolveOrg, app.requireRole('admin', 'owner')],
+    preHandler: [app.authenticate, app.resolveOrg, app.requireCompanyAdmin()],
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
     await usersService.activateUser(id, request.orgId);
@@ -46,7 +36,7 @@ export async function usersRoutes(app: FastifyInstance) {
 
   // POST /api/v1/users/:id/deactivate
   app.post('/:id/deactivate', {
-    preHandler: [app.authenticate, app.resolveOrg, app.requireRole('admin', 'owner')],
+    preHandler: [app.authenticate, app.resolveOrg, app.requireCompanyAdmin()],
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
     await usersService.deactivateUser(id, request.orgId);

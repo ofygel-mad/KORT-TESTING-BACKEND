@@ -196,7 +196,7 @@ export function registerAccountingSync() {
 //  Convenience exports for other modules to use
 // ─────────────────────────────────────────────────────────────
 
-export async function syncChapanPayment(params: {
+export async function syncPayment(params: {
   orgId: string;
   orderId: string;
   orderNumber: string;

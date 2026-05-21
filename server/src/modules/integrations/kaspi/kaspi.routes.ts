@@ -3,8 +3,8 @@ import { z } from 'zod';
 import * as service from './kaspi.service.js';
 
 export async function kaspiIntegrationRoutes(app: FastifyInstance) {
-  const orgAdminOnly = { preHandler: [app.authenticate, app.resolveOrg, app.requireRole('admin', 'owner')] };
-  const orgManagerPlus = { preHandler: [app.authenticate, app.resolveOrg, app.requireRole('manager', 'admin', 'owner')] };
+  const orgAdminOnly = { preHandler: [app.authenticate, app.resolveOrg, app.requireCompanyAdmin()] };
+  const orgManagerPlus = { preHandler: [app.authenticate, app.resolveOrg, app.requireCompanyAdmin()] };
 
   app.get('/connection', orgManagerPlus, async (request) => {
     return service.getConnection(request.orgId);

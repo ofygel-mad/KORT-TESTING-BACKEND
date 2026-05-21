@@ -1,6 +1,6 @@
 import { prisma } from '../../lib/prisma.js';
 import { ForbiddenError, NotFoundError, ValidationError } from '../../lib/errors.js';
-import { calculateChapanOrderFinancials } from '../chapan/financials.js';
+import { calculateOrderFinancials } from '../orders/financials.js';
 
 // ── WS event hook ──────────────────────────────────────────────────────────
 export let emitChatEvent: ((userId: string, event: object) => void) | null = null;
@@ -435,7 +435,7 @@ export async function markRead(convId: string, userId: string) {
 
 export async function getOrderPreview(orderId: string, userId: string) {
   // Verify the user has an active membership in some org that owns this order
-  const order = await prisma.chapanOrder.findFirst({
+  const order = await prisma.order.findFirst({
     where: { id: orderId },
   });
   if (!order) throw new NotFoundError('Р—Р°РєР°Р·', orderId);
@@ -446,7 +446,7 @@ export async function getOrderPreview(orderId: string, userId: string) {
   });
   if (!membership) throw new ForbiddenError('РќРµС‚ РґРѕСЃС‚СѓРїР° Рє СЌС‚РѕРјСѓ Р·Р°РєР°Р·Сѓ.');
 
-  const financials = calculateChapanOrderFinancials({
+  const financials = calculateOrderFinancials({
     itemsSubtotal: Number(order.totalAmount ?? 0),
     orderDiscount: Number(order.orderDiscount ?? 0),
     deliveryFee: Number(order.deliveryFee ?? 0),

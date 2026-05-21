@@ -1,9 +1,9 @@
 // ── Chapan Clients CRM view ────────────────────────────────────────────────
-// Returned by GET /api/v1/chapan/clients — enriched with order aggregates
+// Returned by GET /api/v1/clients — enriched with order aggregates
 
 import type { OrderStatus } from './types';
 
-export interface ChapanClient {
+export interface Customer {
   id: string;
   orgId: string;
   fullName: string;
@@ -14,7 +14,7 @@ export interface ChapanClient {
   createdAt: string;
 }
 
-export interface ChapanClientAggregated {
+export interface CustomerAggregated {
   id: string;
   orgId: string;
   fullName: string;
@@ -33,7 +33,7 @@ export interface ChapanClientAggregated {
   wholesaleOrderCount: number;
 }
 
-export interface ChapanClientDetail extends ChapanClientAggregated {
+export interface CustomerDetail extends CustomerAggregated {
   stats: {
     orderCount: number;
     totalSpent: number;
@@ -61,7 +61,7 @@ export interface ChapanClientDetail extends ChapanClientAggregated {
   }>;
 }
 
-export interface ChapanClientsListParams {
+export interface CustomersListParams {
   search?: string;
   customerType?: 'retail' | 'wholesale' | 'all';
   sortBy?: 'name' | 'orders' | 'spent' | 'lastOrder';

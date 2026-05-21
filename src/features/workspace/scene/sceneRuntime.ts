@@ -329,7 +329,12 @@ export class WorkspaceSceneRuntime {
   resume() {
     if (!this.paused || !this.mounted) return;
     this.paused = false;
+    // THREE.Clock.start() resets elapsedTime to 0 — preserve it so the
+    // animation phase (terrain wave, shaders, mode transitions) carries
+    // across a pause/resume instead of snapping back to the beginning.
+    const elapsed = this.clock.elapsedTime;
     this.clock.start();
+    this.clock.elapsedTime = elapsed;
     this.pendingDelta = 0;
     // Immediate frame render before RAF to avoid visual lag
     this.renderFrame();

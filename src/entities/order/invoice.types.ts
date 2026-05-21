@@ -1,6 +1,6 @@
 // ── Invoice (Накладная) types ────────────────────────────────────────────────
 
-import type { ChapanOrder } from './types';
+import type { Order } from './types';
 
 export type InvoiceStatus = 'pending_confirmation' | 'confirmed' | 'rejected' | 'archived';
 
@@ -47,7 +47,7 @@ export interface InvoiceDocumentPayload {
   rows: InvoiceDocumentRow[];
 }
 
-export interface ChapanInvoice {
+export interface Invoice {
   id: string;
   orgId: string;
   invoiceNumber: string;
@@ -71,6 +71,6 @@ export interface ChapanInvoice {
     id: string;
     invoiceId: string;
     orderId: string;
-    order: ChapanOrder;
+    order: Order;
   }>;
 }

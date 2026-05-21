@@ -26,7 +26,7 @@ export const RETURN_REFUND_METHOD_LABELS: Record<ReturnRefundMethod, string> = {
   bank: 'На счёт',
 };
 
-export interface ChapanReturnItem {
+export interface ReturnItem {
   id: string;
   returnId: string;
   orderItemId: string | null;
@@ -42,7 +42,7 @@ export interface ChapanReturnItem {
   createdAt: string;
 }
 
-export interface ChapanReturn {
+export interface Return {
   id: string;
   orgId: string;
   returnNumber: string;
@@ -65,7 +65,7 @@ export interface ChapanReturn {
     clientPhone: string;
     status: OrderStatus;
   };
-  items: ChapanReturnItem[];
+  items: ReturnItem[];
 }
 
 export interface CreateReturnItemDto {

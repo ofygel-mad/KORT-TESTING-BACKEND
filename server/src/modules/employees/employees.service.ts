@@ -7,27 +7,16 @@ import {
   NotFoundError,
   ValidationError,
 } from '../../lib/errors.js';
+import { ALL_PERMISSIONS, resolveEffectivePermissions } from '../auth/auth.service.js';
 
 // ─── Validation schemas ───────────────────────────────────────────────────────
 
-const VALID_PERMISSIONS = [
-  'full_access',
-  'financial_report',
-  'sales',
-  'production',
-  'warehouse_manager',
-  'observer',
-  // ─── Chapan module ───
-  'chapan_full_access',
-  'chapan_access_orders',
-  'chapan_access_production',
-  'chapan_access_ready',
-  'chapan_access_archive',
-  'chapan_access_warehouse_nav',
-  'chapan_manage_production',
-  'chapan_confirm_invoice',
-  'chapan_manage_settings',
-] as const;
+const VALID_PERMISSIONS = ALL_PERMISSIONS as readonly [string, ...string[]];
+
+const overrideSchema = z.object({
+  permission: z.enum(VALID_PERMISSIONS),
+  effect: z.enum(['allow', 'deny']),
+});
 
 export const createEmployeeSchema = z.object({
   phone: z
@@ -36,17 +25,14 @@ export const createEmployeeSchema = z.object({
     .regex(/^\+7\d{10}$/, 'Телефон должен быть в формате +7XXXXXXXXXX'),
   full_name: z.string().min(2).max(120),
   department: z.string().min(1).max(80),
-  permissions: z
-    .array(z.enum(VALID_PERMISSIONS))
-    .min(1, 'Назначьте хотя бы одно право доступа'),
+  roleId: z.string().min(1, 'Выберите роль сотрудника'),
+  overrides: z.array(overrideSchema).optional(),
 });
 
 export const updateEmployeeSchema = z.object({
   department: z.string().min(1).max(80).optional(),
-  permissions: z
-    .array(z.enum(VALID_PERMISSIONS))
-    .min(1, 'Назначьте хотя бы одно право доступа')
-    .optional(),
+  roleId: z.string().min(1).optional(),
+  overrides: z.array(overrideSchema).optional(),
 });
 
 export type CreateEmployeeInput = z.infer<typeof createEmployeeSchema>;
@@ -54,27 +40,36 @@ export type UpdateEmployeeInput = z.infer<typeof updateEmployeeSchema>;
 
 // ─── Serializer ───────────────────────────────────────────────────────────────
 
-function serializeEmployee(
-  membership: {
-    userId: string;
-    department: string;
-    employeePermissions: string[];
-    employeeAccountStatus: string;
-    addedById: string | null;
-    addedByName: string | null;
-    createdAt: Date;
-    user: {
-      fullName: string;
-      phone: string | null;
-    };
-  },
-) {
+type EmployeeMembership = {
+  userId: string;
+  department: string;
+  employeeAccountStatus: string;
+  addedByName: string | null;
+  createdAt: Date;
+  isOwner: boolean;
+  roleId: string | null;
+  role: { name: string; permissions: string[] } | null;
+  permissionOverrides: { permission: string; effect: string }[];
+  user: { fullName: string; phone: string | null };
+};
+
+function serializeEmployee(membership: EmployeeMembership) {
   return {
     id: membership.userId,
     full_name: membership.user.fullName,
     phone: membership.user.phone ?? '',
     department: membership.department,
-    permissions: membership.employeePermissions,
+    role_id: membership.roleId,
+    role_name: membership.role?.name ?? null,
+    overrides: membership.permissionOverrides.map((o) => ({
+      permission: o.permission,
+      effect: o.effect,
+    })),
+    permissions: resolveEffectivePermissions(
+      membership.isOwner,
+      membership.role?.permissions ?? [],
+      membership.permissionOverrides,
+    ),
     // 'pending_first_login' counts as active for display purposes
     status: membership.employeeAccountStatus === 'dismissed' ? 'dismissed' : 'active',
     isPendingFirstLogin: membership.employeeAccountStatus === 'pending_first_login',
@@ -83,21 +78,20 @@ function serializeEmployee(
   };
 }
 
-const EMPLOYEE_MEMBERSHIP_SELECT = {
-  userId: true,
-  department: true,
-  employeePermissions: true,
-  employeeAccountStatus: true,
-  addedById: true,
-  addedByName: true,
-  createdAt: true,
-  user: {
-    select: {
-      fullName: true,
-      phone: true,
-    },
-  },
+const EMPLOYEE_MEMBERSHIP_INCLUDE = {
+  role: true,
+  permissionOverrides: true,
+  user: { select: { fullName: true, phone: true } },
 } as const;
+
+/** Verifies the role belongs to this org (or is a shared system role). */
+async function assertRoleBelongsToOrg(roleId: string, orgId: string) {
+  const role = await prisma.role.findFirst({
+    where: { id: roleId, OR: [{ orgId: null }, { orgId }] },
+  });
+  if (!role) throw new ValidationError('Указанная роль недоступна в этой организации.');
+  return role;
+}
 
 // ─── List employees ───────────────────────────────────────────────────────────
 
@@ -109,9 +103,9 @@ export async function listEmployees(orgId: string) {
       // Only show employees added by admin (not the owner themselves)
       source: { in: ['admin_added', 'invite', 'request', 'manual'] },
       // Don't show the org owner in the employee list — they're the boss
-      role: { not: 'owner' },
+      isOwner: false,
     },
-    select: EMPLOYEE_MEMBERSHIP_SELECT,
+    include: EMPLOYEE_MEMBERSHIP_INCLUDE,
     orderBy: { createdAt: 'asc' },
   });
 
@@ -126,13 +120,18 @@ export async function createEmployee(
   addedByName: string,
   data: CreateEmployeeInput,
 ) {
+  await assertRoleBelongsToOrg(data.roleId, orgId);
+  const overrideRows = (data.overrides ?? []).map((o) => ({
+    permission: o.permission,
+    effect: o.effect,
+  }));
+
   // Verify the phone isn't already registered
   const existingUser = await prisma.user.findUnique({
     where: { phone: data.phone },
   });
 
   if (existingUser) {
-    // Check if they're already a member of this org
     const existingMembership = await prisma.membership.findUnique({
       where: { userId_orgId: { userId: existingUser.id, orgId } },
     });
@@ -141,26 +140,21 @@ export async function createEmployee(
         'Сотрудник с таким номером телефона уже добавлен в эту компанию.',
       );
     }
-    // User exists globally but isn't in this org — can still add them
-    // (they might work for multiple companies)
     const membership = await prisma.membership.create({
       data: {
         userId: existingUser.id,
         orgId,
-        role: 'viewer',
         status: 'active',
         source: 'admin_added',
         joinedAt: new Date(),
         department: data.department,
-        employeePermissions: data.permissions,
+        roleId: data.roleId,
         addedById: addedByUserId,
         addedByName,
         employeeAccountStatus: 'pending_first_login',
+        permissionOverrides: { create: overrideRows },
       },
-      select: {
-        ...EMPLOYEE_MEMBERSHIP_SELECT,
-        user: { select: { fullName: true, phone: true } },
-      },
+      include: EMPLOYEE_MEMBERSHIP_INCLUDE,
     });
     return serializeEmployee(membership);
   }
@@ -177,7 +171,6 @@ export async function createEmployee(
           phone: data.phone,
           password: hashedPhone,
           status: 'pending',
-          // email intentionally null — employees log in by phone
         },
       });
 
@@ -185,20 +178,17 @@ export async function createEmployee(
         data: {
           userId: user.id,
           orgId,
-          role: 'viewer',
           status: 'active',
           source: 'admin_added',
           joinedAt: new Date(),
           department: data.department,
-          employeePermissions: data.permissions,
+          roleId: data.roleId,
           addedById: addedByUserId,
           addedByName,
           employeeAccountStatus: 'pending_first_login',
+          permissionOverrides: { create: overrideRows },
         },
-        select: {
-          ...EMPLOYEE_MEMBERSHIP_SELECT,
-          user: { select: { fullName: true, phone: true } },
-        },
+        include: EMPLOYEE_MEMBERSHIP_INCLUDE,
       });
 
       return membership;
@@ -232,8 +222,8 @@ export async function updateEmployee(
   });
   if (!membership) throw new NotFoundError('Employee');
 
-  // Protect the owner: their permissions cannot be changed through this endpoint
-  if (membership.role === 'owner') {
+  // Protect the owner: their access cannot be changed through this endpoint
+  if (membership.isOwner) {
     throw new ForbiddenError(
       'Права руководителя не редактируются через интерфейс управления сотрудниками.',
     );
@@ -245,18 +235,35 @@ export async function updateEmployee(
     );
   }
 
-  const updated = await prisma.membership.update({
-    where: { userId_orgId: { userId, orgId } },
-    data: {
-      ...(data.department !== undefined && { department: data.department }),
-      ...(data.permissions !== undefined && {
-        employeePermissions: data.permissions,
-      }),
-    },
-    select: {
-      ...EMPLOYEE_MEMBERSHIP_SELECT,
-      user: { select: { fullName: true, phone: true } },
-    },
+  if (data.roleId !== undefined) {
+    await assertRoleBelongsToOrg(data.roleId, orgId);
+  }
+
+  const updated = await prisma.$transaction(async (tx) => {
+    if (data.overrides !== undefined) {
+      // Full replace of per-member overrides
+      await tx.memberPermissionOverride.deleteMany({
+        where: { membershipId: membership.id },
+      });
+      if (data.overrides.length > 0) {
+        await tx.memberPermissionOverride.createMany({
+          data: data.overrides.map((o) => ({
+            membershipId: membership.id,
+            permission: o.permission,
+            effect: o.effect,
+          })),
+        });
+      }
+    }
+
+    return tx.membership.update({
+      where: { userId_orgId: { userId, orgId } },
+      data: {
+        ...(data.department !== undefined && { department: data.department }),
+        ...(data.roleId !== undefined && { roleId: data.roleId }),
+      },
+      include: EMPLOYEE_MEMBERSHIP_INCLUDE,
+    });
   });
 
   return serializeEmployee(updated);
@@ -267,7 +274,6 @@ export async function updateEmployee(
 /**
  * Admin resets an employee's password.
  * Sets password back to hashed phone number and status back to pending_first_login.
- * Employee must do phone+phone login again and set a new password.
  */
 export async function resetEmployeePassword(orgId: string, userId: string) {
   const membership = await prisma.membership.findUnique({
@@ -276,7 +282,7 @@ export async function resetEmployeePassword(orgId: string, userId: string) {
   });
 
   if (!membership) throw new NotFoundError('Employee');
-  if (membership.role === 'owner') {
+  if (membership.isOwner) {
     throw new ForbiddenError(
       'Нельзя сбросить пароль руководителя через этот интерфейс.',
     );
@@ -322,7 +328,7 @@ export async function removeEmployee(orgId: string, userId: string) {
   });
 
   if (!membership) throw new NotFoundError('Employee');
-  if (membership.role === 'owner') {
+  if (membership.isOwner) {
     throw new ForbiddenError('Нельзя удалить руководителя.');
   }
 
@@ -342,7 +348,7 @@ export async function dismissEmployee(orgId: string, userId: string) {
   });
 
   if (!membership) throw new NotFoundError('Employee');
-  if (membership.role === 'owner') {
+  if (membership.isOwner) {
     throw new ForbiddenError('Нельзя уволить руководителя.');
   }
   if (membership.employeeAccountStatus === 'dismissed') {

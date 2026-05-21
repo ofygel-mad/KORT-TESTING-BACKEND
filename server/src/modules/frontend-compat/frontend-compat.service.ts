@@ -1084,19 +1084,19 @@ export async function detectEntityChanges(
   orgId: string,
   cursors: EntityCursors,
 ): Promise<string[]> {
-  // ChapanProductionTask has no orgId — covered via chapan_orders invalidation on frontend
+  // ProductionTask has no orgId — covered via orders invalidation on frontend
   const checks: Array<{ key: string; fn: () => Promise<Date | null> }> = [
     {
-      key: 'chapan_orders',
-      fn: async () => (await prisma.chapanOrder.aggregate({ where: { orgId }, _max: { updatedAt: true } }))._max.updatedAt,
+      key: 'orders',
+      fn: async () => (await prisma.order.aggregate({ where: { orgId }, _max: { updatedAt: true } }))._max.updatedAt,
     },
     {
-      key: 'chapan_invoices',
-      fn: async () => (await prisma.chapanInvoice.aggregate({ where: { orgId }, _max: { updatedAt: true } }))._max.updatedAt,
+      key: 'invoices',
+      fn: async () => (await prisma.invoice.aggregate({ where: { orgId }, _max: { updatedAt: true } }))._max.updatedAt,
     },
     {
-      key: 'chapan_returns',
-      fn: async () => (await prisma.chapanReturn.aggregate({ where: { orgId }, _max: { updatedAt: true } }))._max.updatedAt,
+      key: 'returns',
+      fn: async () => (await prisma.return.aggregate({ where: { orgId }, _max: { updatedAt: true } }))._max.updatedAt,
     },
     {
       key: 'leads',
