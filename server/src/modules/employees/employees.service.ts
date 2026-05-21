@@ -8,6 +8,7 @@ import {
   ValidationError,
 } from '../../lib/errors.js';
 import { ALL_PERMISSIONS, resolveEffectivePermissions } from '../auth/auth.service.js';
+import { assertWithinUserLimit } from '../subscriptions/subscriptions.service.js';
 
 // ─── Validation schemas ───────────────────────────────────────────────────────
 
@@ -120,6 +121,8 @@ export async function createEmployee(
   addedByName: string,
   data: CreateEmployeeInput,
 ) {
+  // Plan seat limit — refuse before doing any work.
+  await assertWithinUserLimit(orgId);
   await assertRoleBelongsToOrg(data.roleId, orgId);
   const overrideRows = (data.overrides ?? []).map((o) => ({
     permission: o.permission,

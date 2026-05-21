@@ -36,6 +36,7 @@ import { documentsRoutes } from './modules/documents/documents.routes.js';
 import { frontendCompatRoutes } from './modules/frontend-compat/frontend-compat.routes.js';
 import { employeesRoutes } from './modules/employees/employees.routes.js';
 import { rolesRoutes } from './modules/roles/roles.routes.js';
+import { subscriptionsRoutes } from './modules/subscriptions/subscriptions.routes.js';
 import { accountingRoutes } from './modules/accounting/accounting.routes.js';
 import { adsRoutes } from './modules/ads/ads.routes.js';
 import { serviceRoutes } from './modules/service/service.routes.js';
@@ -172,6 +173,7 @@ export async function buildApp() {
   await app.register(membershipsRoutes, { prefix: '/api/v1' });
   await app.register(employeesRoutes, { prefix: '/api/v1/company' });
   await app.register(rolesRoutes, { prefix: '/api/v1/roles' });
+  await app.register(subscriptionsRoutes, { prefix: '/api/v1/subscription' });
   await app.register(customersRoutes, { prefix: '/api/v1/customers' });
   await app.register(leadsRoutes, { prefix: '/api/v1/leads' });
   await app.register(dealsRoutes, { prefix: '/api/v1/deals' });

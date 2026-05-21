@@ -97,10 +97,10 @@ export async function updateOrganization(
   const org = await prisma.organization.update({
     where: { id: orgId },
     data: {
-      // Core fields
+      // Core fields — `mode` is driven by the subscription (PATCH /subscription),
+      // not editable here.
       name: s(data.name),
       slug: data.slug ? sanitizeSlug(String(data.slug)) : undefined,
-      mode: s(data.mode),
       currency: normalizeOrgCurrencyInput(data.currency),
       industry: s(data.industry),
       onboardingCompleted: b(data.onboarding_completed),

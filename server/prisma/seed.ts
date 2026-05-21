@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { SYSTEM_ROLES } from '../src/modules/auth/system-roles.js';
+import { SYSTEM_PLANS } from '../src/modules/subscriptions/plans.js';
 
 const prisma = new PrismaClient();
 
@@ -115,8 +116,35 @@ async function seedSystemRoles(): Promise<Record<string, string>> {
   return ids;
 }
 
+/** Seeds (or refreshes) the platform plan catalog. */
+async function seedPlans() {
+  for (const plan of SYSTEM_PLANS) {
+    await prisma.planDefinition.upsert({
+      where: { code: plan.code },
+      update: {
+        name: plan.name,
+        description: plan.description,
+        rank: plan.rank,
+        maxUsers: plan.maxUsers,
+        features: plan.features,
+      },
+      create: {
+        code: plan.code,
+        name: plan.name,
+        description: plan.description,
+        rank: plan.rank,
+        maxUsers: plan.maxUsers,
+        features: plan.features,
+      },
+    });
+  }
+}
+
 async function main() {
   console.log('Seeding database...');
+
+  await seedPlans();
+  console.log(`  Plans: ${SYSTEM_PLANS.length}`);
 
   const roleIds = await seedSystemRoles();
   console.log(`  System roles: ${Object.keys(roleIds).length}`);
@@ -131,6 +159,13 @@ async function main() {
   });
 
   const org = await upsertSeedOrganization();
+
+  // Subscription — Organization.mode is the denormalized cache of planCode.
+  await prisma.subscription.upsert({
+    where: { orgId: org.id },
+    update: { planCode: org.mode },
+    create: { orgId: org.id, planCode: org.mode },
+  });
 
   // Owner — isOwner bypasses every permission check; no role needed.
   await prisma.membership.upsert({

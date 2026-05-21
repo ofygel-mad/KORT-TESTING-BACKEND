@@ -4,6 +4,7 @@ import {
   Building2,
   Check,
   Copy,
+  CreditCard,
   Edit2,
   Globe,
   Key,
@@ -48,6 +49,7 @@ import type { Employee, CreateEmployeeDto, PermissionOverride } from '@/entities
 import { useEmployees, useCreateEmployee, useUpdateEmployee, useDismissEmployee, useResetPassword, useRemoveEmployee } from '@/entities/employee/queries';
 import { RoleAccessFields } from '@/features/auth/RoleAccessFields';
 import { RolesManager } from '@/features/auth/RolesManager';
+import { SubscriptionManager } from '@/features/auth/SubscriptionManager';
 import { isKazakhPhoneComplete, normalizeKazakhPhone } from '@/shared/utils/kz';
 import { PhoneInput } from '@/shared/ui/PhoneInput';
 import s from './Settings.module.css';
@@ -88,6 +90,7 @@ type SectionKey =
   | 'organization'
   | 'company-access'
   | 'roles'
+  | 'subscription'
   | 'appearance'
   | 'security'
   | 'integrations'
@@ -115,6 +118,7 @@ const SECTIONS: Array<{ key: SectionKey; label: string; icon: JSX.Element }> = [
   { key: 'organization', label: 'Организация', icon: <Building2 size={15} /> },
   { key: 'company-access', label: 'Компания и доступ', icon: <Users size={15} /> },
   { key: 'roles', label: 'Роли', icon: <Shield size={15} /> },
+  { key: 'subscription', label: 'Тариф', icon: <CreditCard size={15} /> },
   { key: 'appearance', label: 'Оформление', icon: <MonitorCog size={15} /> },
   { key: 'security', label: 'Безопасность', icon: <ShieldCheck size={15} /> },
   { key: 'integrations', label: 'Интеграции', icon: <Globe size={15} /> },
@@ -1259,6 +1263,8 @@ export default function SettingsPage() {
         return access.isAdmin && access.hasCompanyAccess;
       case 'roles':
         return access.isAdmin && access.hasCompanyAccess;
+      case 'subscription':
+        return access.isAdmin && access.hasCompanyAccess;
       case 'templates':
         return access.hasCompanyAccess;
       case 'integrations':
@@ -1320,6 +1326,13 @@ export default function SettingsPage() {
                 <div className={s.section}>
                   <div className={s.sectionBody}>
                     <RolesManager />
+                  </div>
+                </div>
+              )}
+              {section === 'subscription' && (
+                <div className={s.section}>
+                  <div className={s.sectionBody}>
+                    <SubscriptionManager />
                   </div>
                 </div>
               )}

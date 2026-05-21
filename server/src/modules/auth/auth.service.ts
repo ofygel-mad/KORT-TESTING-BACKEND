@@ -436,6 +436,11 @@ export async function registerCompany(data: {
           data: { name: data.company_name.trim(), slug, currency: 'KZT' },
         });
 
+        // Provision the subscription — new orgs start on the basic plan.
+        await tx.subscription.create({
+          data: { orgId: org.id, planCode: org.mode },
+        });
+
         const membership = await tx.membership.create({
           data: {
             userId: user.id,

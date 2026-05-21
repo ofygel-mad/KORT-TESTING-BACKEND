@@ -182,6 +182,7 @@ model Organization {
   invites            Invite[]
   membershipRequests MembershipRequest[]
   roles              Role[]
+  subscription       Subscription?
 
   // CRM
   customers Customer[]
@@ -245,6 +246,43 @@ model Organization {
   kaspiOrderLinks                 KaspiOrderLink[]
 
   @@map("organizations")
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  PLATFORM: PLANS & SUBSCRIPTIONS  (R3 — план как данные)
+// ═══════════════════════════════════════════════════════════════
+
+// A plan is data, not a hardcoded string. Seeded; editable by the platform.
+model PlanDefinition {
+  code        String   @id // basic | advanced | industrial
+  name        String
+  description String?
+  rank        Int      @default(0) // tier ordering for planIncludes()
+  maxUsers    Int?     @map("max_users") // null = unlimited
+  features    String[] @default([])
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("plan_definitions")
+}
+
+// One subscription per org. Organization.mode is a denormalized cache of planCode.
+model Subscription {
+  id          String    @id @default(cuid())
+  orgId       String    @unique @map("org_id")
+  planCode    String    @map("plan_code")
+  status      String    @default("active") // active | trial | suspended | cancelled
+  periodStart DateTime  @default(now()) @map("period_start")
+  periodEnd   DateTime? @map("period_end")
+  trialEndsAt DateTime? @map("trial_ends_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // planCode references PlanDefinition.code; validated in the service layer
+  // (kept FK-free for the same reason Organization.mode is an open string).
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
 }
 
 model KaspiConnection {
