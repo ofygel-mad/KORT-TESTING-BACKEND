@@ -1,15 +1,12 @@
 import { timingSafeEqual } from 'node:crypto';
-import type { Prisma } from '@prisma/client';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { nanoid } from 'nanoid';
 import { z } from 'zod';
 import { config } from '../../config.js';
 import { UnauthorizedError } from '../../lib/errors.js';
-import { hashPassword } from '../../lib/hash.js';
 import { signAccessToken, signRefreshToken } from '../../lib/jwt.js';
 import { prisma } from '../../lib/prisma.js';
 import { buildCapabilities } from '../auth/auth.service.js';
-import { DEMO_ORG, DEMO_OWNER } from './demo-access.js';
 
 function safeCompare(provided: string, expected: string): boolean {
   const pa = Buffer.allocUnsafe(128);
@@ -27,70 +24,10 @@ const cleanOrgSchema = z.object({ password: z.string().min(1), orgId: z.string()
 type ServiceAccessBody = z.infer<typeof accessSchema>;
 type ServiceAccessRequest = FastifyRequest<{ Body: ServiceAccessBody }>;
 
-async function isEmptyDatabase() {
-  const [usersCount, orgsCount, membershipsCount] = await Promise.all([
-    prisma.user.count(),
-    prisma.organization.count(),
-    prisma.membership.count(),
-  ]);
-
-  return usersCount === 0 && orgsCount === 0 && membershipsCount === 0;
-}
-
-async function ensureBootstrapOwner() {
-  const existingOwner = await prisma.membership.findFirst({
-    where: { isOwner: true, status: 'active' },
-    include: { user: true, org: true },
-    orderBy: { joinedAt: 'asc' },
-  });
-
-  if (existingOwner) {
-    return existingOwner;
-  }
-
-  if (!(await isEmptyDatabase())) {
-    return null;
-  }
-
-  const passwordHash = await hashPassword(DEMO_OWNER.password);
-
-  return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-    const user = await tx.user.create({
-      data: {
-        email: DEMO_OWNER.email,
-        phone: DEMO_OWNER.phone,
-        fullName: DEMO_OWNER.fullName,
-        password: passwordHash,
-        status: 'active',
-      },
-    });
-
-    const org = await tx.organization.create({
-      data: {
-        name: DEMO_ORG.name,
-        slug: DEMO_ORG.slug,
-        currency: DEMO_ORG.currency,
-      },
-    });
-
-    const membership = await tx.membership.create({
-      data: {
-        userId: user.id,
-        orgId: org.id,
-        isOwner: true,
-        status: 'active',
-        source: 'company_registration',
-        joinedAt: new Date(),
-        employeeAccountStatus: 'active',
-      },
-    });
-
-    return tx.membership.findUniqueOrThrow({
-      where: { id: membership.id },
-      include: { user: true, org: true },
-    });
-  });
-}
+// R4.0 — the hardcoded `admin@kort.local` / `demo1234` bootstrap fallback was
+// removed. The owner identity is now plain data: seed it via `prisma/seed.ts`
+// (env-driven) or register a company. Service access only resolves an existing
+// owner; it never conjures one from constants.
 
 export async function serviceRoutes(app: FastifyInstance) {
   const servicePassword = config.CONSOLE_SERVICE_PASSWORD;
@@ -105,7 +42,7 @@ export async function serviceRoutes(app: FastifyInstance) {
       throw new UnauthorizedError('Access denied.');
     }
 
-    const membership = await ensureBootstrapOwner() ?? await prisma.membership.findFirst({
+    const membership = await prisma.membership.findFirst({
       where: { isOwner: true, status: 'active' },
       include: { user: true, org: true },
       orderBy: { joinedAt: 'asc' },
