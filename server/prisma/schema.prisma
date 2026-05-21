@@ -19,6 +19,7 @@ model User {
   avatarUrl String?  @map("avatar_url")
   password  String
   status    String   @default("active") // active | pending | inactive
+  lastLoginAt DateTime? @map("last_login_at")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
@@ -56,6 +57,28 @@ model RefreshToken {
 
   @@index([userId])
   @@map("refresh_tokens")
+}
+
+// Append-only telemetry/audit stream (R4 — Control Plane).
+// No FK relations: audit must survive deletion of the referenced user/org.
+// shippedAt = outbox marker — null until the row is pushed to the Control Plane.
+model AuditEvent {
+  id         String    @id @default(cuid())
+  type       String // login | login_failed | request | business | security
+  action     String
+  orgId      String?   @map("org_id")
+  userId     String?   @map("user_id")
+  ip         String?
+  userAgent  String?   @map("user_agent")
+  metadata   Json?
+  shippedAt  DateTime? @map("shipped_at")
+  occurredAt DateTime  @default(now()) @map("occurred_at")
+
+  @@index([orgId, occurredAt])
+  @@index([userId, occurredAt])
+  @@index([type, occurredAt])
+  @@index([shippedAt])
+  @@map("audit_events")
 }
 
 model AccountingEntry {

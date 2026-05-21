@@ -11,6 +11,8 @@ import {
 import * as authService from './auth.service.js';
 import { UnauthorizedError } from '../../lib/errors.js';
 import { verifyFirstLoginToken } from '../../lib/jwt.js';
+import { prisma } from '../../lib/prisma.js';
+import { recordAuditEvent, auditContext } from '../../lib/audit.js';
 
 export async function authRoutes(app: FastifyInstance) {
 
@@ -19,12 +21,36 @@ export async function authRoutes(app: FastifyInstance) {
   // Returns AuthSessionResponse OR FirstLoginResponse (for pending_first_login employees)
   app.post('/login', async (request, reply) => {
     const body = loginSchema.parse(request.body);
-    const result = await authService.login({
-      email: body.email,
-      phone: body.phone,
-      password: body.password,
-    });
-    return reply.send(result);
+    const ctx = auditContext(request);
+    try {
+      const result = await authService.login({
+        email: body.email,
+        phone: body.phone,
+        password: body.password,
+      });
+      const userId = result.user?.id;
+      if (userId) {
+        recordAuditEvent({
+          type: 'login',
+          action: 'auth.login',
+          userId,
+          ...ctx,
+          metadata: { via: body.email ? 'email' : 'phone' },
+        });
+        void prisma.user
+          .update({ where: { id: userId }, data: { lastLoginAt: new Date() } })
+          .catch(() => { /* non-fatal */ });
+      }
+      return reply.send(result);
+    } catch (err) {
+      recordAuditEvent({
+        type: 'login_failed',
+        action: 'auth.login',
+        ...ctx,
+        metadata: { identifier: body.email ?? body.phone ?? null },
+      });
+      throw err;
+    }
   });
 
   // ── POST /api/v1/auth/set-password ───────────────────────────────────────

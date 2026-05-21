@@ -7,6 +7,7 @@ import sensible from '@fastify/sensible';
 import { ZodError } from 'zod';
 import { config, normalizeCorsOrigin } from './config.js';
 import { AppError } from './lib/errors.js';
+import { recordAuditEvent, auditContext } from './lib/audit.js';
 
 // Plugins
 import authPlugin from './plugins/auth.js';
@@ -109,6 +110,27 @@ export async function buildApp() {
   await app.register(multipart, { attachFieldsToBody: false });
   await app.register(authPlugin);
   await app.register(orgScopePlugin);
+
+  // ── Request audit (R4.1) ────────────────────────────────
+  // Every API call → an `AuditEvent` of type `request`. Runs after the
+  // response is sent; the write is fire-and-forget so it never adds latency.
+  app.addHook('onResponse', (request, reply, done) => {
+    const path = request.routeOptions?.url ?? request.url.split('?')[0] ?? request.url;
+    if (path !== '/api/v1/health' && request.method !== 'OPTIONS') {
+      recordAuditEvent({
+        type: 'request',
+        action: `${request.method} ${path}`,
+        orgId: request.orgId || null,
+        userId: request.userId || null,
+        ...auditContext(request),
+        metadata: {
+          statusCode: reply.statusCode,
+          durationMs: Math.round(reply.elapsedTime),
+        },
+      });
+    }
+    done();
+  });
 
   // ── Global error handler ────────────────────────────────
   app.setErrorHandler((error, _request, reply) => {
