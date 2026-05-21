@@ -2,6 +2,7 @@ import type { Prisma } from '@prisma/client';
 import { NotFoundError, ValidationError } from '../../lib/errors.js';
 import { paginate, paginatedResponse, type PaginationParams } from '../../lib/pagination.js';
 import { prisma } from '../../lib/prisma.js';
+import { ownScopeWhere, type DataScope } from '../../lib/data-scope.js';
 import {
   getDealPipeline,
   serializeDealActivity,
@@ -110,8 +111,8 @@ function normalizeActivityType(type: string) {
   return type;
 }
 
-export async function list(orgId: string, params: PaginationParams) {
-  const where = { orgId };
+export async function list(orgId: string, params: PaginationParams, scope: DataScope, userId: string) {
+  const where = { orgId, ...ownScopeWhere(scope, userId, 'assignedTo') };
   const [items, total] = await Promise.all([
     prisma.deal.findMany({
       where,
@@ -127,9 +128,9 @@ export async function list(orgId: string, params: PaginationParams) {
   return paginatedResponse(items.map((item) => serializeDealSummary(item)), total, params);
 }
 
-export async function getBoard(orgId: string) {
+export async function getBoard(orgId: string, scope: DataScope, userId: string) {
   const deals = await prisma.deal.findMany({
-    where: { orgId },
+    where: { orgId, ...ownScopeWhere(scope, userId, 'assignedTo') },
     orderBy: { updatedAt: 'desc' },
     take: 100,
   });
@@ -142,9 +143,9 @@ export async function getBoard(orgId: string) {
   };
 }
 
-export async function getById(orgId: string, id: string) {
+export async function getById(orgId: string, id: string, scope: DataScope, userId: string) {
   const deal = await prisma.deal.findFirst({
-    where: { id, orgId },
+    where: { id, orgId, ...ownScopeWhere(scope, userId, 'assignedTo') },
     include: {
       customer: true,
     },

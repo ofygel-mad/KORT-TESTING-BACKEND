@@ -6,7 +6,7 @@ import type { InvoiceDocumentPayload } from '../invoices/invoice-document.js';
 import { getWarehouseOrderState, getWarehouseOrderStates } from '../warehouse/warehouse-projections.service.js';
 import { prisma } from '../../lib/prisma.js';
 import { ForbiddenError } from '../../lib/errors.js';
-import { resolveEffectivePermissions } from '../auth/auth.service.js';
+import type { DataScope } from '../../lib/data-scope.js';
 
 // ── Idempotency cache for POST /orders ─────────────────────────────────────
 // Prevents duplicate orders when a client retries due to network latency.
@@ -23,34 +23,13 @@ function sweepIdempotencyCache() {
   }
 }
 
-async function resolveOrderAccessScope(orgId: string, userId: string) {
-  const membership = await prisma.membership.findUnique({
-    where: { userId_orgId: { userId, orgId } },
-    include: { role: true, permissionOverrides: true },
-  });
-
-  const permissions = membership
-    ? resolveEffectivePermissions(
-        membership.isOwner,
-        membership.role?.permissions ?? [],
-        membership.permissionOverrides,
-      )
-    : [];
-  const canAccessAllOrders =
-    (membership?.isOwner ?? false)
-    || permissions.includes('company.admin')
-    || permissions.includes('orders.admin');
-
-  return {
-    canAccessAllOrders,
-    managerId: canAccessAllOrders ? undefined : userId,
-  };
-}
-
+// Data scope (own vs all) is resolved upstream in org-scope and carried on
+// request.dataScope. `mineOnly` is an explicit per-request client filter.
 async function assertOrderReadAccess(
   orgId: string,
   userId: string,
   orderId: string,
+  dataScope: DataScope,
   options?: { mineOnly?: boolean },
 ) {
   const order = await prisma.order.findFirst({
@@ -62,19 +41,8 @@ async function assertOrderReadAccess(
     return;
   }
 
-  if (options?.mineOnly) {
-    if (order.managerId !== userId) {
-      throw new ForbiddenError('Access denied for this order.');
-    }
-    return;
-  }
-
-  const accessScope = await resolveOrderAccessScope(orgId, userId);
-  if (accessScope.canAccessAllOrders) {
-    return;
-  }
-
-  if (order.managerId !== userId) {
+  const restrictToOwn = Boolean(options?.mineOnly) || dataScope === 'own';
+  if (restrictToOwn && order.managerId !== userId) {
     throw new ForbiddenError('Access denied for this order.');
   }
 }
@@ -99,8 +67,8 @@ export async function ordersRoutes(app: FastifyInstance) {
   // GET /api/v1/orders
   app.get('/', async (request) => {
     const query = request.query as Record<string, string>;
-    const accessScope = await resolveOrderAccessScope(request.orgId, request.userId);
     const mineOnly = query.mineOnly === 'true';
+    const restrictToOwn = mineOnly || request.dataScope === 'own';
     const archived = query.archived === 'true' ? true : query.archived === 'false' ? false : undefined;
     const statuses = query.statuses
       ? query.statuses.split(',').map((value) => value.trim()).filter(Boolean)
@@ -118,9 +86,9 @@ export async function ordersRoutes(app: FastifyInstance) {
       hasWarehouseItems: query.hasWarehouseItems === 'true',
       createdFrom,
       createdTo,
-      managerId: mineOnly
+      managerId: restrictToOwn
         ? request.userId
-        : accessScope.managerId ?? query.managerId ?? undefined,
+        : query.managerId ?? undefined,
       customerType: query.customerType || undefined,
     });
     return { count: orders.length, results: orders };
@@ -144,7 +112,7 @@ export async function ordersRoutes(app: FastifyInstance) {
   app.get('/:id', async (request) => {
     const { id } = request.params as { id: string };
     const query = request.query as Record<string, string>;
-    await assertOrderReadAccess(request.orgId, request.userId, id, {
+    await assertOrderReadAccess(request.orgId, request.userId, id, request.dataScope, {
       mineOnly: query.mineOnly === 'true',
     });
     return svc.getById(request.orgId, id);
@@ -521,20 +489,10 @@ export async function ordersRoutes(app: FastifyInstance) {
       managerId: z.string().min(1),
     }).parse(request.body);
 
-    const membership = await prisma.membership.findUnique({
-      where: { userId_orgId: { userId: request.userId, orgId: request.orgId } },
-      include: { role: true, permissionOverrides: true },
-    });
-
-    const perms: string[] = membership
-      ? resolveEffectivePermissions(
-          membership.isOwner,
-          membership.role?.permissions ?? [],
-          membership.permissionOverrides,
-        )
-      : [];
+    // Effective permissions are already resolved upstream by org-scope.
+    const perms = request.permissions ?? [];
     const canReassign =
-      (membership?.isOwner ?? false) ||
+      request.isOwner ||
       perms.includes('company.admin') ||
       perms.includes('orders.admin');
 

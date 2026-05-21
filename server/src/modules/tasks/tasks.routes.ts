@@ -30,13 +30,14 @@ export async function tasksRoutes(app: FastifyInstance) {
     return svc.list(request.orgId, params, {
       userId: request.userId,
       userFullName: request.userFullName,
+      scope: request.dataScope,
     });
   });
 
   // GET /api/v1/tasks/:id
   app.get('/:id', async (request) => {
     const { id } = request.params as { id: string };
-    return svc.getById(request.orgId, id);
+    return svc.getById(request.orgId, id, request.dataScope, request.userId);
   });
 
   // POST /api/v1/tasks
@@ -63,6 +64,7 @@ export async function tasksRoutes(app: FastifyInstance) {
     const task = await svc.create(request.orgId, body, {
       userId: request.userId,
       userFullName: request.userFullName,
+      scope: request.dataScope,
     });
     return reply.status(201).send(task);
   });

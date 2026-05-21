@@ -10,12 +10,12 @@ export async function dealsRoutes(app: FastifyInstance) {
   // GET /api/v1/deals
   app.get('/', async (request) => {
     const params = paginationSchema.parse(request.query);
-    return svc.list(request.orgId, params);
+    return svc.list(request.orgId, params, request.dataScope, request.userId);
   });
 
   // GET /api/v1/deals/board
   app.get('/board/', async (request) => {
-    return svc.getBoard(request.orgId);
+    return svc.getBoard(request.orgId, request.dataScope, request.userId);
   });
 
   // GET /api/v1/deals/:id/activities
@@ -27,7 +27,7 @@ export async function dealsRoutes(app: FastifyInstance) {
   // GET /api/v1/deals/:id
   app.get('/:id', async (request) => {
     const { id } = request.params as { id: string };
-    return svc.getById(request.orgId, id);
+    return svc.getById(request.orgId, id, request.dataScope, request.userId);
   });
 
   // POST /api/v1/deals

@@ -10,12 +10,14 @@ export const createRoleSchema = z.object({
   name: z.string().min(2).max(60),
   description: z.string().max(240).optional(),
   permissions: z.array(z.enum(VALID_PERMISSIONS)).default([]),
+  dataScope: z.enum(['all', 'own']).default('all'),
 });
 
 export const updateRoleSchema = z.object({
   name: z.string().min(2).max(60).optional(),
   description: z.string().max(240).optional(),
   permissions: z.array(z.enum(VALID_PERMISSIONS)).optional(),
+  dataScope: z.enum(['all', 'own']).optional(),
 });
 
 export type CreateRoleInput = z.infer<typeof createRoleSchema>;
@@ -29,6 +31,7 @@ type RoleRow = {
   description: string | null;
   isSystem: boolean;
   permissions: string[];
+  dataScope: string;
 };
 
 function serializeRole(role: RoleRow) {
@@ -40,6 +43,7 @@ function serializeRole(role: RoleRow) {
     is_system: role.isSystem,
     scope: role.orgId ? 'custom' : 'system',
     permissions: role.permissions,
+    data_scope: role.dataScope === 'own' ? 'own' : 'all',
   };
 }
 
@@ -61,6 +65,7 @@ export async function createRole(orgId: string, data: CreateRoleInput) {
       description: data.description?.trim() || null,
       isSystem: false,
       permissions: data.permissions,
+      dataScope: data.dataScope,
     },
   });
   return serializeRole(role);
@@ -83,6 +88,7 @@ export async function updateRole(orgId: string, id: string, data: UpdateRoleInpu
       ...(data.name !== undefined && { name: data.name.trim() }),
       ...(data.description !== undefined && { description: data.description.trim() || null }),
       ...(data.permissions !== undefined && { permissions: data.permissions }),
+      ...(data.dataScope !== undefined && { dataScope: data.dataScope }),
     },
   });
   return serializeRole(role);

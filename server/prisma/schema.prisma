@@ -411,6 +411,7 @@ model Role {
   description String?
   isSystem    Boolean  @default(false) @map("is_system")
   permissions String[] @default([]) // scope.action permission keys
+  dataScope   String   @default("all") @map("data_scope") // all | own — область данных роли
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 

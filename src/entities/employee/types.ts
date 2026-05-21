@@ -45,6 +45,9 @@ export interface PermissionOverride {
   effect: PermissionEffect;
 }
 
+// Data scope — whose records the role can see ('all' company data vs 'own' only).
+export type DataScope = 'all' | 'own';
+
 export interface Role {
   id: string;
   key: string;
@@ -53,18 +56,21 @@ export interface Role {
   is_system: boolean;
   scope: 'system' | 'custom';
   permissions: Permission[];
+  data_scope: DataScope;
 }
 
 export interface CreateRoleDto {
   name: string;
   description?: string;
   permissions: Permission[];
+  dataScope: DataScope;
 }
 
 export interface UpdateRoleDto {
   name?: string;
   description?: string;
   permissions?: Permission[];
+  dataScope?: DataScope;
 }
 
 export interface Employee {

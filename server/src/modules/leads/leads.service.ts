@@ -1,9 +1,15 @@
 import { prisma } from '../../lib/prisma.js';
 import { paginate, paginatedResponse, type PaginationParams } from '../../lib/pagination.js';
 import { NotFoundError } from '../../lib/errors.js';
+import { ownScopeWhere, type DataScope } from '../../lib/data-scope.js';
 
-export async function list(orgId: string, params: PaginationParams & { pipeline?: string; stage?: string }) {
-  const where: Record<string, unknown> = { orgId };
+export async function list(
+  orgId: string,
+  params: PaginationParams & { pipeline?: string; stage?: string },
+  scope: DataScope,
+  userId: string,
+) {
+  const where: Record<string, unknown> = { orgId, ...ownScopeWhere(scope, userId, 'assignedTo') };
   if (params.pipeline) where.pipeline = params.pipeline;
   if (params.stage) where.stage = params.stage;
 
@@ -20,9 +26,9 @@ export async function list(orgId: string, params: PaginationParams & { pipeline?
   return paginatedResponse(items, total, params);
 }
 
-export async function getById(orgId: string, id: string) {
+export async function getById(orgId: string, id: string, scope: DataScope, userId: string) {
   const lead = await prisma.lead.findFirst({
-    where: { id, orgId },
+    where: { id, orgId, ...ownScopeWhere(scope, userId, 'assignedTo') },
     include: { history: { orderBy: { createdAt: 'desc' } } },
   });
   if (!lead) throw new NotFoundError('Lead', id);

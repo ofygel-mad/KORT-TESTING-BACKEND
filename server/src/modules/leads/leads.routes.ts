@@ -15,13 +15,13 @@ export async function leadsRoutes(app: FastifyInstance) {
       pipeline: query.pipeline,
       stage: query.stage,
     };
-    return svc.list(request.orgId, params);
+    return svc.list(request.orgId, params, request.dataScope, request.userId);
   });
 
   // GET /api/v1/leads/:id
   app.get('/:id', async (request) => {
     const { id } = request.params as { id: string };
-    return svc.getById(request.orgId, id);
+    return svc.getById(request.orgId, id, request.dataScope, request.userId);
   });
 
   // POST /api/v1/leads
@@ -37,7 +37,12 @@ export async function leadsRoutes(app: FastifyInstance) {
       comment: z.string().optional(),
     }).parse(request.body);
 
-    const lead = await svc.create(request.orgId, body);
+    // Default the owner to the creator so own-scoped users keep sight of it.
+    const lead = await svc.create(request.orgId, {
+      ...body,
+      assignedTo: body.assignedTo ?? request.userId,
+      assignedName: body.assignedName ?? request.userFullName,
+    });
     return reply.status(201).send(lead);
   });
 

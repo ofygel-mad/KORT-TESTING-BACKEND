@@ -3,6 +3,7 @@ import fp from 'fastify-plugin';
 import { prisma } from '../lib/prisma.js';
 import { ForbiddenError, UnauthorizedError } from '../lib/errors.js';
 import { resolveEffectivePermissions } from '../modules/auth/auth.service.js';
+import { resolveDataScope, type DataScope } from '../lib/data-scope.js';
 
 function isBlockedEmployeeStatus(status: string | null | undefined) {
   return status === 'dismissed' || status === 'pending_first_login';
@@ -15,6 +16,7 @@ async function orgScopePlugin(fastify: FastifyInstance) {
   fastify.decorateRequest('orgId', '');
   fastify.decorateRequest('isOwner', false);
   fastify.decorateRequest('permissions', null);
+  fastify.decorateRequest('dataScope', 'all');
 
   /**
    * Resolves the user's active organization from their membership.
@@ -44,6 +46,11 @@ async function orgScopePlugin(fastify: FastifyInstance) {
           requested.isOwner,
           requested.role?.permissions ?? [],
           requested.permissionOverrides,
+        );
+        request.dataScope = resolveDataScope(
+          requested.isOwner,
+          request.permissions,
+          requested.role?.dataScope,
         );
         request.userFullName = requested.user.fullName;
         return;
@@ -88,6 +95,11 @@ async function orgScopePlugin(fastify: FastifyInstance) {
       membership.role?.permissions ?? [],
       membership.permissionOverrides,
     );
+    request.dataScope = resolveDataScope(
+      membership.isOwner,
+      request.permissions,
+      membership.role?.dataScope,
+    );
     request.userFullName = membership.user.fullName;
   });
 
@@ -121,6 +133,7 @@ declare module 'fastify' {
   interface FastifyRequest {
     isOwner: boolean;
     permissions: string[] | null;
+    dataScope: DataScope;
   }
   interface FastifyInstance {
     resolveOrg: (request: FastifyRequest, reply: FastifyReply) => Promise<void>;

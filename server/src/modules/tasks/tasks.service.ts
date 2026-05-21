@@ -3,6 +3,7 @@ import { NotFoundError, ValidationError } from '../../lib/errors.js';
 import { paginate, paginatedResponse, type PaginationParams } from '../../lib/pagination.js';
 import { prisma } from '../../lib/prisma.js';
 import { serializeTask } from '../frontend-compat/crm-compat.js';
+import { ownScopeWhere, type DataScope } from '../../lib/data-scope.js';
 
 type TaskListParams = PaginationParams & {
   status?: string;
@@ -16,6 +17,7 @@ type TaskListParams = PaginationParams & {
 type TaskContext = {
   userId: string;
   userFullName: string;
+  scope: DataScope;
 };
 
 type CreateTaskInput = {
@@ -131,6 +133,11 @@ export async function list(orgId: string, params: TaskListParams, context: TaskC
     });
   }
 
+  // own data scope — role-level restriction to the member's own tasks.
+  if (context.scope === 'own') {
+    andConditions.push({ assignedTo: context.userId });
+  }
+
   if (params.dueToday) {
     andConditions.push({
       dueDate: {
@@ -171,9 +178,9 @@ export async function list(orgId: string, params: TaskListParams, context: TaskC
   return paginatedResponse(items.map((item) => serializeTask(item)), total, params);
 }
 
-export async function getById(orgId: string, id: string) {
+export async function getById(orgId: string, id: string, scope: DataScope, userId: string) {
   const task = await prisma.task.findFirst({
-    where: { id, orgId },
+    where: { id, orgId, ...ownScopeWhere(scope, userId, 'assignedTo') },
     include: {
       deal: {
         include: {

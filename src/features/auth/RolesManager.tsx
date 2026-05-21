@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { useRoles, useCreateRole, useUpdateRole, useDeleteRole } from '@/entities/role/queries';
 import {
   COMPANY_ADMIN_PERMISSION,
+  type DataScope,
   type Permission,
   type Role,
 } from '@/entities/employee/types';
@@ -22,6 +23,7 @@ function RoleEditorDrawer({ role, onClose }: { role: Role | 'new'; onClose: () =
   const [permissions, setPermissions] = useState<Permission[]>(
     isNew ? [] : [...role.permissions],
   );
+  const [dataScope, setDataScope] = useState<DataScope>(isNew ? 'all' : role.data_scope);
   const [error, setError] = useState('');
 
   const grantsAll = permissions.includes(COMPANY_ADMIN_PERMISSION);
@@ -46,9 +48,9 @@ function RoleEditorDrawer({ role, onClose }: { role: Role | 'new'; onClose: () =
     }
     try {
       if (isNew) {
-        await createRole.mutateAsync({ name: name.trim(), description: description.trim(), permissions });
+        await createRole.mutateAsync({ name: name.trim(), description: description.trim(), permissions, dataScope });
       } else {
-        await updateRole.mutateAsync({ id: role.id, name: name.trim(), description: description.trim(), permissions });
+        await updateRole.mutateAsync({ id: role.id, name: name.trim(), description: description.trim(), permissions, dataScope });
       }
       onClose();
     } catch (err: any) {
@@ -88,6 +90,26 @@ function RoleEditorDrawer({ role, onClose }: { role: Role | 'new'; onClose: () =
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Кратко: что делает эта роль"
             />
+          </div>
+
+          <div className={styles.field}>
+            <span className={styles.label}>Область данных</span>
+            <div className={styles.scopeRow}>
+              {([
+                { value: 'all', title: 'Все данные компании', desc: 'Видит записи всех сотрудников.' },
+                { value: 'own', title: 'Только свои', desc: 'Видит только свои заказы, лиды, сделки и задачи.' },
+              ] as Array<{ value: DataScope; title: string; desc: string }>).map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  className={`${styles.scopeOption} ${dataScope === opt.value ? styles.scopeOptionActive : ''}`}
+                  onClick={() => setDataScope(opt.value)}
+                >
+                  <span className={styles.scopeOptionTitle}>{opt.title}</span>
+                  <span className={styles.scopeOptionDesc}>{opt.desc}</span>
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className={styles.field}>
@@ -184,6 +206,8 @@ function RoleCard({
         {role.description && <div className={styles.cardDesc}>{role.description}</div>}
         <div className={styles.cardMeta}>
           {grantsAll ? 'Полный доступ' : `${role.permissions.length} прав`}
+          {' · '}
+          {role.data_scope === 'own' ? 'свои данные' : 'все данные'}
         </div>
       </div>
       {!role.is_system && (
