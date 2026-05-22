@@ -67,6 +67,18 @@ const envSchema = z.object({
   ),
   PLATFORM_ALLOWED_IPS: z.string().default(''),
   PLATFORM_PRODUCT_CODE: z.string().default('kort'),
+  // R4.4 — telemetry shipper: KORT's AuditEvent outbox → Control Plane
+  // ingestion. The shipper runs only when both URL and secret are set.
+  PLATFORM_INGEST_URL: z.preprocess(
+    (value) => (value === '' ? undefined : value),
+    z.string().url().optional(),
+  ),
+  PLATFORM_INGEST_SECRET: z.preprocess(
+    (value) => (value === '' ? undefined : value),
+    z.string().min(16).optional(),
+  ),
+  PLATFORM_INGEST_INTERVAL_MS: z.coerce.number().int().min(5000).default(30000),
+  PLATFORM_INGEST_BATCH: z.coerce.number().int().min(1).max(1000).default(100),
 });
 
 function loadConfig() {

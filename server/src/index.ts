@@ -5,12 +5,14 @@ import { connectDatabase, disconnectDatabase } from './lib/prisma.js';
 // import { attachChatWebSocket, broadcastToUser } from './modules/chat/chat.ws.js';
 // import { setChatEventEmitter } from './modules/chat/chat.service.js';
 import { startWarehouseOutboxWorker } from './modules/warehouse/warehouse-outbox.worker.js';
+import { startTelemetryShipper } from './modules/platform/telemetry-shipper.js';
 
 async function main() {
   await connectDatabase();
 
   const app = await buildApp();
   let warehouseOutboxWorker: ReturnType<typeof startWarehouseOutboxWorker> | null = null;
+  let telemetryShipper: ReturnType<typeof startTelemetryShipper> | null = null;
 
   try {
     await app.listen({ port: config.PORT, host: config.HOST });
@@ -24,6 +26,8 @@ async function main() {
 
     warehouseOutboxWorker = startWarehouseOutboxWorker(app.log);
     app.log.info('Warehouse outbox worker started');
+
+    telemetryShipper = startTelemetryShipper(app.log);
   } catch (error) {
     const err = error as NodeJS.ErrnoException;
 
@@ -43,6 +47,7 @@ async function main() {
   const shutdown = async () => {
     console.log('\nShutting down...');
     warehouseOutboxWorker?.stop();
+    telemetryShipper?.stop();
     await app.close();
     await disconnectDatabase();
     process.exit(0);
