@@ -28,11 +28,13 @@ type ServiceAccessRequest = FastifyRequest<{ Body: ServiceAccessBody }>;
 // removed. The owner identity is now plain data: seed it via `prisma/seed.ts`
 // (env-driven) or register a company. Service access only resolves an existing
 // owner; it never conjures one from constants.
+//
+// R5 — this whole module is a dev-only backdoor superseded by the Control
+// Plane (impersonation). It is registered only when ENABLE_SERVICE_ROUTES is
+// explicitly set (see app.ts); production deploys never mount it.
 
 export async function serviceRoutes(app: FastifyInstance) {
   const servicePassword = config.CONSOLE_SERVICE_PASSWORD;
-
-  if (process.env.NODE_ENV === 'production' && !servicePassword) return;
 
   // POST /api/v1/service/access
   app.post('/access', async (request: ServiceAccessRequest, reply: FastifyReply) => {

@@ -18,6 +18,7 @@ import {
 } from '../../lib/errors.js';
 import { sendPasswordResetEmail } from '../../lib/email.js';
 import { normalizeOrgCurrency } from '../../lib/currency.js';
+import { provisionOrganization } from '../../lib/provisioning.js';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -94,23 +95,6 @@ function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
 }
 
-function sanitizeSlug(value: string): string {
-  return (
-    value
-      .toLowerCase()
-      .replace(/[^a-z0-9а-яё\s-]/gi, '')
-      .trim()
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .slice(0, 48) || `company-${Date.now()}`
-  );
-}
-
-function appendSlugSuffix(base: string, suffix: number) {
-  const label = `-${suffix}`;
-  return `${base.slice(0, Math.max(1, 48 - label.length))}${label}`;
-}
-
 function isUniqueConstraint(error: unknown, field: string) {
   if (
     !(error instanceof Prisma.PrismaClientKnownRequestError) ||
@@ -119,31 +103,6 @@ function isUniqueConstraint(error: unknown, field: string) {
   const target = error.meta?.target;
   if (Array.isArray(target)) return target.includes(field);
   return typeof target === 'string' ? target.includes(field) : false;
-}
-
-/**
- * Provisioning primitive: derives a unique org slug from a company name.
- * Exported so the Product Platform API (R4.2) can provision tenants without
- * duplicating the slug-uniqueness logic.
- */
-export async function generateUniqueSlug(
-  companyName: string,
-  tx: Prisma.TransactionClient,
-) {
-  const base = sanitizeSlug(companyName);
-  const existing = await tx.organization.findMany({
-    where: { OR: [{ slug: base }, { slug: { startsWith: `${base}-` } }] },
-    select: { slug: true },
-  });
-  const used = new Set(existing.map((o) => o.slug));
-  if (!used.has(base)) return base;
-  let n = 2;
-  let next = appendSlugSuffix(base, n);
-  while (used.has(next)) {
-    n += 1;
-    next = appendSlugSuffix(base, n);
-  }
-  return next;
 }
 
 async function createTokenPair(userId: string, email: string) {
@@ -423,43 +382,24 @@ export async function registerCompany(data: {
     if (existingPhone) throw new ConflictError(DUPLICATE_PHONE_MESSAGE);
   }
 
+  const passwordHash = await hashPassword(data.password);
+
   for (let attempt = 0; attempt < 4; attempt += 1) {
     try {
-      const result = await prisma.$transaction(async (tx) => {
-        const user = await tx.user.create({
-          data: {
-            fullName: data.full_name.trim(),
-            email,
-            password: await hashPassword(data.password),
-            phone: phone || null,
-            status: 'active',
-          },
-        });
-
-        const slug = await generateUniqueSlug(data.company_name, tx);
-        const org = await tx.organization.create({
-          data: { name: data.company_name.trim(), slug, currency: 'KZT' },
-        });
-
-        // Provision the subscription — new orgs start on the basic plan.
-        await tx.subscription.create({
-          data: { orgId: org.id, planCode: org.mode },
-        });
-
-        const membership = await tx.membership.create({
-          data: {
-            userId: user.id,
-            orgId: org.id,
-            isOwner: true,
-            status: 'active',
-            source: 'company_registration',
-            joinedAt: new Date(),
-            employeeAccountStatus: 'active',
-          },
-        });
-
-        return { user, org, membership };
-      });
+      // New orgs start on the basic plan; provisionOrganization creates the
+      // owner user, org, subscription and owner membership in one transaction.
+      const result = await prisma.$transaction((tx) =>
+        provisionOrganization(tx, {
+          ownerEmail: email,
+          ownerFullName: data.full_name,
+          ownerPasswordHash: passwordHash,
+          ownerStatus: 'active',
+          ownerPhone: phone || null,
+          companyName: data.company_name,
+          planCode: 'basic',
+          membershipSource: 'company_registration',
+        }),
+      );
 
       const tokens = await createTokenPair(
         result.user.id,

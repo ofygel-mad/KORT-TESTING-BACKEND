@@ -44,6 +44,9 @@ const envSchema = z.object({
   HOST: z.string().default('0.0.0.0'),
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
   CONSOLE_SERVICE_PASSWORD: z.string().optional(),
+  // R5 — the /service/* dev backdoor is mounted ONLY when explicitly enabled.
+  // Production deploys never set this; the Control Plane replaces it.
+  ENABLE_SERVICE_ROUTES: z.preprocess((value) => value === 'true', z.boolean()),
   // Sprint 10-11: Google Sheets integration (optional)
   GOOGLE_SHEETS_SPREADSHEET_ID: z.string().optional(),
   GOOGLE_SHEETS_SHEET_NAME: z.string().optional(),

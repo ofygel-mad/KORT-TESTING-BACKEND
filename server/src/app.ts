@@ -217,7 +217,13 @@ export async function buildApp() {
   await app.register(frontendCompatRoutes, { prefix: '/api/v1' });
 
 
-  await app.register(serviceRoutes, { prefix: '/api/v1/service' });
+  // R5 — /service/* is a dev backdoor superseded by the Control Plane.
+  // Mounted only behind an explicit opt-in; off by default everywhere.
+  if (config.ENABLE_SERVICE_ROUTES) {
+    await app.register(serviceRoutes, { prefix: '/api/v1/service' });
+  } else {
+    app.log.warn('Service routes disabled — set ENABLE_SERVICE_ROUTES=true to enable (dev only).');
+  }
   await app.register(kaspiIntegrationRoutes, { prefix: '/api/v1/integrations/kaspi' });
   await app.register(warehouseRoutes, { prefix: '/api/v1/warehouse' });
   await app.register(warehouseCatalogRoutes, { prefix: '/api/v1/warehouse' });

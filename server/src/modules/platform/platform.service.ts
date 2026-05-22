@@ -16,7 +16,7 @@ import { hashPassword } from '../../lib/hash.js';
 import { ConflictError, NotFoundError, ValidationError } from '../../lib/errors.js';
 import { recordAuditEvent } from '../../lib/audit.js';
 import { signImpersonationToken } from '../../lib/jwt.js';
-import { generateUniqueSlug } from '../auth/auth.service.js';
+import { provisionOrganization } from '../../lib/provisioning.js';
 import { changePlan, getPlanDef } from '../subscriptions/subscriptions.service.js';
 import { PLAN_CODES, DEFAULT_PLAN_CODE } from '../subscriptions/plans.js';
 
@@ -300,37 +300,15 @@ export async function createTenant(
   for (let attempt = 0; attempt < 4; attempt += 1) {
     try {
       provisioned = await prisma.$transaction(async (tx) => {
-        const user = await tx.user.create({
-          data: {
-            fullName: body.ownerFullName.trim(),
-            email,
-            password: inertPassword,
-            status: 'pending',
-          },
-        });
-
-        const slug = await generateUniqueSlug(body.companyName, tx);
-        const org = await tx.organization.create({
-          data: {
-            name: body.companyName.trim(),
-            slug,
-            mode: planCode,
-            currency: 'KZT',
-          },
-        });
-
-        await tx.subscription.create({ data: { orgId: org.id, planCode } });
-
-        await tx.membership.create({
-          data: {
-            userId: user.id,
-            orgId: org.id,
-            isOwner: true,
-            status: 'active',
-            source: 'company_registration',
-            joinedAt: new Date(),
-            employeeAccountStatus: 'active',
-          },
+        const { user, org } = await provisionOrganization(tx, {
+          ownerEmail: email,
+          ownerFullName: body.ownerFullName,
+          ownerPasswordHash: inertPassword,
+          ownerStatus: 'pending',
+          ownerPhone: null,
+          companyName: body.companyName,
+          planCode,
+          membershipSource: 'company_registration',
         });
 
         // One-time bootstrap token: a PasswordResetToken the owner consumes via

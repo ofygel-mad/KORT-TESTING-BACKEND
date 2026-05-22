@@ -1,10 +1,9 @@
 import ReactDOM from 'react-dom/client';
-import { type ReactNode, useEffect, useState } from 'react';
+import { lazy, Suspense, type ReactNode, useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { toast, Toaster } from 'sonner';
 import * as Sentry from '@sentry/react';
 import { AppRouter } from './app/router';
-import { ConsoleRoot } from './console';
 import { api } from '@/shared/api/client';
 import type { AuthSessionResponse } from '@/shared/api/contracts';
 import { readApiErrorMessage, readApiErrorStatus } from '@/shared/api/errors';
@@ -15,6 +14,12 @@ import { isChunkLoadError, reloadForChunkErrorOnce } from '@/shared/lib/browser'
 import { readStorage, reloadWindow, writeStorage } from '@/shared/lib/browser';
 import { useAuthStore } from '@/shared/stores/auth';
 import { PageLoader } from '@/shared/ui/PageLoader';
+
+// R5 — the dev console (and its DEFAULT_CONSOLE_PASSWORD) is lazy-loaded and
+// gated on import.meta.env.DEV, so it is tree-shaken out of production builds.
+const ConsoleRoot = import.meta.env.DEV
+  ? lazy(() => import('./console').then((module) => ({ default: module.ConsoleRoot })))
+  : null;
 
 const SENTRY_DSN = import.meta.env.VITE_SENTRY_DSN;
 if (SENTRY_DSN) {
@@ -155,7 +160,11 @@ function App() {
         <AppRouter />
       </SessionBootstrap>
       <Toaster position="bottom-right" richColors />
-      <ConsoleRoot />
+      {ConsoleRoot && (
+        <Suspense fallback={null}>
+          <ConsoleRoot />
+        </Suspense>
+      )}
     </QueryClientProvider>
   );
 }
