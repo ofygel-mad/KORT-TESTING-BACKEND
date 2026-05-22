@@ -19,3 +19,7 @@ _database-report/
 tests/e2e/.auth/
 test-results/
 playwright-report/
+
+# Control Plane (R4.3) — a separate, independent git repository living
+# physically alongside KORT. Never tracked by the KORT repo.
+control-plane/
