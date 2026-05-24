@@ -7,7 +7,7 @@ describe('NewOrderPage draft sanitization', () => {
       clientName: 'Client',
       items: [
         {
-          productName: 'Chapan',
+          productName: 'Coat',
           size: '48',
           quantity: 1,
           unitPrice: 50000,
@@ -23,7 +23,7 @@ describe('NewOrderPage draft sanitization', () => {
     const draft = sanitizeDraft({
       items: [
         {
-          productName: 'Chapan Premium',
+          productName: 'Coat Premium',
           color: 'Blue',
           size: '50',
           quantity: 2,
@@ -34,7 +34,7 @@ describe('NewOrderPage draft sanitization', () => {
     });
 
     expect(draft.items?.[0]).toMatchObject({
-      productName: 'Chapan Premium',
+      productName: 'Coat Premium',
       color: 'Blue',
       size: '50',
       quantity: 2,

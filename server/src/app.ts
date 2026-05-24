@@ -24,6 +24,7 @@ import { dealsRoutes } from './modules/deals/deals.routes.js';
 import { tasksRoutes } from './modules/tasks/tasks.routes.js';
 import { ordersRoutes } from './modules/orders/orders.routes.js';
 import { attachmentsRoutes } from './modules/orders/attachments.routes.js';
+import { orderTemplatesRoutes } from './modules/orders/templates.routes.js';
 import { productionRoutes } from './modules/production/production.routes.js';
 import { requestsRoutes } from './modules/production/requests.routes.js';
 import { operationsSettingsRoutes } from './modules/orgs/operations-settings.routes.js';
@@ -204,6 +205,7 @@ export async function buildApp() {
   await app.register(tasksRoutes, { prefix: '/api/v1/tasks' });
   await app.register(ordersRoutes, { prefix: '/api/v1/orders' });
   await app.register(attachmentsRoutes, { prefix: '/api/v1/orders' });
+  await app.register(orderTemplatesRoutes, { prefix: '/api/v1/order-templates' });
   await app.register(productionRoutes, { prefix: '/api/v1/production' });
   await app.register(requestsRoutes, { prefix: '/api/v1/requests' });
   await app.register(operationsSettingsRoutes, { prefix: '/api/v1/settings/operations' });

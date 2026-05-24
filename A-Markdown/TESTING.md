@@ -21,7 +21,7 @@ KORT implements a comprehensive Enterprise-grade CI/CD testing pyramid covering:
 - **Coverage Target**: 80% lines, functions, statements; 75% branches
 - **Running**: `pnpm run test` (with watch) or `pnpm run test:run` (single run)
 
-**Example**: `server/src/modules/chapan/__tests__/orders.service.test.ts`
+**Example**: `server/src/modules/orders/__tests__/orders.service.test.ts`
 - Tests core order service functions
 - Uses mocks for external dependencies (Prisma, Google Sheets)
 - 20 tests covering CRUD, filtering, and state transitions
@@ -33,7 +33,7 @@ KORT implements a comprehensive Enterprise-grade CI/CD testing pyramid covering:
 - **Status**: Skipped by default (require database setup)
 - **Running**: `pnpm run test:run` (when DB configured)
 
-**Example**: `server/src/modules/chapan/__tests__/orders.integration.test.ts`
+**Example**: `server/src/modules/orders/__tests__/orders.integration.test.ts`
 - Tests order lifecycle with real database
 - 26 tests covering full workflows (currently skipped)
 - Will activate once test database is configured in .env.test
@@ -48,9 +48,9 @@ KORT implements a comprehensive Enterprise-grade CI/CD testing pyramid covering:
 - **Location**: `src/pages/**/*.test.ts` and `src/components/**/*.test.ts`
 - **Framework**: Vitest (with component-specific test utilities)
 - **Examples**:
-  - `ChapanOrders.test.ts` - Component behavior and state
-  - `ChapanFinancials.test.ts` - Financial calculations
-  - `ChapanUrgencySort.test.ts` - Sorting logic
+  - `OrdersPage.test.tsx` - Component behavior and state
+  - `OrderFinancials.test.ts` - Financial calculations
+  - `OrderUrgencySort.test.ts` - Sorting logic
 
 #### E2E Tests
 - **Location**: `src/pages/**/*.e2e.test.ts`
@@ -59,7 +59,7 @@ KORT implements a comprehensive Enterprise-grade CI/CD testing pyramid covering:
 - **Devices**: Desktop, Pixel 5, iPhone 12
 - **Running**: `npx playwright test` (or `pnpm run test:e2e`)
 
-**Example**: `src/pages/workzone/chapan/orders/ChapanOrders.e2e.test.ts`
+**Example**: `src/features/auth/pages/sales/OrdersPage.e2e.test.ts`
 - 100+ test cases covering:
   - Order list display and filtering
   - Order detail navigation
@@ -90,7 +90,7 @@ pnpm run test:ui
 pnpm run test:coverage
 
 # Run specific test file
-pnpm run test:run src/modules/chapan/__tests__/orders.service.test.ts
+pnpm run test:run src/modules/orders/__tests__/orders.service.test.ts
 ```
 
 ### Frontend Tests

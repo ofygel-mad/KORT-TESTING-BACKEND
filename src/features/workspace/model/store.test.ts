@@ -81,60 +81,9 @@ describe('sanitizeWorkspacePersistedState', () => {
       zoom: 1,
       topZIndex: 10,
       sceneTheme: 'morning',
+      sceneThemeAuto: true,
       sceneTerrainMode: 'full',
-      sceneBgMode: 'photo',
-    });
-  });
-
-  it('migrates legacy production shortcuts away from Chapan', () => {
-    const state = sanitizeWorkspacePersistedState({
-      tiles: [
-        {
-          id: 'chapan-legacy',
-          kind: 'chapan',
-          title: 'Производство',
-          x: 40,
-          y: 20,
-          width: 260,
-          height: 170,
-          modalSize: 'default',
-          version: 1,
-          createdAt: '2026-03-18T00:00:00.000Z',
-          lastInteractionAt: '2026-03-18T00:00:00.000Z',
-        },
-      ],
-    });
-
-    expect(state.tiles[0]).toMatchObject({
-      kind: 'production',
-      title: 'Производство',
-      version: 2,
-    });
-  });
-
-  it('keeps current Chapan shortcuts intact', () => {
-    const state = sanitizeWorkspacePersistedState({
-      tiles: [
-        {
-          id: 'chapan-current',
-          kind: 'chapan',
-          title: 'Чапан',
-          x: 40,
-          y: 20,
-          width: 260,
-          height: 170,
-          modalSize: 'default',
-          version: 2,
-          createdAt: '2026-03-18T00:00:00.000Z',
-          lastInteractionAt: '2026-03-18T00:00:00.000Z',
-        },
-      ],
-    });
-
-    expect(state.tiles[0]).toMatchObject({
-      kind: 'chapan',
-      title: 'Чапан',
-      version: 2,
+      sceneBgMode: 'scene',
     });
   });
 

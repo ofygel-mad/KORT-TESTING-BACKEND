@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "prisma generate && node --max-old-space-size=4096 ./node_modules/typescript/bin/tsc",
+    "build": "prisma generate && npm run composition:manifest && node --max-old-space-size=4096 ./node_modules/typescript/bin/tsc",
+    "composition:manifest": "tsx scripts/export-manifest.ts",
     "start": "prisma migrate deploy && node dist/index.js",
     "start:docker": "node scripts/start-docker.mjs",
     "postinstall": "prisma generate",

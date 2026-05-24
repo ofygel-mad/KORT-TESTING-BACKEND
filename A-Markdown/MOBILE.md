@@ -49,7 +49,6 @@
 
 - [`src/app/layout/MobileNav.tsx`](src/app/layout/MobileNav.tsx): глобальная нижняя mobile nav.
 - [`src/pages/canvas/index.tsx`](src/pages/canvas/index.tsx): отдельный mobile fallback для `/`, без canvas.
-- [`src/pages/workzone/chapan/ChapanShell.tsx`](src/pages/workzone/chapan/ChapanShell.tsx): собственная mobile nav внутри workzone.
 
 Это значит, что мобилка сейчас не единая система, а набор несовместимых режимов.
 
@@ -114,13 +113,7 @@
 - touch semantics (`touch-action: none`, pan, pointer capture) остаются сложными;
 - важно вынести desktop-only workspace в lazy chunk, а mobile dashboard держать отдельно.
 
-### 7. Chapan workzone на телефоне всё ещё не перепридуман
-
-[`src/pages/workzone/chapan/ChapanShell.tsx`](src/pages/workzone/chapan/ChapanShell.tsx) просто скрывает sidebar и показывает fixed bottom nav.
-
-Дополнительная проблема: `navItems.slice(0, 5)` отрезает часть доступной навигации. Для mobile это критично: пользователь просто не увидит раздел.
-
-### 8. Auth/onboarding тоже несут desktop assumptions
+### 7. Auth/onboarding тоже несут desktop assumptions
 
 - [`src/features/auth/AuthRouteLayout.module.css`](src/features/auth/AuthRouteLayout.module.css) использует fullscreen layout с `overflow: hidden`.
 - [`src/features/auth/AuthModal.module.css`](src/features/auth/AuthModal.module.css) строит крупную двухколоночную fullscreen overlay-схему.
@@ -213,7 +206,7 @@
 - Warehouse: card feed + status chips + sheet details.
 - Reports: summary-first, drill-down через cards и collapsible blocks.
 - Settings: секции-аккордеоны/горизонтальный rail, а не desktop sidebar mentality.
-- Chapan: список задач/заказов и быстрые действия, а не уменьшенный desktop workspace.
+- Sales/Production: список задач/заказов и быстрые действия, а не уменьшенный desktop workspace.
 
 ### 3. Desktop-only тяжёлые вещи грузятся только на desktop
 
@@ -238,7 +231,6 @@
 
 ### P1
 
-- перепридумать Chapan mobile workflow;
 - отделить mobile dashboard от desktop canvas chunk;
 - привести auth/onboarding к keyboard-safe поведению;
 - ввести reusable mobile primitives.
@@ -657,8 +649,7 @@
 
 ### Прямые проблемы сейчас
 
-- в `ChapanShell` mobile nav режется через `slice(0, 5)`;
-- глобальная mobile nav, canvas mobile launcher и workzone mobile nav живут по разным правилам;
+- глобальная mobile nav и canvas mobile launcher живут по разным правилам;
 - fixed bottom nav конфликтует с action-heavy экранами.
 
 ### Что нужно сделать
@@ -667,45 +658,14 @@
 - Для workzone-шеллов не дублировать fixed nav снизу, а перейти на sticky horizontal route rail.
 - Все доступные mobile-разделы должны быть видимы и достижимы.
 
-### Рекомендательный патч 4.1. Исправить mobile nav в `ChapanShell`
+### Рекомендательный патч 4.1. Mobile nav (placeholder)
+
+(Patch снят: документация ссылалась на удалённый workzone-шелл. Когда появится
+новый mobile-ready shell для sales/production, переписать здесь под актуальный
+файл.)
 
 ```diff
---- a/src/pages/workzone/chapan/ChapanShell.tsx
-+++ b/src/pages/workzone/chapan/ChapanShell.tsx
-@@
--      <nav className={styles.mobileNav}>
--        {navItems.slice(0, 5).map((item) => {
-+      <nav className={styles.mobileRail}>
-+        {navItems.map((item) => {
-           const Icon = item.icon;
-           return (
-             <NavLink
-               key={item.to}
-               to={item.to}
--              className={({ isActive }) => `${styles.mobileNavItem} ${isActive ? styles.mobileNavItemActive : ''}`}
-+              className={({ isActive }) => `${styles.mobileRailItem} ${isActive ? styles.mobileRailItemActive : ''}`}
-             >
-               <Icon size={18} />
-               <span>{item.label}</span>
-             </NavLink>
-           );
-         })}
-       </nav>
-```
-
-```diff
---- a/src/pages/workzone/chapan/ChapanShell.module.css
-+++ b/src/pages/workzone/chapan/ChapanShell.module.css
-@@
--.mobileNav {
--.  display: none;
--.}
-+.mobileRail {
-+  display: none;
-+}
-@@
- @media (max-width: 768px) {
-@@
+@@ legacy patch removed @@
 -  .main {
 -    height: auto;
 -    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 76px);
@@ -1029,7 +989,7 @@
 | Employees | table + local drawer | staff cards + role chips + sheet | P1 |
 | Reports | desktop tables и summary blocks | summary-first cards + expandables | P1 |
 | Settings | уже ближе к mobile, но ещё desktop sidebar mindset | horizontal rail + accordion sections | P1 |
-| Chapan | отдельный shell, но не mobile-native | task-first workzone, sticky route rail, bottom actions | P0/P1 |
+| Sales/Production | стандартные feature-pages, ещё не mobile-native | task-first surface, sticky route rail, bottom actions | P0/P1 |
 | Auth | fullscreen overlay mindset | keyboard-safe form stack | P1 |
 | Onboarding | лучше остальных, но требует keyboard-safe pass | wizard без height traps | P1 |
 
@@ -1067,7 +1027,7 @@
 
 ### Спринт 4
 
-- Chapan mobile redesign;
+- Sales/Production mobile redesign;
 - desktop/mobile chunk separation;
 - mobile performance budget.
 

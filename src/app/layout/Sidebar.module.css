@@ -205,26 +205,6 @@
   transition: opacity 200ms 60ms;
 }
 
-/* ── Chapan special item ─────────────────────────────────────────── */
-.navItemChapan {
-  color: var(--text-secondary);
-}
-.navItemChapan .navIcon {
-  color: var(--text-tertiary);
-}
-.navItemChapan:hover {
-  background: color-mix(in srgb, var(--fill-accent-subtle) 44%, var(--bg-hover));
-  color: var(--text-primary);
-  border-color: var(--border-default);
-}
-.navItemChapan.navItemActive {
-  background: color-mix(in srgb, var(--fill-accent-subtle) 56%, var(--bg-surface-inset));
-  color: var(--text-primary);
-  border-color: transparent;
-  border-left: 2px solid var(--fill-accent);
-  padding-left: 12px;
-}
-
 /* ── Divider ─────────────────────────────────────────────────────── */
 .navDivider {
   height: 1px;
@@ -314,8 +294,7 @@
   color: rgba(156, 177, 214, 0.84);
 }
 
-.sidebar[data-chrome="canvas"] .navItem:hover,
-.sidebar[data-chrome="canvas"] .navItemChapan:hover {
+.sidebar[data-chrome="canvas"] .navItem:hover {
   background:
     linear-gradient(180deg, rgba(255,255,255,0.11) 0%, rgba(148,172,219,0.09) 100%);
   color: rgba(247, 250, 255, 0.98);
@@ -325,14 +304,11 @@
 }
 
 .sidebar[data-chrome="canvas"] .navItem:hover .navIcon,
-.sidebar[data-chrome="canvas"] .navItem:hover .navExternalIcon,
-.sidebar[data-chrome="canvas"] .navItemChapan:hover .navIcon,
-.sidebar[data-chrome="canvas"] .navItemChapan:hover .navExternalIcon {
+.sidebar[data-chrome="canvas"] .navItem:hover .navExternalIcon {
   color: rgba(237, 244, 255, 0.94);
 }
 
-.sidebar[data-chrome="canvas"] .navItemActive,
-.sidebar[data-chrome="canvas"] .navItemChapan.navItemActive {
+.sidebar[data-chrome="canvas"] .navItemActive {
   background:
     linear-gradient(180deg, rgba(244, 247, 252, 0.9) 0%, rgba(223, 231, 242, 0.8) 100%);
   color: rgba(17, 24, 39, 0.94);
@@ -342,8 +318,7 @@
     0 16px 34px -24px rgba(0,0,0,0.72);
 }
 
-.sidebar[data-chrome="canvas"] .navItemActive .navIcon,
-.sidebar[data-chrome="canvas"] .navItemChapan.navItemActive .navIcon {
+.sidebar[data-chrome="canvas"] .navItemActive .navIcon {
   color: color-mix(in srgb, var(--fill-accent) 82%, #d08342 18%);
 }
 

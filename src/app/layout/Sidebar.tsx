@@ -5,10 +5,11 @@ import { KortLogo } from '@/shared/ui/KortLogo';
 import {
   CANVAS_NAV_ITEM,
   SETTINGS_NAV_ITEM,
-  SIDEBAR_NAV_SECTIONS,
   type ShortcutNavItem,
 } from '@/shared/navigation/appNavigation';
 import { usePlan, planIncludes } from '@/shared/hooks/usePlan';
+import { useTenantConfig } from '@/shared/composition/useTenantConfig';
+import { applySidebarConfig } from '@/shared/composition/applySidebarConfig';
 import styles from './Sidebar.module.css';
 
 function SidebarRouteItem({
@@ -53,6 +54,9 @@ export function Sidebar({ chromeTone = 'dark' }: { chromeTone?: 'canvas' | 'dark
   const navigate = useNavigate();
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const plan = usePlan();
+  const tenantConfig = useTenantConfig();
+  // ЧАСТЬ X — sidebar layout is config-driven; default config = today's sidebar.
+  const groups = applySidebarConfig(tenantConfig?.data ?? null, plan);
 
   function handleLogout() {
     clearAuth();
@@ -69,14 +73,9 @@ export function Sidebar({ chromeTone = 'dark' }: { chromeTone?: 'canvas' | 'dark
       <nav className={styles.nav}>
         <SidebarRouteItem item={CANVAS_NAV_ITEM} />
 
-        {SIDEBAR_NAV_SECTIONS.map((section) => {
-          const visibleItems = section.items.filter((item) =>
-            planIncludes(plan, item.planTier),
-          );
-          return (
-            <NavGroup key={section.label} label={section.label} items={visibleItems} />
-          );
-        })}
+        {groups.map((group) => (
+          <NavGroup key={group.label} label={group.label} items={group.items} />
+        ))}
 
         {planIncludes(plan, 'industrial') && (
           <>

@@ -1,5 +1,5 @@
-// ── Chapan Order types — synced with backend schema ──────────────────────────
-// Backend model: Order, OrderItem, ProductionTask, ChapanPayment, ChapanActivity
+// ── Order types — synced with backend schema ────────────────────────────────
+// Backend model: Order, OrderItem, ProductionTask, Payment, OrderActivity
 
 import type { InvoiceStatus } from './invoice.types';
 
@@ -57,6 +57,14 @@ export interface Order {
   managerId: string | null;
   managerName: string | null;
   customerType: 'retail' | 'wholesale';
+  // P3: OrderTemplate this order was created from.
+  templateId?: string | null;
+  // P3: free-form bag of template-defined client/order custom attributes.
+  extraAttributes?: Record<string, unknown> | null;
+  // P2: lifecycle stage (draft|committed|fulfilling|completed|cancelled).
+  lifecycleStage?: string | null;
+  // P2: frozen manager attribution at completion.
+  managerSnapshot?: { managerId: string | null; managerName: string | null } | null;
   createdAt: string;
   updatedAt: string;
   // Relations (included by backend):
@@ -98,6 +106,10 @@ export interface OrderItem {
   color: string | null;
   gender: string | null;
   length: string | null;
+  // P3: free-form bag of template-defined per-item custom attributes.
+  attributes?: Record<string, unknown> | null;
+  // P2: per-item lifecycle stage; null until item is committed.
+  fulfillmentSubstatus?: string | null;
 }
 
 export interface ProductionTask {
@@ -300,6 +312,12 @@ export interface CreateOrderDto {
   sourceRequestId?: string;
   managerNote?: string;
   customerType?: 'retail' | 'wholesale';
+  // P5: schema-driven order-level custom fields, persisted into
+  // Order.extraAttributes.
+  extraAttributes?: Record<string, unknown>;
+  // P5/Stage1: explicit OrderTemplate id selected by the manager. When
+  // omitted, the server falls back to the org's default Clothing template.
+  templateId?: string;
 }
 
 export interface CreateOrderItemDto {
@@ -307,11 +325,13 @@ export interface CreateOrderItemDto {
   color?: string;
   gender?: string;
   length?: string;
-  size: string;                // was: sizeName
+  size?: string;                // P5: was required; now optional so non-clothing templates can omit it
   quantity: number;            // was: qty (min 1)
   unitPrice: number;
   notes?: string;
   workshopNotes?: string;
+  // P5: schema-driven custom fields (also mirrors legacy fields for unified read).
+  attributes?: Record<string, unknown>;
 }
 
 export interface UpdateOrderDto {

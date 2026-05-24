@@ -50,7 +50,7 @@ export default function TrashPage() {
   return (
     <div className={styles.root}>
       <div className={styles.header}>
-        <button className={styles.back} onClick={() => navigate('/orders')}>
+        <button className={styles.back} onClick={() => navigate('/sales')}>
           <ChevronLeft size={16} />
           Заказы
         </button>

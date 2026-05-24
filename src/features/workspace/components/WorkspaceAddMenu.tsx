@@ -21,20 +21,19 @@ interface Props {
 function useCanAddWidget(id: ShortcutNavItemId): boolean {
   const { isOwner, isAdmin } = useRole();
   const perms = useEmployeePermissions();
-  const chapan = useOperationsAccess();
+  const ops = useOperationsAccess();
 
   if (isOwner || isAdmin) return true;
   if (perms.permissions.length === 0) return true;
 
   switch (id) {
-    case 'leads': case 'deals': case 'customers': case 'tasks':
+    case 'leads': case 'customers': case 'tasks':
       return perms.canAccessSales;
     case 'warehouse': return perms.canAccessWarehouse;
     case 'production': return perms.canAccessProduction;
     case 'finance': case 'reports': case 'documents':
       return perms.canAccessFinancial;
-    case 'employees': return perms.canManageTeam;
-    case 'sales': case 'logistics': case 'products': return chapan.hasAnyAccess;
+    case 'sales': case 'logistics': case 'products': return ops.hasAnyAccess;
     default: return true;
   }
 }
@@ -43,7 +42,7 @@ export function WorkspaceAddMenu({ open, onClose, onSelect }: Props) {
   const plan = usePlan();
   const { isOwner, isAdmin } = useRole();
   const perms = useEmployeePermissions();
-  const chapan = useOperationsAccess();
+  const ops = useOperationsAccess();
   const hasEmployeePerms = perms.permissions.length > 0 && !isOwner && !isAdmin;
 
   useEffect(() => {
@@ -102,14 +101,13 @@ export function WorkspaceAddMenu({ open, onClose, onSelect }: Props) {
                 // Если у сотрудника есть employee_permissions — скрываем недоступные разделы
                 if (!hasEmployeePerms) return true;
                 switch (widget.kind) {
-                  case 'leads': case 'deals': case 'customers': case 'tasks':
+                  case 'leads': case 'customers': case 'tasks':
                     return perms.canAccessSales;
                   case 'warehouse': return perms.canAccessWarehouse;
                   case 'production': return perms.canAccessProduction;
                   case 'finance': case 'reports': case 'documents':
                     return perms.canAccessFinancial;
-                  case 'employees': return perms.canManageTeam;
-                  case 'sales': case 'logistics': case 'products': return chapan.hasAnyAccess;
+                  case 'sales': case 'logistics': case 'products': return ops.hasAnyAccess;
                   default: return true;
                 }
               }).map((widget) => {

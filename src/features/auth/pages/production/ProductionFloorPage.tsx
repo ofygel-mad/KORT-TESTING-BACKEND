@@ -1,5 +1,5 @@
 import { useDeferredValue, useMemo, useState, type CSSProperties } from 'react';
-import { AlertTriangle, CalendarDays, Factory, LayoutGrid, LayoutList, MessageCircle, Search, Star, X, XCircle } from 'lucide-react';
+import { AlertTriangle, CalendarDays, ClipboardList, Factory, LayoutGrid, LayoutList, MessageCircle, Search, Star, X, XCircle } from 'lucide-react';
 import {
   useAssignWorker,
   useClaimProductionTask,
@@ -443,7 +443,7 @@ export default function ProductionPage() {
             )}
             {!isLoading && visibleTasks.length === 0 && (
               <div className={styles.emptyState}>
-                <div className={styles.emptyIcon}>📋</div>
+                <div className={styles.emptyIcon}><ClipboardList size={28} /></div>
                 <div className={styles.emptyText}>Нет заданий</div>
                 <div className={styles.emptySubtext}>Все позиции выполнены или отфильтрованы</div>
               </div>
@@ -481,7 +481,7 @@ export default function ProductionPage() {
           {!isLoading && visibleTasks.length === 0 && (
             <div className={styles.cardList}>
               <div className={styles.emptyState}>
-                <div className={styles.emptyIcon}>📋</div>
+                <div className={styles.emptyIcon}><ClipboardList size={28} /></div>
                 <div className={styles.emptyText}>Нет заданий</div>
                 <div className={styles.emptySubtext}>Все позиции выполнены или отфильтрованы</div>
               </div>

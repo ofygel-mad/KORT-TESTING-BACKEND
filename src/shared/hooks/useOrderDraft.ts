@@ -6,7 +6,7 @@
  * refreshes and component remounts.
  *
  * Usage:
- *   const draft = useOrderDraft({ storageKey: 'chapan:new-order:v3', form: methods });
+ *   const draft = useOrderDraft({ storageKey: 'sales:new-order:v3', form: methods });
  *   // on successful submit:  draft.clearDraft();
  */
 import { useEffect, useRef } from 'react';

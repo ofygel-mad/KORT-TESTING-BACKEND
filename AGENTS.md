@@ -13,7 +13,7 @@ KORT is a monorepo with:
 - A multi-domain product that combines:
   - CRM (`leads`, `deals`, `customers`, `tasks`)
   - organization and employee management
-  - a large `Chapan` workzone for atelier/workshop operations
+  - sales / production / returns / invoices
   - a standard warehouse module
   - a much deeper "Warehouse Foundation" runtime/control-tower/execution engine layer
   - accounting
@@ -29,7 +29,7 @@ The product is not a simple CRUD app. It contains:
 - a WebSocket chat channel
 - a background warehouse outbox worker
 
-The single largest domain is `Chapan`. The deepest technical subsystem is `warehouse`.
+The single largest domain is sales/production/orders. The deepest technical subsystem is `warehouse`.
 
 ## 2. Repository Layout
 
@@ -122,7 +122,6 @@ Main route groups:
 - `/warehouse`, `/warehouse/twin`, `/warehouse/control-tower`, `/warehouse/operations`
 - `/production`, `/finance`, `/employees`, `/reports`, `/documents`, `/settings`
 - `/onboarding`
-- `/workzone/chapan/*`
 - `/auth/login`, `/auth/register`, `/auth/accept-invite`, `/reset-password`
 - `/dev`
 
@@ -148,7 +147,6 @@ The sidebar model defines:
   - CRM
   - Operations
   - Analytics
-- a separate `CHAPAN_NAV_ITEM`
 
 Each shortcut defines:
 
@@ -188,7 +186,7 @@ Notable behavior:
 
 - `useRole()`: owner/admin/manager/viewer helper flags
 - `useEmployeePermissions()`: decodes checkbox-style employee permissions
-- `useChapanPermissions()`: derives Chapan-specific access and action rights
+- `useOperationsAccess()`: derives sales/logistics/products access and action rights
 - `usePlan()`: current org mode and plan comparisons
 
 Permission system is layered:
@@ -200,14 +198,7 @@ Permission system is layered:
   - `production`
   - `warehouse_manager`
   - `financial_report`
-  - `chapan_full_access`
-  - `chapan_access_orders`
-  - `chapan_access_production`
-  - `chapan_access_ready`
-  - `chapan_access_archive`
-  - `chapan_access_warehouse_nav`
-  - `chapan_confirm_invoice`
-  - `chapan_manage_settings`
+  - sales/production/ready/archive scope permissions (see `useOperationsAccess`)
 
 ## 3.5 API and Data Access Layer
 
@@ -247,7 +238,7 @@ Pattern:
 
 Most important entity modules:
 
-- `order`: Chapan orders/production/invoices/settings/attachments/returns/managers
+- `order`: orders/production/invoices/settings/attachments/returns/managers
 - `warehouse`: classic warehouse + warehouse foundation/foundation-runtime APIs
 - `lead`, `deal`, `customer`, `task`, `employee`, `finance`, `alert`
 
@@ -315,7 +306,7 @@ These previews surface lightweight snapshots for:
 - employees
 - reports
 - documents
-- chapan
+- sales
 
 ## 3.7 Global Utility/UI Systems
 
@@ -330,7 +321,7 @@ Important cross-cutting frontend systems:
 
 ## 3.8 Additional Product Surfaces and Operational Pages
 
-The repository contains several substantial frontend surfaces outside the core canvas/CRM/warehouse/Chapan walkthroughs. Future agents should not treat them as "minor settings pages".
+The repository contains several substantial frontend surfaces outside the core canvas/CRM/warehouse/sales walkthroughs. Future agents should not treat them as "minor settings pages".
 
 ### Settings and team administration
 
@@ -388,15 +379,15 @@ It includes:
 
 Tabs:
 
-- `sales`: won deals + Chapan revenue/paid metrics by manager
+- `sales`: won deals + order revenue/paid metrics by manager
 - `funnel`: lead and deal stage rollups
-- `production`: Chapan order totals by production status
+- `production`: order totals by production status
 
 It reads from:
 
 - leads
 - deals
-- Chapan orders
+- orders
 
 and exports CSV snapshots from each reporting tab.
 
@@ -455,355 +446,22 @@ Important architecture nuance:
 - code presence does not guarantee current route registration
 - future agents should verify both `src/app/router/index.tsx` and `main.tsx` before assuming a page is reachable in the current build
 
-## 4. Chapan Workzone Frontend
-
-This is the most operationally dense frontend area.
-
-## 4.1 Chapan Shell
-
-Main shell:
-
-- `src/pages/workzone/chapan/ChapanShell.tsx`
-
-Responsibilities:
-
-- separate shell/layout from the main app chrome
-- shows only the sections allowed for the current user
-- exposes special nav entries:
-  - orders
-  - production
-  - ready
-  - archive
-  - invoices
-  - warehouse
-  - returns
-  - trash
-- supports mobile horizontal rail
-- includes iOS-style swipe-back gesture for subpages
-- mounts `ChapanInvoicesDrawer` globally
-
-Transient Chapan UI state lives in `src/features/workzone/chapan/store.ts`:
-
-- selected order id
-- invoice drawer state
-- list filters for orders
-
-Important bugfix note already encoded in comments:
-
-- `selectedOrderId` is intentionally not persisted because persisting it caused redirect loops on returning from order details to the list.
-
-## 4.2 Chapan Data Contracts
-
-Primary type system:
-
-- `src/entities/order/types.ts`
-
-Important model facts:
-
-- order statuses:
-  - `new`
-  - `confirmed`
-  - `in_production`
-  - `ready`
-  - `transferred`
-  - `on_warehouse`
-  - `shipped`
-  - `completed`
-  - `cancelled`
-- payment status:
-  - `not_paid`
-  - `partial`
-  - `paid`
-- item fulfillment mode:
-  - `unassigned`
-  - `warehouse`
-  - `production`
-- priority is legacy, but current logic separates:
-  - `urgency`
-  - `isDemandingClient`
-
-This split matters throughout the UI and backend. Do not assume `priority` alone is the modern source of truth.
-
-## 4.3 Orders List
-
-Main file:
-
-- `src/pages/workzone/chapan/orders/ChapanOrders.tsx`
-
-Major behaviors:
-
-- loads up to 200 active orders
-- supports search, status filter, payment filter, manager filter, calendar filter
-- persists view mode and grouping mode in local storage
-- supports grid and list presentations
-- supports grouping similar orders into batches using item signature + close due dates
-- flags urgent orders to the top
-- overlays warehouse state badges using:
-  - `useOrderWarehouseStates`
-  - `useProductsAvailability`
-- surfaces unpaid alerts from `useUnpaidAlerts`
-- supports "trash" action for users with high permissions
-- has internal seed helper to create example orders from the UI
-
-Selection/open behavior:
-
-- list page uses `selectedOrderId`
-- drawer/detail navigation exists through `OrderDetailDrawer`
-- comments note an earlier auto-redirect loop was intentionally removed
-
-## 4.4 New/Edit Order
-
-Main files:
-
-- `src/pages/workzone/chapan/orders/ChapanNewOrder.tsx`
-- `src/pages/workzone/chapan/orders/ChapanEditOrder.tsx`
-
-These pages build and submit `CreateOrderDto` / `UpdateOrderDto`.
-
-Expected order content:
-
-- client identity and phones
-- urgency and demanding-client flag
-- address, city, postal code, delivery type, source
-- pricing and discount fields
-- payment method and prepayment
-- one or more order items
-
-The form ecosystem uses:
-
-- `react-hook-form`
-- Zod validation
-- shared helper hook `useChapanOrderDraft`
-
-## 4.5 Order Detail
-
-Main file:
-
-- `src/pages/workzone/chapan/orders/ChapanOrderDetail.tsx`
-
-This page is the operational control center for a single order.
-
-It supports:
-
-- viewing core order meta
-- item-by-item route resolution (`warehouse` vs `production`)
-- status change
-- adding payments
-- adding comments/activities
-- archive/restore
-- cancel/restore
-- close order, including unpaid warning
-- invoice download
-- requires-invoice toggle
-- "transfer to warehouse" logic
-- route a single item after confirmation
-- attach files
-- delete attachments
-- reassign manager
-- view and create returns
-
-Important internal logic:
-
-- per-item routing is resolved from either explicit `fulfillmentMode` or inferred from production tasks / terminal statuses
-- warehouse items and production items are displayed as separate sections
-- order detail behaves differently depending on URL origin:
-  - orders
-  - ready
-  - archive
-  - warehouse
-
-## 4.6 Production Board
-
-Main file:
-
-- `src/pages/workzone/chapan/production/ChapanProduction.tsx`
-
-Modes:
-
-- `ProductionMode = 'manager' | 'workshop'`
-- `LayoutMode = 'kanban' | 'list'` — persisted per user in localStorage (`chapan_prod_layout_{userId}`)
-
-Behavior:
-
-- auto-defaults workshop users into workshop mode if their permissions are limited
-- loads either:
-  - full manager production list
-  - workshop-safe task list without client PII
-- supports grouping similar tasks into task batches
-- search by order number/product/fabric/size
-- layout modes:
-  - **kanban**: two-column board (Новые заказы / Выполнение)
-  - **list**: vertical collapsible sections (Выполнение / Новые заказы)
-- columns/sections:
-  - `queued` (Новые заказы)
-  - `in_progress` (Выполнение)
-- task actions:
-  - claim
-  - mark done
-  - return to queue
-  - block/unblock
-- shows change request alerts from managers and supports approve/reject flows
-- workshop-mode cards now display `TaskDetailPanel` inline (always expanded; no toggle button)
-
-Components:
-
-- **`TaskCard`** — kanban card (compact header + meta + actions + detail panel in workshop mode)
-- **`BatchTaskCard`** — grouped kanban card with expand/collapse
-- **`TaskListCard`** — horizontal list-view card (fields in row, vertical action button)
-- **`CollapsibleSection`** — wraps task groups in list view; expand/collapse via chevron
-- **`ProductionListView`** — top-level list layout with two collapsible sections
-- **`TaskDetailPanel`** — detail grid (item fields, notes, order info, defects)
-
-Frontend production status model is currently simplified to:
-
-- `queued`
-- `in_progress`
-- `done`
-
-This is more up to date than older docs that describe a more granular cutting/sewing pipeline.
-
-## 4.7 Ready Queue
-
-Main file:
-
-- `src/pages/workzone/chapan/ready/ChapanReady.tsx`
-
-Purpose:
-
-- bridge between production and warehouse
-- batch actions for ready and partially ready orders
-- invoice preview/create flow
-- warehouse handoff
-- unpaid warnings and manager notifications
-
-Key behaviors:
-
-- combines:
-  - `ready` orders
-  - partially completed `confirmed` / `in_production` orders that have warehouse-eligible items
-- supports grouping and bulk selection
-- blocks transfer if:
-  - any item is still unrouted
-  - production tasks are still unfinished
-- if any selected order requires invoice:
-  - generates invoice and opens pending invoice drawer
-- if invoice is not required:
-  - advances order directly and archives it
-
-## 4.8 Invoices
-
-Main files:
-
-- `src/pages/workzone/chapan/invoices/ChapanInvoices.tsx`
-- `src/pages/workzone/chapan/invoices/ChapanInvoicesDrawer.tsx`
-- `src/pages/workzone/chapan/invoices/ChapanInvoicePreviewModal.tsx`
-
-Responsibilities:
-
-- filter invoice list by status
-- show seamstress/warehouse confirmation state
-- download invoice XLSX
-- confirm from seamstress side
-- confirm from warehouse side
-- reject with reason
-- show stale invoices where one side confirmed long ago and the other did not
-
-Status values:
-
-- `pending_confirmation`
-- `confirmed`
-- `rejected`
-- `archived`
-
-## 4.9 Chapan Warehouse
-
-Main file:
-
-- `src/pages/workzone/chapan/warehouse/ChapanWarehouse.tsx`
-
-This is a very large hybrid page. It is not just inventory CRUD.
-
-Tabs:
-
-- incoming invoices
-- invoice archive
-- warehouse orders
-- to ship
-- shipped
-- items
-- movements
-- alerts
-- catalog
-
-Capabilities on this page include:
-
-- warehouse acceptance of invoices
-- order shipment
-- close order from warehouse
-- return order back to ready with reason
-- inventory item CRUD
-- movement creation
-- opening balance import
-- CSV export
-- alert resolution
-- embedding the generic `WarehouseCatalog`
-- showing "Warehouse Foundation" site health/control tower summaries and deep links
-
-This page is where old/simple warehouse UX and the newer warehouse foundation stack meet.
-
-## 4.10 Archive, Trash, Returns, Settings
-
-Other Chapan pages:
-
-- `archive/ChapanArchive.tsx`: archived historical orders
-- `orders/ChapanTrash.tsx`: soft-deleted orders with restore/permanent delete
-- `returns/ChapanReturns.tsx`: return records
-- `settings/ChapanSettings.tsx`: catalogs, profile, clients, account settings
-
-### `ChapanSettings.tsx`
-
-Tabs:
-
-- catalogs
-- profile
-- clients
-- account
-
-Highlights:
-
-- catalogs manage:
-  - products
-  - colors/fabric catalog
-  - sizes
-  - workers
-  - payment methods
-- profile manages:
-  - display name
-  - order prefix
-  - public intake enabled
-  - delivery fees
-- account tab allows:
-  - password change for all users
-  - email change only for owner/full-access users
-
-## 4.11 Public Request Page
-
-Main files:
-
-- `src/pages/workzone-request/index.tsx`
-- `src/pages/workzone-request/chapanApi.ts`
-
-Behavior:
-
-- client-facing intake form
-- loads profile and catalogs from backend
-- submits public-style workshop requests
-- includes polished branded UI and success video flow
-
-Caveat:
-
-- the API helper currently calls authenticated endpoints (`/chapan/settings/profile`, `/chapan/settings/catalogs`, `/chapan/requests`) instead of the explicitly public backend endpoints (`/chapan/requests/public/:orgId` and `/public/:orgId/profile`).
-- This likely means the page is unfinished, internally used, or mismatched with backend public API design.
+## 4. Sales / Production / Warehouse Frontend (consolidated)
+
+Sales, production, ready queue, invoices, returns, and warehouse handoff live
+under top-level `src/features/auth/pages/*` (sales, production, warehouse, etc.)
+and use the canonical entity layer at `src/entities/order` and
+`src/entities/warehouse`.
+
+For the current routing and page tree, treat `src/app/router/index.tsx` and the
+per-feature page files as the source of truth.
+
+Frontend order types live in `src/entities/order/types.ts`. Order statuses:
+`new`, `confirmed`, `in_production`, `ready`, `transferred`, `on_warehouse`,
+`shipped`, `completed`, `cancelled`. Payment status: `not_paid`, `partial`,
+`paid`. Item fulfillment mode: `unassigned`, `warehouse`, `production`.
+Urgency is split from `isDemandingClient`; the legacy `priority` field is no
+longer the source of truth.
 
 ## 5. Warehouse Frontend
 
@@ -1057,7 +715,7 @@ Capabilities:
 
 The sync layer listens to domain events and syncs:
 
-- Chapan payments
+- order payments
 - won deals
 - warehouse movements
 
@@ -1071,8 +729,8 @@ Subareas:
 
 - `scanner/file.scanner.ts`: parses XLSX/CSV, finds header rows, samples rows, classifies columns, detects likely import target, and returns preview payloads
 - `scanner/semantic.matcher.ts`: maps human column names to domain fields and detects targets such as customers, leads, orders, catalog, warehouse items/stock, accounting, and employees
-- `adapters/orders.adapter.ts`: imports grouped order rows into Chapan client/order/order-item records and triggers accounting sync on imported payments
-- `adapters/warehouse.adapter.ts`: imports warehouse items, stock-like quantities, and catalog-like product definitions; it can also create Chapan catalog primitives
+- `adapters/orders.adapter.ts`: imports grouped order rows into client/order/order-item records and triggers accounting sync on imported payments
+- `adapters/warehouse.adapter.ts`: imports warehouse items, stock-like quantities, and catalog-like product definitions; it can also create product catalog primitives
 - `templates/templates.service.ts`: CRUD plus "similar template" lookup for saved import mappings
 
 Important nuance:
@@ -1081,11 +739,11 @@ Important nuance:
 - `server/src/app.ts` does not register an imports router in the current snapshot
 - this should be treated as an incomplete or disconnected subsystem until route wiring is confirmed
 
-## 8. Chapan Backend Internals
+## 8. Sales / Production Backend Internals
 
-Chapan backend lives in `server/src/modules/chapan/`.
-
-This is the operational backbone of the system.
+Order, production, invoice, return, and settings logic lives directly under
+`server/src/modules/` (orders, production, invoices, returns, settings). This is
+the operational backbone of the system.
 
 ## 8.1 Orders
 
@@ -1145,7 +803,7 @@ Service responsibilities in `orders.service.ts` include:
 
 Important reality:
 
-- `orders.service.ts` imports warehouse orchestration concepts directly. Chapan orders are deeply coupled to warehouse reservations and handoff/shipment documents.
+- `orders.service.ts` imports warehouse orchestration concepts directly. Orders are deeply coupled to warehouse reservations and handoff/shipment documents.
 
 ## 8.2 Production
 
@@ -1230,8 +888,8 @@ Confirmation side effects:
 
 Public request endpoints really exist on the backend:
 
-- `POST /api/v1/chapan/requests/public/:orgId`
-- `GET /api/v1/chapan/requests/public/:orgId/profile`
+- `POST /api/v1/requests/public/:orgId`
+- `GET /api/v1/requests/public/:orgId/profile`
 
 ## 9. Warehouse Backend Internals
 
@@ -1311,31 +969,24 @@ Key models:
 - `Task`
 - task subtasks/activities are also present elsewhere in the schema
 
-## 10.3 Chapan
+## 10.3 Sales / Production
 
 Key models:
 
-- `ChapanProfile`
-- `ChapanClient`
-- `ChapanOrder`
-- `ChapanOrderItem`
-- `ChapanProductionTask`
-- `ChapanPayment`
-- `ChapanTransfer`
-- `ChapanActivity`
-- `ChapanRequest`
-- `ChapanRequestItem`
-- `ChapanWorker`
-- `ChapanCatalogProduct`
-- `ChapanCatalogFabric`
-- `ChapanCatalogSize`
-- `ChapanCatalogPaymentMethod`
-- `ChapanInvoice`
-- invoice junction tables
-- `ChapanReturn`
-- return item tables
-- change request tables
-- attachment tables
+- `Order`
+- `OrderItem`
+- `ProductionTask`
+- `Payment`
+- `OrderTransfer`
+- `OrderActivity`
+- `OrderAttachment`
+- `Invoice`
+- `InvoiceOrder` (junction)
+- `Return`
+- `ReturnItem`
+- `ChangeRequest`
+- `UnpaidAlert`
+- `Worker`, `ProductSize`, `PaymentMethod`, `MaterialRequest*` — per-org catalogs
 - alert tables
 
 ## 10.4 Warehouse
@@ -1374,7 +1025,7 @@ Frontend test coverage includes files such as:
 - auth store tests
 - workspace store tests
 - command tests
-- Chapan order tests
+- order tests
 - financial/navigation/item-line tests
 - product moment utilities
 
@@ -1394,7 +1045,7 @@ Important suites in `tests/e2e/`:
 - edit lifecycle
 - quick actions
 - settings guards
-- chapan warehouse smoke
+- warehouse smoke
 - mock regression
 - smoke
 
@@ -1407,7 +1058,7 @@ Global setup currently logs in using:
 
 Backend uses Vitest and has focused tests under:
 
-- `server/src/modules/chapan/__tests__/`
+- `server/src/modules/orders/__tests__/` and sibling modules
 
 These cover areas like:
 
@@ -1608,8 +1259,7 @@ This drives:
 ### `src/shared/lib/`
 - `auth.ts` -- `resolveOnboardingCompleted()` helper
 - `browser.ts` -- browser detection, chunk error recovery, redirect helper
-- `chapanBranding.ts` -- Chapan branding utilities
-- `chapanCatalogDefaults.ts` -- default catalog values
+- `productCatalogDefaults.ts` -- default catalog values
 - `demoWorkspace.ts` -- demo workspace helpers
 - `export.ts` -- CSV/data export utilities
 
@@ -1650,7 +1300,7 @@ Located in `server/src/lib/`:
 - Cloudflare R2 S3-compatible storage client
 - Optional at boot; required for attachment runtime
 
-## 14.2 Chapan Order Status Transition Graph
+## 14.2 Order Status Transition Graph
 
 The backend `status-validator.ts` defines the exact state machine:
 
@@ -1672,7 +1322,7 @@ cancelled    -> ready
 
 ## 14.3 Idempotency in Order Creation
 
-`orders.routes.ts` implements in-memory idempotency cache for POST `/chapan/orders`:
+`orders.routes.ts` implements in-memory idempotency cache for POST `/orders`:
 
 - **Key:** `${orgId}:${idempotencyKey}`
 - **TTL:** 5 minutes
@@ -1691,7 +1341,7 @@ The outbox worker (`warehouse-outbox.worker.ts`):
 
 ## 14.5 Google Sheets Integration
 
-Optional Google Sheets sync for Chapan orders:
+Optional Google Sheets sync for orders:
 
 **Environment variables:**
 - `GOOGLE_SHEETS_SPREADSHEET_ID`
@@ -1701,10 +1351,10 @@ Optional Google Sheets sync for Chapan orders:
 - `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY`
 
 **Implementation:**
-- `server/src/modules/chapan/sheets.sync.ts`
+- `server/src/modules/orders/sheets.sync.ts`
 - `sheets/row-builder.ts`
 
-Syncs Chapan order data to external Google Sheets.
+Syncs order data to external Google Sheets.
 
 ## 15. Repository Structure and Build Configuration
 
@@ -1714,7 +1364,6 @@ The `tsconfig.json` excludes many directories that still exist in the repo. Agen
 
 **Obsolete SPA layers:**
 - `features/accounting-spa`
-- `features/chapan-spa`
 - `features/crm-spa`
 - `features/warehouse-spa`
 
@@ -1790,8 +1439,8 @@ Seeded records:
   - phone `+77010000003`
   - password initially hashed from phone
 - one industrial organization `workspace`
-- default Chapan profile
-- starter Chapan catalogs
+- default order/workshop profile
+- starter product catalogs
 - one sample CRM customer
 
 Important warning:
@@ -1816,8 +1465,8 @@ These are the most important "do not assume" notes for future agents.
    - intro logic knows about it
    - router does not register it
    - API helper uses authenticated endpoints instead of backend public endpoints
-5. Chapan production status model in current frontend/backend usage is simplified compared to some old docs.
-6. Chapan and warehouse are tightly coupled. Order changes can create or consume warehouse reservations/documents.
+5. Production status model in current frontend/backend usage is simplified compared to some old docs.
+6. Sales/orders and warehouse are tightly coupled. Order changes can create or consume warehouse reservations/documents.
 7. Employee permissions matter as much as org role. A `manager` is not automatically omnipotent.
 8. `selectedOrgId` affects backend scoping via `X-Org-Id`; do not ignore multi-org behavior.
 9. `service/clean-org` is destructive.
@@ -1830,13 +1479,13 @@ These are the most important "do not assume" notes for future agents.
 If the task is about:
 
 - login/session/org switching: start in `src/shared/stores/auth.ts`, `src/shared/api/client.ts`, `server/src/modules/auth/*`, `server/src/plugins/*`
-- route access bugs: start in `src/app/router/index.tsx`, `usePlan`, `useEmployeePermissions`, `useChapanPermissions`
+- route access bugs: start in `src/app/router/index.tsx`, `usePlan`, `useEmployeePermissions`, `useOperationsAccess`
 - workspace/canvas behavior: start in `src/pages/canvas/index.tsx`, `src/features/workspace/model/store.ts`, `src/features/workspace/components/*`
-- Chapan order lifecycle: start in `src/entities/order/*`, `src/pages/workzone/chapan/orders/*`, `server/src/modules/chapan/orders.*`
-- Chapan production: start in `src/pages/workzone/chapan/production/*`, `server/src/modules/chapan/production.*`
-- invoices: start in `src/pages/workzone/chapan/invoices/*`, `server/src/modules/chapan/invoices.*`, `invoice*.ts`
-- returns: start in `src/pages/workzone/chapan/returns/*`, `server/src/modules/chapan/returns.*`
-- Chapan settings/catalogs/profile: start in `src/pages/workzone/chapan/settings/*`, `server/src/modules/chapan/settings.*`
+- order lifecycle: start in `src/entities/order/*`, `src/features/auth/pages/sales/*`, `server/src/modules/orders/*`
+- production: start in `src/features/auth/pages/production/*`, `server/src/modules/production/*`
+- invoices: start in `src/features/auth/pages/sales/invoices/*` (or feature siblings), `server/src/modules/invoices/*`, `invoice*.ts`
+- returns: start in `src/features/auth/pages/sales/returns/*`, `server/src/modules/returns/*`
+- settings/catalogs/profile: start in `src/features/auth/pages/settings/*`, `server/src/modules/settings/*`
 - warehouse classic inventory: start in `src/pages/warehouse/index.tsx`, `src/entities/warehouse/*`, `server/src/modules/warehouse/warehouse.service.ts`
 - warehouse foundation/twin/runtime: start in `src/pages/warehouse/Twin.tsx`, `ControlTower.tsx`, `Operations.tsx`, `src/entities/warehouse/queries.ts`, `server/src/modules/warehouse/*foundation*`, `*runtime*`, `*projections*`, `*execution-engine*`
 - accounting: start in `src/entities/finance/*`, `src/pages/finance/index.tsx`, `server/src/modules/accounting/*`
@@ -1845,15 +1494,15 @@ If the task is about:
 - reports/documents/feed/audit/automations: inspect the page file directly first; these are thinner verticals and some rely on compatibility endpoints or partial product scaffolding
 - chat: start in `src/features/chat/*`, `src/shared/stores/chat.ts`, `server/src/modules/chat/*`
 - console/dev access: start in `src/console/*`, `src/pages/dev/index.tsx`, `server/src/modules/service/*`
-- public/workzone request intake: inspect `src/pages/workzone-request/*` and compare it carefully against `server/src/modules/chapan/requests.*`
+- public/workzone request intake: inspect `src/pages/workzone-request/*` and compare it carefully against `server/src/modules/requests/*`
 - imports: compare `src/pages/imports/index.tsx` with `server/src/modules/imports/*` and `server/src/app.ts` before assuming the API is actually wired
 - capabilities / roles / permissions: check `src/shared/hooks/useCapabilities.ts`, `useRole()`, `useEmployeePermissions()` for the exact permission hierarchy
 - i18n or language support: check `src/shared/i18n/` and `src/shared/hooks/useT.ts`
 - design tokens or styling issues: check `src/shared/design/globals.css` for the 3-layer token system
 - build/chunking issues: check `vite.config.ts` for manual chunk configuration
 - outbox/warehouse async jobs: check `server/src/workers/warehouse-outbox.worker.ts` for polling/backoff behavior
-- Google Sheets sync: check `server/src/modules/chapan/sheets.sync.ts` and environment variables
-- order status transitions: check `server/src/modules/chapan/status-validator.ts` for exact state machine
+- Google Sheets sync: check `server/src/modules/orders/sheets.sync.ts` and environment variables
+- order status transitions: check `server/src/modules/orders/status-validator.ts` for exact state machine
 - idempotency or retry safety: check `orders.routes.ts` for in-memory cache behavior
 - CI/CD or deployment issues: check `.github/workflows/` for exact test/build steps and Node 20 / pnpm 10 requirements
 
@@ -1862,14 +1511,14 @@ If the task is about:
 This repository is best understood as three overlapping systems:
 
 - a CRM/admin product
-- an atelier operations platform centered on `Chapan`
+- a sales/production operations platform
 - an increasingly sophisticated warehouse execution platform
 
 The most business-critical flow is:
 
 - auth/bootstrap
 - org/permission gating
-- Chapan orders
+- order creation
 - production completion
 - invoice confirmation
 - warehouse handoff/shipment

@@ -54,7 +54,7 @@ async function createOrderForContext(context: TestContext, overrides?: {
     paymentBreakdown: overrides?.paymentBreakdown,
     items: [
       {
-        productName: 'Chapan Premium',
+        productName: 'Coat Premium',
         fabric: 'Cotton',
         size: 'M',
         quantity: 2,
@@ -133,7 +133,7 @@ describe('Orders Service Integration Tests', () => {
 
     const fetched = await getById(context.orgId, order.id);
     expect(fetched.id).toBe(order.id);
-    expect(fetched.items.map((item) => item.productName)).toEqual(['Chapan Premium', 'Vest']);
+    expect(fetched.items.map((item) => item.productName)).toEqual(['Coat Premium', 'Vest']);
   });
 
   it('confirm routes all items into production and creates production tasks', async () => {

@@ -9,6 +9,9 @@ const useOrdersMock = vi.fn();
 
 vi.mock('react-router-dom', () => ({
   useNavigate: () => navigateMock,
+  Link: ({ to, children, ...rest }: { to: string; children: React.ReactNode; [key: string]: unknown }) => (
+    <a href={typeof to === 'string' ? to : '#'} {...rest}>{children}</a>
+  ),
 }));
 
 vi.mock('@/shared/stores/auth', () => ({

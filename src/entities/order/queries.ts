@@ -742,7 +742,7 @@ export const useDeleteReturnDraft = () => {
   });
 };
 
-// ── Chapan Clients (new CRM section) ────────────────────────────────────────
+// ── Clients (CRM section) ───────────────────────────────────────────────────
 
 export const useClientsList = (params?: Parameters<typeof clientsApi.list>[0]) =>
   useQuery({

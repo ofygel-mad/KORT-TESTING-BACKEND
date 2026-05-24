@@ -1,7 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   BarChart2,
-  Briefcase,
   Building2,
   CheckSquare,
   Factory,
@@ -19,7 +18,6 @@ import type { OrgMode } from '../hooks/usePlan';
 
 export type ShortcutNavItemId =
   | 'leads'
-  | 'deals'
   | 'customers'
   | 'tasks'
   | 'sales'
@@ -28,7 +26,6 @@ export type ShortcutNavItemId =
   | 'logistics'
   | 'products'
   | 'finance'
-  | 'employees'
   | 'reports'
   | 'documents';
 
@@ -59,7 +56,7 @@ export const CANVAS_NAV_ITEM: SidebarNavItem = {
   id: 'canvas',
   to: '/',
   icon: Layers,
-  label: 'Канвас',
+  label: 'Главная',
   end: true,
 };
 
@@ -81,13 +78,13 @@ export const SHORTCUT_NAV_ITEMS: ShortcutNavItem[] = [
     planTier: 'basic',
   },
   {
-    id: 'deals',
-    to: '/crm/deals',
-    icon: Briefcase,
-    label: 'Сделки',
-    description: 'Сделки, этапы и контроль оплаты.',
-    color: 'var(--fill-accent)',
-    planTier: 'advanced',
+    id: 'sales',
+    to: '/sales',
+    icon: ShoppingCart,
+    label: 'Продажи',
+    description: 'Заказы, возвраты, архив и каналы продаж.',
+    color: '#D0B06A',
+    planTier: 'basic',
   },
   {
     id: 'customers',
@@ -106,15 +103,6 @@ export const SHORTCUT_NAV_ITEMS: ShortcutNavItem[] = [
     description: 'Личные и командные задачи с дедлайнами.',
     color: 'var(--fill-positive)',
     planTier: 'advanced',
-  },
-  {
-    id: 'sales',
-    to: '/sales',
-    icon: ShoppingCart,
-    label: 'Продажи',
-    description: 'Заказы, возвраты, архив и каналы продаж.',
-    color: '#D0B06A',
-    planTier: 'basic',
   },
   {
     id: 'warehouse',
@@ -162,15 +150,6 @@ export const SHORTCUT_NAV_ITEMS: ShortcutNavItem[] = [
     planTier: 'advanced',
   },
   {
-    id: 'employees',
-    to: '/employees',
-    icon: Building2,
-    label: 'Сотрудники',
-    description: 'Команда и права доступа.',
-    color: '#8FA4C8',
-    planTier: 'advanced',
-  },
-  {
     id: 'reports',
     to: '/reports',
     icon: BarChart2,
@@ -201,11 +180,11 @@ function pickShortcutNavItems(...ids: ShortcutNavItemId[]) {
 export const SIDEBAR_NAV_SECTIONS: SidebarNavSection[] = [
   {
     label: 'CRM',
-    items: pickShortcutNavItems('leads', 'deals', 'customers', 'tasks'),
+    items: pickShortcutNavItems('leads', 'sales', 'customers', 'tasks'),
   },
   {
     label: 'Операции',
-    items: pickShortcutNavItems('sales', 'warehouse', 'production', 'logistics', 'products', 'finance', 'employees'),
+    items: pickShortcutNavItems('warehouse', 'production', 'logistics', 'products', 'finance'),
   },
   {
     label: 'Аналитика',

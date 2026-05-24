@@ -10,7 +10,6 @@ import { useCustomers } from '@/entities/customer/queries';
 import { useTasks } from '@/entities/task/queries';
 import { useWarehouseSummary, useWarehouseAlerts } from '@/entities/warehouse/queries';
 import { useFinanceSummary } from '@/entities/finance/queries';
-import { useEmployees } from '@/entities/employee/queries';
 import { useOrders } from '@/entities/order/queries';
 import s from './TileLivePreviews.module.css';
 
@@ -74,55 +73,6 @@ export function LeadsTilePreview({ tileId: _ }: { tileId: string }) {
 }
 
 // ── Deals ─────────────────────────────────────────────────────────────────────
-
-const DEAL_STAGE_LABEL: Record<string, string> = {
-  new: 'Новая', qualified: 'Квалиф.', proposal: 'КП',
-  negotiation: 'Перегов.', won: 'Закрыта', lost: 'Отказ',
-};
-const DEAL_STAGE_TONE: Record<string, string> = {
-  new: 'muted', qualified: 'accent', proposal: 'warning',
-  negotiation: 'warning', won: 'success', lost: 'danger',
-};
-
-export function DealsTilePreview({ tileId: _ }: { tileId: string }) {
-  const { data, isLoading } = useDeals({ limit: 50 });
-  const deals = data?.results ?? [];
-  const active = deals.filter(d => d.stage !== 'won' && d.stage !== 'lost');
-  const totalValue = active.reduce((sum, d) => sum + (d.amount ?? 0), 0);
-  const won = deals.filter(d => d.stage === 'won').length;
-  const recent = active.slice(0, 3);
-
-  if (isLoading && deals.length === 0) {
-    return (
-      <div className={s.root}>
-        <div className={s.statsRow}>
-          <span className={s.chip} data-tone="muted">Загрузка…</span>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className={s.root}>
-      <div className={s.statsRow}>
-        <span className={s.chip} data-tone="accent">{active.length} активных</span>
-        {totalValue > 0 && <span className={s.chip} data-tone="warning">~{fmtNum(totalValue)} ₸</span>}
-        {won > 0 && <span className={s.chip} data-tone="success">{won} закрыто</span>}
-      </div>
-      <div className={s.list}>
-        {recent.length === 0
-          ? <span className={s.empty}>Нет сделок</span>
-          : recent.map(d => (
-            <div key={d.id} className={s.row}>
-              <span className={s.rowDot} data-tone={DEAL_STAGE_TONE[d.stage] ?? 'muted'} />
-              <span className={s.rowName}>{d.title || d.fullName || '—'}</span>
-              <span className={s.rowMeta}>{DEAL_STAGE_LABEL[d.stage] ?? d.stage}</span>
-            </div>
-          ))}
-      </div>
-    </div>
-  );
-}
 
 // ── Customers ─────────────────────────────────────────────────────────────────
 
@@ -319,43 +269,7 @@ export function FinanceTilePreview({ tileId: _ }: { tileId: string }) {
   );
 }
 
-// ── Employees ─────────────────────────────────────────────────────────────────
-
-export function EmployeesTilePreview({ tileId: _ }: { tileId: string }) {
-  const { data, isLoading } = useEmployees();
-  const employees = data?.results ?? [];
-  const total = data?.count ?? employees.length;
-
-  if (isLoading && employees.length === 0) {
-    return (
-      <div className={s.root}>
-        <div className={s.statsRow}>
-          <span className={s.chip} data-tone="muted">Загрузка…</span>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className={s.root}>
-      <div className={s.statsRow}>
-        <span className={s.chip} data-tone="accent">{total} сотрудников</span>
-      </div>
-      <div className={s.list}>
-        {employees.slice(0, 3).map(e => (
-          <div key={e.id} className={s.row}>
-            <span className={s.rowDot} data-tone="accent" />
-            <span className={s.rowName}>{e.full_name}</span>
-            {e.department && <span className={s.rowMeta}>{e.department}</span>}
-          </div>
-        ))}
-        {employees.length === 0 && <span className={s.empty}>Нет сотрудников</span>}
-      </div>
-    </div>
-  );
-}
-
-// ── Chapan ────────────────────────────────────────────────────────────────────
+// ── Operations (sales / logistics / products) ────────────────────────────────
 
 const ORDER_STATUS_LABEL: Record<string, string> = {
   new: 'Новый', confirmed: 'Подтв.', in_production: 'Произв.',
@@ -367,7 +281,7 @@ const ORDER_STATUS_TONE: Record<string, string> = {
   ready: 'success', on_warehouse: 'success', shipped: 'success',
 };
 
-export function ChapanTilePreview({ tileId: _ }: { tileId: string }) {
+export function OperationsTilePreview({ tileId: _ }: { tileId: string }) {
   const { data, isLoading } = useOrders({ limit: 50 });
   const orders = data?.results ?? [];
   const active = orders.filter(o => o.status !== 'completed' && o.status !== 'cancelled');

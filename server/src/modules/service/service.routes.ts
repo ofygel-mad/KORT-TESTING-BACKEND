@@ -125,8 +125,8 @@ export async function serviceRoutes(app: FastifyInstance) {
     }
 
     // Delete in FK-safe order:
-    // 1. chapanInvoice → cascades chapanInvoiceOrder (junction has no cascade from order side)
-    // 2. chapanOrder → cascades items, payments, activities, productionTasks, unpaidAlerts, changeRequests
+    // 1. Invoice → cascades InvoiceOrder (junction has no cascade from order side)
+    // 2. Order → cascades items, payments, activities, productionTasks, unpaidAlerts, changeRequests
     // 3. leads, deals, tasks (have orgId directly)
     // 4. customers
     // 5. accounting

@@ -33,7 +33,7 @@ function getOrderIdFromOutboxPayload(payload: Record<string, unknown>) {
 
   if (typeof payload.sourceId === 'string' && payload.sourceId) {
     const sourceType = typeof payload.sourceType === 'string' ? payload.sourceType : '';
-    if (sourceType.startsWith('chapan_order')) {
+    if (sourceType === 'order' || sourceType.startsWith('order_')) {
       return payload.sourceId;
     }
   }
@@ -2089,7 +2089,7 @@ export async function buildWarehouseOrderSnapshot(db: Tx, orgId: string, orderId
     db.warehouseStockReservation.findMany({
       where: {
         orgId,
-        sourceType: 'chapan_order_item',
+        sourceType: 'order_item',
         sourceId: orderId,
       },
       include: {

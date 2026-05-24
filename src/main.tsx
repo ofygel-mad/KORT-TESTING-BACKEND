@@ -53,11 +53,17 @@ type BootstrapResponse = Omit<AuthSessionResponse, 'access' | 'refresh'> & { org
 function SessionBootstrap({ children }: { children: ReactNode }) {
   const token = useAuthStore((state) => state.token);
   const refreshToken = useAuthStore((state) => state.refreshToken);
+  const persistedUser = useAuthStore((state) => state.user);
   const inviteContext = useAuthStore((state) => state.inviteContext);
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const setTokens = useAuthStore((state) => state.setTokens);
   const syncSession = useAuthStore((state) => state.syncSession);
-  const [ready, setReady] = useState(() => !token);
+  // If we have a persisted user + token, the app can render IMMEDIATELY —
+  // the bootstrap fetch refreshes data silently in the background. Only
+  // when storage is empty (or token is present but user is not) do we
+  // block with PageLoader, because in that case RootIndex would otherwise
+  // briefly flash the landing page.
+  const [ready, setReady] = useState(() => !token || Boolean(persistedUser));
 
   useEffect(() => {
     let cancelled = false;
@@ -69,7 +75,10 @@ function SessionBootstrap({ children }: { children: ReactNode }) {
       };
     }
 
-    setReady(false);
+    // Only block when we have nothing to render — otherwise refresh silently.
+    if (!persistedUser) {
+      setReady(false);
+    }
 
     const syncFromBootstrap = (session: BootstrapResponse) => {
       syncSession({
@@ -80,6 +89,7 @@ function SessionBootstrap({ children }: { children: ReactNode }) {
         membership: session.membership,
         inviteContext,
         orgs: session.orgs,
+        tenantConfig: session.config ?? null,
       });
     };
 

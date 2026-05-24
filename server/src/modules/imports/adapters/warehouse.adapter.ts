@@ -124,7 +124,7 @@ export async function importWarehouseItems(
 }
 
 // ─────────────────────────────────────────────────────────────
-//  Import catalog (creates warehouse items + chapan catalog entries)
+//  Import catalog (creates warehouse items + product catalog entries)
 // ─────────────────────────────────────────────────────────────
 
 export async function importCatalog(

@@ -1,6 +1,6 @@
 import { memo, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, Bell, Check, ChevronLeft, ChevronRight, ClipboardList, FlaskConical, LayoutGrid, Layers, List, Package, Plus, Search, SlidersHorizontal, Star, User, X } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Archive as ArchiveIcon, AlertTriangle, Bell, Check, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, FlaskConical, LayoutGrid, Layers, List, Package, Plus, Search, SlidersHorizontal, Star, Store, Trash2, User, X, XCircle } from 'lucide-react';
 import { useCreateOrder, useOrders, useOrderWarehouseStates, useOrgManagers } from '@/entities/order/queries';
 import { toast } from 'sonner';
 import type { Order, OrderStatus, OrderWarehouseState } from '@/entities/order/types';
@@ -19,7 +19,7 @@ import styles from './OrdersPage.module.css';
 import { formatOrderItemNumber } from '@/shared/utils/orderItemNumber';
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
-  new: 'Новый', confirmed: 'Подтверждён', in_production: 'В цехе',
+  new: 'Новый', confirmed: 'Подтверждён', in_production: 'В производстве',
   ready: 'Готов', transferred: 'Передан', on_warehouse: 'На складе',
   shipped: 'Отправлен', completed: 'Завершён', cancelled: 'Отменён',
 };
@@ -271,7 +271,11 @@ export default function OrdersPage() {
   const activeAlertOrderIds = useMemo(() => new Set(alerts.map((a) => a.orderId)), [alerts]);
 
   const deferred = useDeferredValue(search);
-  const hasActiveFilters = Boolean(search || statusFilter || payFilter || managerFilter || calendarDate);
+  // `statusFilter` is set by the lifecycle chips above the list — that's
+  // its own visible indicator, so don't double-count it as an "active
+  // filter" that the "Сбросить фильтр" button (and empty-state copy)
+  // should react to.
+  const hasActiveFilters = Boolean(search || payFilter || managerFilter || calendarDate);
 
   // A1 fix: авторедирект убран — он вызывал цикл возврата.
   // selectedOrderId теперь очищается при входе в OrderDetailPage.
@@ -315,6 +319,10 @@ const setViewMode = (mode: ViewMode) => {
   const { data, isLoading, isError } = useOrders({
     search: deferred || undefined,
     status: statusFilter || undefined,
+    // "Активные" chip (no statusFilter): exclude terminal statuses on the
+    // server so pagination is correct and every consumer of the API sees
+    // the same set of "active" orders.
+    statusNotIn: !statusFilter ? 'completed,cancelled' : undefined,
     paymentStatus: payFilter || undefined,
     managerId: effectiveManagerId,
     mineOnly: !canViewAllOrders,
@@ -355,7 +363,8 @@ const setViewMode = (mode: ViewMode) => {
   }, [monthData?.results]);
   const orders: Order[] = useMemo(() => {
     const raw = data?.results ?? [];
-    // D1: urgent-заказы всегда наверху, внутри каждой группы — порядок сервера
+    // Server already filters by status / statusNotIn — no client-side
+    // exclusion needed. Just sort urgent orders to the top.
     return [...raw].sort((a, b) => {
       const urgA = (a.urgency ?? a.priority) === 'urgent' ? 0 : 1;
       const urgB = (b.urgency ?? b.priority) === 'urgent' ? 0 : 1;
@@ -426,6 +435,48 @@ const setViewMode = (mode: ViewMode) => {
         >
           Оптовые клиенты
         </button>
+        <Link
+          to="/sales/kaspi"
+          className={styles.tab}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}
+        >
+          <Store size={13} />
+          Kaspi
+        </Link>
+      </div>
+
+      {/* Lifecycle chip row — quick filters across the order life cycle.
+          First 3 chips filter the current list; last 2 link to dedicated
+          Archive and Trash views. Discoverability fix: completed/cancelled
+          orders were previously invisible from the main list. */}
+      <div className={styles.lifecycleRow}>
+        <button
+          type="button"
+          className={`${styles.lifecycleChip} ${!statusFilter ? styles.lifecycleChipActive : ''}`}
+          onClick={() => setStatusFilter('')}
+        >
+          <Layers size={12} /> Активные
+        </button>
+        <button
+          type="button"
+          className={`${styles.lifecycleChip} ${statusFilter === 'completed' ? styles.lifecycleChipActive : ''}`}
+          onClick={() => setStatusFilter('completed')}
+        >
+          <CheckCircle2 size={12} /> Завершённые
+        </button>
+        <button
+          type="button"
+          className={`${styles.lifecycleChip} ${statusFilter === 'cancelled' ? styles.lifecycleChipActive : ''}`}
+          onClick={() => setStatusFilter('cancelled')}
+        >
+          <XCircle size={12} /> Отменённые
+        </button>
+        <Link to="/sales/archive" className={styles.lifecycleLink}>
+          <ArchiveIcon size={12} /> Архив
+        </Link>
+        <Link to="/sales/trash" className={styles.lifecycleLink}>
+          <Trash2 size={12} /> Корзина
+        </Link>
       </div>
 
       <div className={styles.toolbar}>
@@ -483,7 +534,7 @@ const setViewMode = (mode: ViewMode) => {
             onClick={() => setShowFilters(v => !v)}
           >
             <SlidersHorizontal size={13} /><span>Фильтры</span>
-            {(statusFilter || payFilter || managerFilter || calendarDate) && <span className={styles.filterDot} />}
+            {(payFilter || managerFilter || calendarDate) && <span className={styles.filterDot} />}
           </button>
 
           {/* Alerts bell icon */}
@@ -587,8 +638,20 @@ const setViewMode = (mode: ViewMode) => {
               onNextMonth={() => setCalendarMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1))}
             />
           </div>
-          {(statusFilter || payFilter || managerFilter || calendarDate) && (
-            <button className={styles.clearFilters} onClick={resetOrderFilters}>Сбросить</button>
+          {(payFilter || managerFilter || calendarDate) && (
+            <button
+              className={styles.clearFilters}
+              onClick={() => setOrderFilters({
+                search: '',
+                payFilter: '',
+                managerFilter: '',
+                calendarDate: null,
+                // statusFilter intentionally preserved — that's the
+                // lifecycle chip state, not a filter to reset.
+              })}
+            >
+              Сбросить
+            </button>
           )}
         </div>
       )}
@@ -734,7 +797,13 @@ const setViewMode = (mode: ViewMode) => {
       {/* Floating reset filter button */}
       {hasActiveFilters && (
         <button
-          onClick={resetOrderFilters}
+          onClick={() => setOrderFilters({
+            search: '',
+            payFilter: '',
+            managerFilter: '',
+            calendarDate: null,
+            // statusFilter preserved — lifecycle chip is not a filter
+          })}
           style={{
             position: 'fixed',
             bottom: '24px',

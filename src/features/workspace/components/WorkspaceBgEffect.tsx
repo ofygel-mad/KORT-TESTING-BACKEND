@@ -347,6 +347,7 @@ export const WorkspaceBgEffect = memo(function WorkspaceBgEffect({ onFlightTileP
         <button
           type="button"
           className={styles.sceneControlToggle}
+          data-open={controlsOpen ? 'true' : 'false'}
           onClick={() => setControlsOpen((value) => !value)}
           aria-expanded={controlsOpen}
           aria-controls="workspace-scene-controls"

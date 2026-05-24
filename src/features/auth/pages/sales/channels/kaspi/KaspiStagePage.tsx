@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Activity, PackageSearch, RefreshCw } from 'lucide-react';
+import { PackageSearch, RefreshCw } from 'lucide-react';
 import { useKaspiOrders } from '@/entities/kaspi/queries';
 import type { KaspiOrder } from '@/entities/kaspi/types';
+import { SearchInput } from '@/shared/ui/SearchInput';
+import { EmptyState } from '@/shared/ui/EmptyState';
 import {
   buildKaspiIssueLabel,
   formatKaspiDateTime,
@@ -40,7 +42,7 @@ function renderIssueColumn(order: KaspiOrder, stage: Exclude<KaspiStageKey, 'sto
     return (
       <div className={styles.stack}>
         <span>{formatKaspiDateTime(order.lastExternalUpdateAt)}</span>
-        <span className={styles.metaLabel}>{order.syncError || '\u2014'}</span>
+        <span className={styles.metaLabel}>{order.syncError || '—'}</span>
       </div>
     );
   }
@@ -60,54 +62,55 @@ export default function KaspiStagePage({ stage }: StagePageProps) {
 
   const stageMeta = KASPI_STAGE_META.find((item) => item.key === stage)!;
   const filteredOrders = useMemo(() => {
-    return (ordersData?.results ?? []).filter((order) => matchesKaspiStage(order, stage) && matchesKaspiSearch(order, search));
+    return (ordersData?.results ?? []).filter(
+      (order) => matchesKaspiStage(order, stage) && matchesKaspiSearch(order, search),
+    );
   }, [ordersData?.results, search, stage]);
 
   return (
-    <section className={styles.panel}>
-      <div className={styles.panelHeader}>
-        <div>
-          <div className={styles.panelTitle}>{stageMeta.label}</div>
-          <div className={styles.panelSub}>{stageMeta.description}</div>
-        </div>
-        <div className={styles.inlineStats}>
-          <span className={styles.inlineStatLabel}>{'\u0412 \u0432\u0438\u0434\u0435'}</span>
-          <strong>{filteredOrders.length}</strong>
+    <section className={styles.card}>
+      <div className={styles.cardHeader}>
+        <div className={styles.cardTitleGroup}>
+          <div className={styles.cardTitle}>{stageMeta.label}</div>
+          <div className={styles.cardSub}>{stageMeta.description}</div>
         </div>
       </div>
 
       <div className={styles.toolbar}>
-        <input
-          className={styles.search}
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Order code / customer / sku"
-        />
-        <div className={styles.toolbarNote}>
-          <Activity size={14} />
-          <span>{'\u041e\u0442\u043a\u0440\u043e\u0439\u0442\u0435 \u0441\u0442\u0440\u043e\u043a\u0443 \u0434\u043b\u044f detail, history \u0438 sync diagnostics.'}</span>
+        <div className={styles.searchWrap}>
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Номер заказа, клиент, SKU..."
+          />
         </div>
+        <div className={styles.toolbarSpacer} />
+        <span className={styles.toolbarCount}>
+          В виде: <strong>{filteredOrders.length}</strong>
+        </span>
       </div>
 
       {isLoading && (
-        <div className={styles.empty}>
+        <div className={styles.statePanel}>
           <RefreshCw size={22} />
-          <div>{'\u0417\u0430\u0433\u0440\u0443\u0437\u043a\u0430 Kaspi \u0437\u0430\u043a\u0430\u0437\u043e\u0432...'}</div>
+          <div>Загрузка Kaspi заказов...</div>
         </div>
       )}
 
       {isError && (
-        <div className={styles.empty}>
-          <PackageSearch size={22} />
-          <div>{'\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044c Kaspi \u0437\u0430\u043a\u0430\u0437\u044b.'}</div>
-        </div>
+        <EmptyState
+          icon={<PackageSearch size={36} />}
+          title="Не удалось загрузить Kaspi заказы"
+          description="Проверьте подключение и попробуйте синхронизировать ещё раз."
+        />
       )}
 
       {!isLoading && !isError && filteredOrders.length === 0 && (
-        <div className={styles.empty}>
-          <PackageSearch size={22} />
-          <div>{'\u041f\u043e \u0442\u0435\u043a\u0443\u0449\u0438\u043c \u0444\u0438\u043b\u044c\u0442\u0440\u0430\u043c \u043d\u0435\u0442 Kaspi \u0437\u0430\u043a\u0430\u0437\u043e\u0432.'}</div>
-        </div>
+        <EmptyState
+          icon={<PackageSearch size={36} />}
+          title="Нет заказов под текущие фильтры"
+          description="Попробуйте другую вкладку или поиск."
+        />
       )}
 
       {!isLoading && !isError && filteredOrders.length > 0 && (
@@ -115,12 +118,12 @@ export default function KaspiStagePage({ stage }: StagePageProps) {
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>{'\u0417\u0430\u043a\u0430\u0437'}</th>
-                <th>{'\u041a\u043b\u0438\u0435\u043d\u0442'}</th>
-                <th>{'\u0421\u0442\u0430\u0442\u0443\u0441 Kaspi'}</th>
-                <th>{'\u0421\u043a\u043b\u0430\u0434 / match'}</th>
-                <th>{'\u0421\u0443\u043c\u043c\u0430'}</th>
-                <th>{stage === 'issues' ? '\u041f\u0440\u043e\u0431\u043b\u0435\u043c\u0430' : '\u041e\u0431\u043d\u043e\u0432\u043b\u0435\u043d\u043e'}</th>
+                <th>Заказ</th>
+                <th>Клиент</th>
+                <th>Статус Kaspi</th>
+                <th>Склад / match</th>
+                <th>Сумма</th>
+                <th>{stage === 'issues' ? 'Проблема' : 'Обновлено'}</th>
               </tr>
             </thead>
             <tbody>
@@ -132,23 +135,27 @@ export default function KaspiStagePage({ stage }: StagePageProps) {
                 >
                   <td>
                     <div className={styles.stack}>
-                      <strong>{order.externalOrderCode || order.externalOrderId}</strong>
-                      <span className={`${styles.metaLabel} ${styles.mono}`}>{order.externalOrderId}</span>
+                      <span className={styles.primaryCell}>
+                        {order.externalOrderCode || order.externalOrderId}
+                      </span>
+                      <span className={`${styles.metaLabel} ${styles.mono}`}>
+                        {order.externalOrderId}
+                      </span>
                     </div>
                   </td>
                   <td>
                     <div className={styles.stack}>
-                      <strong>{order.customerName || '\u2014'}</strong>
-                      <span className={styles.metaLabel}>{order.customerPhone || '\u2014'}</span>
+                      <span className={styles.primaryCell}>{order.customerName || '—'}</span>
+                      <span className={styles.metaLabel}>{order.customerPhone || '—'}</span>
                     </div>
                   </td>
                   <td>
                     <div className={styles.badgeRow}>
                       <span className={`${styles.badge} ${statusToneClass(getKaspiStatusTone(order))}`}>
-                        {order.externalStatus || '\u2014'}
+                        {order.externalStatus || '—'}
                       </span>
                       <span className={`${styles.badge} ${styles.statusDefault}`}>
-                        {order.externalState || '\u2014'}
+                        {order.externalState || '—'}
                       </span>
                     </div>
                   </td>

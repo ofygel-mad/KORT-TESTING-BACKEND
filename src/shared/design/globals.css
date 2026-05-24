@@ -77,6 +77,31 @@
   --border-strong:  #98A2B3;
   --border-focus:   #4A8BD4;
 
+  /* --ch-* legacy aliases used by OrdersPage / OrderDetailPage / Kaspi
+     pages / TemplatePicker. These tokens were previously undeclared, so
+     cards rendered as transparent and blended with the canvas. Aliasing
+     to the design tokens makes them inherit theme switching for free. */
+  --ch-surface:       var(--bg-surface);
+  --ch-surface-inset: var(--bg-surface-inset);
+  --ch-card:          var(--bg-surface-elevated);
+  --ch-border:        var(--border-subtle);
+  --ch-border-plat:   var(--border-default);
+  --ch-text:          var(--text-primary);
+  --ch-text-dim:      var(--text-secondary);
+  --ch-text-muted:    var(--text-tertiary);
+  --ch-text-secondary: var(--text-secondary);
+  --ch-plat:          var(--fill-accent, #4A8BD4);
+  --ch-plat-bright:   var(--text-primary);
+
+  /* --bg-tint* / --text-tint* used by TemplatePicker (active option),
+     Templates Library chips, Field Designer panels, and
+     TemplateAttributeRenderer multi-select chips. Without these, the
+     hardcoded light-gray fallbacks made content unreadable on the
+     dark canvas. Tinted off the brand accent so they adapt to theme. */
+  --bg-tint:         color-mix(in srgb, var(--fill-accent, #4A8BD4) 14%, var(--bg-surface-elevated));
+  --bg-tint-subtle:  var(--bg-surface-inset);
+  --text-tint:       var(--fill-accent, #4A8BD4);
+
   /* Light theme: KORT blue accent */
   --fill-accent:          #4A8BD4;
   --fill-accent-soft:     rgba(74,139,212,0.14);

@@ -57,7 +57,7 @@ export async function resolveWarehouseSiteForOrder(db: Tx, orgId: string, orderI
   const reservationSite = await db.warehouseStockReservation.findFirst({
     where: {
       orgId,
-      sourceType: 'chapan_order_item',
+      sourceType: 'order_item',
       sourceId: orderId,
     },
     select: {

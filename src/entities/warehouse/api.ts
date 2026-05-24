@@ -197,11 +197,11 @@ export const warehouseApi = {
       reason ? { reason } : {},
     ),
 
-  // Chapan integration: check if finished products are in stock by name
+  // Sales integration: check if finished products are in stock by name
   checkProducts: (names: string[]) =>
     api.post<ProductsAvailabilityMap>('/warehouse/products-availability', { names }),
 
-  // Chapan integration: check stock by full variant (name + color/size/gender)
+  // Sales integration: check stock by full variant (name + color/size/gender)
   checkVariants: (variants: VariantAvailabilityInput[]) =>
     api.post<VariantAvailabilityMap>('/warehouse/items/variant-availability', { variants }),
 

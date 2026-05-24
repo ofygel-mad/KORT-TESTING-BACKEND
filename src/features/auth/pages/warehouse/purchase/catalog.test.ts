@@ -3,7 +3,7 @@ import { resolvePurchaseFieldOptions } from './catalog';
 
 describe('purchase catalog option resolution', () => {
   const productMap = {
-    Chapan: [
+    Coat: [
       {
         code: 'color',
         label: 'Цвет',
@@ -21,7 +21,7 @@ describe('purchase catalog option resolution', () => {
   it('prefers product-specific options over global warehouse options', () => {
     const options = resolvePurchaseFieldOptions({
       productMap,
-      productName: 'Chapan',
+      productName: 'Coat',
       code: 'color',
       globalOptions: ['Черный', 'Белый'],
     });

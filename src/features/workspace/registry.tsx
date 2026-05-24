@@ -9,13 +9,11 @@ import type { OrgMode } from '@/shared/hooks/usePlan';
 import type { WorkspaceWidgetKind } from './model/types';
 import {
   LeadsTilePreview,
-  DealsTilePreview,
   CustomersTilePreview,
   TasksTilePreview,
   WarehouseTilePreview,
   FinanceTilePreview,
-  EmployeesTilePreview,
-  ChapanTilePreview,
+  OperationsTilePreview,
   ReportsTilePreview,
   DocumentsTilePreview,
   ProductionTilePreview,
@@ -39,16 +37,14 @@ const SECTION_BY_KIND: Partial<Record<WorkspaceWidgetKind, string>> = Object.fro
 
 const TILE_PREVIEWS: Record<WorkspaceWidgetKind, ComponentType<{ tileId: string }>> = {
   leads: LeadsTilePreview,
-  deals: DealsTilePreview,
   customers: CustomersTilePreview,
   tasks: TasksTilePreview,
-  sales: ChapanTilePreview,
+  sales: OperationsTilePreview,
   warehouse: WarehouseTilePreview,
   production: ProductionTilePreview,
-  logistics: ChapanTilePreview,
-  products: ChapanTilePreview,
+  logistics: OperationsTilePreview,
+  products: OperationsTilePreview,
   finance: FinanceTilePreview,
-  employees: EmployeesTilePreview,
   reports: ReportsTilePreview,
   documents: DocumentsTilePreview,
 };

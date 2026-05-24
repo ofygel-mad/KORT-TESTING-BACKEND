@@ -7,6 +7,7 @@ import { isChunkLoadError, reloadForChunkErrorOnce } from '@/shared/lib/browser'
 import { useAuthStore } from '@/shared/stores/auth';
 import { usePlan, planIncludes, PLAN_LABELS, type OrgMode } from '@/shared/hooks/usePlan';
 import { useEmployeePermissions } from '@/shared/hooks/useEmployeePermissions';
+import { RequireSection } from './RequireSection';
 import type { Permission } from '@/entities/employee/types';
 import KaspiStagePage from '@/features/auth/pages/sales/channels/kaspi/KaspiStagePage';
 import KaspiStockPage from '@/features/auth/pages/sales/channels/kaspi/KaspiStockPage';
@@ -38,15 +39,10 @@ function makePage(imp: () => Promise<{ default: ComponentType }>) {
 // Core pages
 const CanvasPage     = makePage(() => import('@/features/auth/pages/canvas'));
 const LeadsPage      = makePage(() => import('@/features/auth/pages/crm/leads'));
-const DealsPage      = makePage(() => import('@/features/auth/pages/crm/deals'));
 const CustomersPage  = makePage(() => import('@/features/auth/pages/crm/customers'));
 const TasksPage      = makePage(() => import('@/features/auth/pages/crm/tasks'));
-const WarehousePage  = makePage(() => import('@/features/auth/pages/warehouse'));
-const WarehouseTwinPage = makePage(() => import('@/features/auth/pages/warehouse/Twin'));
-const WarehouseOperationsPage = makePage(() => import('@/features/auth/pages/warehouse/Operations'));
-const WarehouseControlTowerPage = makePage(() => import('@/features/auth/pages/warehouse/ControlTower'));
+const WarehousePage  = makePage(() => import('@/features/auth/pages/warehouse/WarehousePage'));
 const FinancePage    = makePage(() => import('@/features/auth/pages/finance'));
-const EmployeesPage  = makePage(() => import('@/features/auth/pages/employees'));
 const ReportsPage    = makePage(() => import('@/features/auth/pages/reports'));
 const DocumentsPage  = makePage(() => import('@/features/auth/pages/documents'));
 const SettingsPage   = makePage(() => import('@/features/auth/pages/settings'));
@@ -84,8 +80,7 @@ const LogisticsPage = makePage(() => import('@/features/auth/pages/logistics/Log
 // Products catalog
 const ProductsPage = makePage(() => import('@/features/auth/pages/products/ProductsPage'));
 
-// Warehouse stock + purchase
-const WarehouseStockPage = makePage(() => import('@/features/auth/pages/warehouse/stock/WarehousePage'));
+// Warehouse purchase
 const PurchasePage       = makePage(() => import('@/features/auth/pages/warehouse/purchase/PurchasePage'));
 
 // Documents (invoices)
@@ -99,6 +94,11 @@ const ClientDetailPage = makePage(() => import('@/features/auth/pages/crm/custom
 
 // Operations settings (catalogs, delivery defaults, clients reference)
 const OperationsSettingsPage = makePage(() => import('@/features/auth/pages/settings/OperationsSettingsPage'));
+
+// Order Templates Library (P5)
+const TemplatesLibraryPage = makePage(() => import('@/features/auth/pages/settings/templates/TemplatesLibraryPage'));
+// Field Designer (P7)
+const FieldDesignerPage = makePage(() => import('@/features/auth/pages/settings/templates/FieldDesignerPage'));
 
 function RootIndex() {
   const user = useAuthStore((s) => s.user);
@@ -254,6 +254,30 @@ function RequirePermission({ check, children }: { check: Permission; children: R
   return <>{children}</>;
 }
 
+/**
+ * ЧАСТЬ X — composes the standard guard stack for an org-scoped feature route:
+ * RequireAuth → RequireOrg → RequireSection → RequirePlan → RequirePermission.
+ */
+function protect(
+  node: ReactNode,
+  opts: { section: string; plan?: OrgMode; permission?: Permission },
+): ReactNode {
+  let el: ReactNode = node;
+  if (opts.permission) {
+    el = <RequirePermission check={opts.permission}>{el}</RequirePermission>;
+  }
+  if (opts.plan) {
+    el = <RequirePlan tier={opts.plan}>{el}</RequirePlan>;
+  }
+  return (
+    <RequireAuth>
+      <RequireOrg>
+        <RequireSection section={opts.section}>{el}</RequireSection>
+      </RequireOrg>
+    </RequireAuth>
+  );
+}
+
 export const appRouter = createBrowserRouter([
   // ── KORT Core ─────────────────────────────────────────
   {
@@ -267,48 +291,50 @@ export const appRouter = createBrowserRouter([
       // ── CRM ──
       {
         path: 'crm/leads',
-        element: <RequireAuth><RequireOrg><RequirePermission check="customers.read"><LeadsPage /></RequirePermission></RequireOrg></RequireAuth>,
+        element: protect(<LeadsPage />, { section: 'leads', permission: 'customers.read' }),
       },
       {
+        // The "Deals" concept was retired — sales orders cover the same
+        // ground. Old bookmarks redirect to the unified Sales section.
         path: 'crm/deals',
-        element: <RequireAuth><RequireOrg><RequirePlan tier="advanced"><RequirePermission check="customers.read"><DealsPage /></RequirePermission></RequirePlan></RequireOrg></RequireAuth>,
+        element: <Navigate to="/sales" replace />,
       },
       {
         path: 'crm/customers',
-        element: <RequireAuth><RequireOrg><RequirePermission check="customers.read"><CustomersPage /></RequirePermission></RequireOrg></RequireAuth>,
+        element: protect(<CustomersPage />, { section: 'customers', permission: 'customers.read' }),
       },
       {
         path: 'crm/customers/:id',
-        element: <RequireAuth><RequireOrg><RequirePermission check="customers.read"><ClientDetailPage /></RequirePermission></RequireOrg></RequireAuth>,
+        element: protect(<ClientDetailPage />, { section: 'customers', permission: 'customers.read' }),
       },
       {
         path: 'crm/tasks',
-        element: <RequireAuth><RequireOrg><RequirePlan tier="advanced"><RequirePermission check="customers.read"><TasksPage /></RequirePermission></RequirePlan></RequireOrg></RequireAuth>,
+        element: protect(<TasksPage />, { section: 'tasks', plan: 'advanced', permission: 'customers.read' }),
       },
       // ── Sales (orders) ──
       {
         path: 'sales',
-        element: <RequireAuth><RequireOrg><RequirePermission check="orders.read"><OrdersPage /></RequirePermission></RequireOrg></RequireAuth>,
+        element: protect(<OrdersPage />, { section: 'sales', permission: 'orders.read' }),
       },
       {
         path: 'sales/new',
-        element: <RequireAuth><RequireOrg><RequirePermission check="orders.write"><NewOrderPage /></RequirePermission></RequireOrg></RequireAuth>,
+        element: protect(<NewOrderPage />, { section: 'sales', permission: 'orders.write' }),
       },
       {
         path: 'sales/archive',
-        element: <RequireAuth><RequireOrg><RequirePermission check="orders.read"><ArchivePage /></RequirePermission></RequireOrg></RequireAuth>,
+        element: protect(<ArchivePage />, { section: 'sales', permission: 'orders.read' }),
       },
       {
         path: 'sales/trash',
-        element: <RequireAuth><RequireOrg><RequirePermission check="orders.admin"><OrderTrashPage /></RequirePermission></RequireOrg></RequireAuth>,
+        element: protect(<OrderTrashPage />, { section: 'sales', permission: 'orders.admin' }),
       },
       {
         path: 'sales/returns',
-        element: <RequireAuth><RequireOrg><RequirePermission check="returns.read"><ReturnsPage /></RequirePermission></RequireOrg></RequireAuth>,
+        element: protect(<ReturnsPage />, { section: 'sales', permission: 'returns.read' }),
       },
       {
         path: 'sales/kaspi',
-        element: <RequireAuth><RequireOrg><RequirePermission check="orders.read"><KaspiOrdersPage /></RequirePermission></RequireOrg></RequireAuth>,
+        element: protect(<KaspiOrdersPage />, { section: 'sales', permission: 'orders.read' }),
         children: [
           { index: true, element: <Navigate to="new" replace /> },
           { path: 'new', element: <KaspiStagePage stage="new" /> },
@@ -322,84 +348,70 @@ export const appRouter = createBrowserRouter([
       },
       {
         path: 'sales/:id',
-        element: <RequireAuth><RequireOrg><RequirePermission check="orders.read"><OrderDetailPage /></RequirePermission></RequireOrg></RequireAuth>,
+        element: protect(<OrderDetailPage />, { section: 'sales', permission: 'orders.read' }),
       },
       {
         path: 'sales/:id/edit',
-        element: <RequireAuth><RequireOrg><RequirePermission check="orders.write"><EditOrderPage /></RequirePermission></RequireOrg></RequireAuth>,
+        element: protect(<EditOrderPage />, { section: 'sales', permission: 'orders.write' }),
       },
       // ── Warehouse ──
       {
         path: 'warehouse',
-        element: <RequireAuth><RequireOrg><RequirePermission check="warehouse.read"><WarehousePage /></RequirePermission></RequireOrg></RequireAuth>,
-      },
-      {
-        path: 'warehouse/stock',
-        element: <RequireAuth><RequireOrg><RequirePermission check="warehouse.read"><WarehouseStockPage /></RequirePermission></RequireOrg></RequireAuth>,
+        element: protect(<WarehousePage />, { section: 'warehouse', permission: 'warehouse.read' }),
       },
       {
         path: 'warehouse/purchase',
-        element: <RequireAuth><RequireOrg><RequirePermission check="purchase.read"><PurchasePage /></RequirePermission></RequireOrg></RequireAuth>,
-      },
-      {
-        path: 'warehouse/twin',
-        element: <RequireAuth><RequireOrg><RequirePermission check="warehouse.read"><WarehouseTwinPage /></RequirePermission></RequireOrg></RequireAuth>,
-      },
-      {
-        path: 'warehouse/control-tower',
-        element: <RequireAuth><RequireOrg><RequirePermission check="warehouse.read"><WarehouseControlTowerPage /></RequirePermission></RequireOrg></RequireAuth>,
-      },
-      {
-        path: 'warehouse/operations',
-        element: <RequireAuth><RequireOrg><RequirePermission check="warehouse.read"><WarehouseOperationsPage /></RequirePermission></RequireOrg></RequireAuth>,
+        element: protect(<PurchasePage />, { section: 'warehouse', permission: 'purchase.read' }),
       },
       // ── Production ──
       {
         path: 'production',
-        element: <RequireAuth><RequireOrg><RequirePermission check="production.read"><ProductionFloorPage /></RequirePermission></RequireOrg></RequireAuth>,
+        element: protect(<ProductionFloorPage />, { section: 'production', permission: 'production.read' }),
       },
       {
         path: 'production/ready',
-        element: <RequireAuth><RequireOrg><RequirePermission check="production.read"><ReadyPage /></RequirePermission></RequireOrg></RequireAuth>,
+        element: protect(<ReadyPage />, { section: 'production', permission: 'production.read' }),
       },
       // ── Logistics ──
       {
         path: 'logistics',
-        element: <RequireAuth><RequireOrg><RequirePermission check="logistics.read"><LogisticsPage /></RequirePermission></RequireOrg></RequireAuth>,
+        element: protect(<LogisticsPage />, { section: 'logistics', permission: 'logistics.read' }),
       },
       {
         path: 'logistics/:id',
-        element: <RequireAuth><RequireOrg><RequirePermission check="logistics.read"><OrderDetailPage /></RequirePermission></RequireOrg></RequireAuth>,
+        element: protect(<OrderDetailPage />, { section: 'logistics', permission: 'logistics.read' }),
       },
       // ── Products ──
       {
         path: 'products',
-        element: <RequireAuth><RequireOrg><RequirePermission check="products.read"><ProductsPage /></RequirePermission></RequireOrg></RequireAuth>,
+        element: protect(<ProductsPage />, { section: 'products', permission: 'products.read' }),
       },
       // ── Finance / Reports / Documents ──
       {
         path: 'finance',
-        element: <RequireAuth><RequireOrg><RequirePlan tier="advanced"><RequirePermission check="reports.read"><FinancePage /></RequirePermission></RequirePlan></RequireOrg></RequireAuth>,
+        element: protect(<FinancePage />, { section: 'finance', plan: 'advanced', permission: 'reports.read' }),
       },
       {
+        // "Сотрудники" as a top-level page was retired — the same management
+        // lives inside Settings now. Old bookmarks redirect there.
         path: 'employees',
-        element: <RequireAuth><RequireOrg><RequirePlan tier="advanced"><RequirePermission check="company.admin"><EmployeesPage /></RequirePermission></RequirePlan></RequireOrg></RequireAuth>,
+        element: <Navigate to="/settings" replace />,
       },
       {
         path: 'reports',
-        element: <RequireAuth><RequireOrg><RequirePlan tier="advanced"><RequirePermission check="reports.read"><ReportsPage /></RequirePermission></RequirePlan></RequireOrg></RequireAuth>,
+        element: protect(<ReportsPage />, { section: 'reports', plan: 'advanced', permission: 'reports.read' }),
       },
       {
         path: 'reports/analytics',
-        element: <RequireAuth><RequireOrg><RequirePlan tier="advanced"><RequirePermission check="reports.read"><AnalyticsPage /></RequirePermission></RequirePlan></RequireOrg></RequireAuth>,
+        element: protect(<AnalyticsPage />, { section: 'reports', plan: 'advanced', permission: 'reports.read' }),
       },
       {
         path: 'documents',
-        element: <RequireAuth><RequireOrg><RequirePlan tier="advanced"><RequirePermission check="documents.read"><DocumentsPage /></RequirePermission></RequirePlan></RequireOrg></RequireAuth>,
+        element: protect(<DocumentsPage />, { section: 'documents', plan: 'advanced', permission: 'documents.read' }),
       },
       {
         path: 'documents/invoices',
-        element: <RequireAuth><RequireOrg><RequirePermission check="invoices.read"><InvoicesPage /></RequirePermission></RequireOrg></RequireAuth>,
+        element: protect(<InvoicesPage />, { section: 'documents', permission: 'invoices.read' }),
       },
       {
         path: 'settings',
@@ -408,6 +420,16 @@ export const appRouter = createBrowserRouter([
       {
         path: 'settings/operations',
         element: <RequireAuth><RequireOrg><RequirePermission check="company.admin"><OperationsSettingsPage /></RequirePermission></RequireOrg></RequireAuth>,
+      },
+      // P5: read-only Templates Library — must precede the catch-all below.
+      {
+        path: 'settings/order-templates',
+        element: <RequireAuth><RequireOrg><RequirePermission check="company.admin"><TemplatesLibraryPage /></RequirePermission></RequireOrg></RequireAuth>,
+      },
+      // P7: Field Designer
+      {
+        path: 'settings/order-templates/:id',
+        element: <RequireAuth><RequireOrg><RequirePermission check="company.admin"><FieldDesignerPage /></RequirePermission></RequireOrg></RequireAuth>,
       },
       {
         path: 'settings/:section',
@@ -431,7 +453,7 @@ export const appRouter = createBrowserRouter([
   // ── Dev panel — service password, no normal auth ──────
   { path: '/dev', element: <DevPanelPage /> },
 
-  // ── Legacy Chapan workzone URLs → redirect home ───────
+  // ── Legacy workzone URLs → redirect home ──────────────
   { path: '/workzone/*', element: <Navigate to="/" replace /> },
 
   // ── Fallback ───────────────────────────────────────────

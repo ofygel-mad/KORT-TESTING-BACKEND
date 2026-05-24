@@ -1,5 +1,5 @@
 /**
- * Centralized catalog defaults and normalization for Chapan module.
+ * Centralized catalog defaults and normalization for product catalogs.
  *
  * This module replaces all locally-duplicated size/payment/delivery constant
  * arrays and normalization tables scattered across Settings, NewOrder, EditOrder.

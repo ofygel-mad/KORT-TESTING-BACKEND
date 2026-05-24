@@ -131,46 +131,22 @@ async function main() {
   counts.task_activities = writeCsv(outDir, 'task_activities.csv',
     (await prisma.taskActivity.findMany({ orderBy: { createdAt: 'asc' } })) as Record<string, unknown>[]);
 
-  // ── CHAPAN WORKSHOP ──────────────────────────────────────
+  // ── SALES ────────────────────────────────────────────────
 
-  counts.chapan_profiles = writeCsv(outDir, 'chapan_profiles.csv',
-    (await prisma.chapanProfile.findMany()) as Record<string, unknown>[]);
+  counts.orders = writeCsv(outDir, 'orders.csv',
+    (await prisma.order.findMany({ orderBy: { createdAt: 'asc' } })) as Record<string, unknown>[]);
 
-  counts.chapan_workers = writeCsv(outDir, 'chapan_workers.csv',
-    (await prisma.chapanWorker.findMany()) as Record<string, unknown>[]);
+  counts.order_items = writeCsv(outDir, 'order_items.csv',
+    (await prisma.orderItem.findMany()) as Record<string, unknown>[]);
 
-  counts.chapan_catalog_products = writeCsv(outDir, 'chapan_catalog_products.csv',
-    (await prisma.chapanCatalogProduct.findMany()) as Record<string, unknown>[]);
+  counts.production_tasks = writeCsv(outDir, 'production_tasks.csv',
+    (await prisma.productionTask.findMany()) as Record<string, unknown>[]);
 
-  counts.chapan_catalog_sizes = writeCsv(outDir, 'chapan_catalog_sizes.csv',
-    (await prisma.chapanCatalogSize.findMany()) as Record<string, unknown>[]);
+  counts.payments = writeCsv(outDir, 'payments.csv',
+    (await prisma.payment.findMany()) as Record<string, unknown>[]);
 
-  counts.chapan_clients = writeCsv(outDir, 'chapan_clients.csv',
-    (await prisma.chapanClient.findMany({ orderBy: { createdAt: 'asc' } })) as Record<string, unknown>[]);
-
-  counts.chapan_requests = writeCsv(outDir, 'chapan_requests.csv',
-    (await prisma.chapanRequest.findMany({ orderBy: { createdAt: 'asc' } })) as Record<string, unknown>[]);
-
-  counts.chapan_request_items = writeCsv(outDir, 'chapan_request_items.csv',
-    (await prisma.chapanRequestItem.findMany()) as Record<string, unknown>[]);
-
-  counts.chapan_orders = writeCsv(outDir, 'chapan_orders.csv',
-    (await prisma.chapanOrder.findMany({ orderBy: { createdAt: 'asc' } })) as Record<string, unknown>[]);
-
-  counts.chapan_order_items = writeCsv(outDir, 'chapan_order_items.csv',
-    (await prisma.chapanOrderItem.findMany()) as Record<string, unknown>[]);
-
-  counts.chapan_production_tasks = writeCsv(outDir, 'chapan_production_tasks.csv',
-    (await prisma.chapanProductionTask.findMany()) as Record<string, unknown>[]);
-
-  counts.chapan_payments = writeCsv(outDir, 'chapan_payments.csv',
-    (await prisma.chapanPayment.findMany()) as Record<string, unknown>[]);
-
-  counts.chapan_transfers = writeCsv(outDir, 'chapan_transfers.csv',
-    (await prisma.chapanTransfer.findMany()) as Record<string, unknown>[]);
-
-  counts.chapan_activities = writeCsv(outDir, 'chapan_activities.csv',
-    (await prisma.chapanActivity.findMany({ orderBy: { createdAt: 'asc' } })) as Record<string, unknown>[]);
+  counts.order_activities = writeCsv(outDir, 'order_activities.csv',
+    (await prisma.orderActivity.findMany({ orderBy: { createdAt: 'asc' } })) as Record<string, unknown>[]);
 
   // ── Summary ───────────────────────────────────────────────
 

@@ -17,8 +17,8 @@ import { createEntry } from './accounting.service.js';
 type AccountingEventType =
   | 'deal.won'
   | 'deal.payment'
-  | 'chapan_order.completed'
-  | 'chapan_payment.added'
+  | 'order.completed'
+  | 'payment.added'
   | 'warehouse.movement_in'
   | 'warehouse.write_off';
 
@@ -105,8 +105,8 @@ export function registerAccountingSync() {
         break;
       }
 
-      // ── Заказ Чапан завершён ─────────────────────────────
-      case 'chapan_order.completed': {
+      // ── Заказ завершён ───────────────────────────────────
+      case 'order.completed': {
         const { orderId, orderNumber, paidAmount, clientName, authorName } = payload as {
           orderId: string; orderNumber: string; paidAmount: number; clientName: string; authorName?: string;
         };
@@ -126,8 +126,8 @@ export function registerAccountingSync() {
         break;
       }
 
-      // ── Платёж по заказу Чапан ───────────────────────────
-      case 'chapan_payment.added': {
+      // ── Платёж по заказу ─────────────────────────────────
+      case 'payment.added': {
         const { orderId, orderNumber, amount, method, clientName, authorName } = payload as {
           orderId: string; orderNumber: string; amount: number; method: string;
           clientName: string; authorName?: string;
@@ -206,7 +206,7 @@ export async function syncPayment(params: {
   authorName: string;
 }) {
   await emitAccountingEvent({
-    type: 'chapan_payment.added',
+    type: 'payment.added',
     orgId: params.orgId,
     payload: { ...params },
   });

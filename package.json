@@ -12,6 +12,7 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "composition:manifest": "npm --prefix server run composition:manifest",
     "docker:up": "docker compose up -d --build",
     "docker:down": "docker compose down -v",
     "docker:logs": "docker compose logs -f --tail=100"

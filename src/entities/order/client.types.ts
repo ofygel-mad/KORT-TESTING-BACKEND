@@ -1,4 +1,4 @@
-// ── Chapan Clients CRM view ────────────────────────────────────────────────
+// ── Clients CRM view ───────────────────────────────────────────────────────
 // Returned by GET /api/v1/clients — enriched with order aggregates
 
 import type { OrderStatus } from './types';

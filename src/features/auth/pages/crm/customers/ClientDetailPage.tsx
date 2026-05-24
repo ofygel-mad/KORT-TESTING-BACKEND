@@ -163,7 +163,7 @@ function getStatusLabel(status: string): string {
   const labels: Record<string, string> = {
     new: 'Новый',
     confirmed: 'Подтвержден',
-    in_production: 'В цехе',
+    in_production: 'В производстве',
     ready: 'Готово',
     transferred: 'Передано',
     on_warehouse: 'На складе',

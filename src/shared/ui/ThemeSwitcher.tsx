@@ -11,7 +11,7 @@ const OPTIONS: { key: Theme; Icon: React.ElementType; label: string }[] = [
 
 /**
  * Universal theme switcher — adapts visually to its context via CSS-variable
- * fallback chains:  --ch-* (ChapanShell)  →  global design tokens (AppShell).
+ * fallback chains:  --ch-* (legacy shell)  →  global design tokens (AppShell).
  * Drop it anywhere; no extra props needed.
  */
 export function ThemeSwitcher() {

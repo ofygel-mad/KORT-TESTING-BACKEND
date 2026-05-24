@@ -126,7 +126,8 @@ export async function authRoutes(app: FastifyInstance) {
       typeof request.headers['x-org-id'] === 'string'
         ? request.headers['x-org-id']
         : undefined;
-    return reply.send(await authService.bootstrap(request.userId, xOrgId));
+    const preview = request.headers['x-config-preview'] === '1';
+    return reply.send(await authService.bootstrap(request.userId, xOrgId, preview));
   });
 
   // ── GET /api/v1/auth/me ──────────────────────────────────────────────────
@@ -136,7 +137,8 @@ export async function authRoutes(app: FastifyInstance) {
       typeof request.headers['x-org-id'] === 'string'
         ? request.headers['x-org-id']
         : undefined;
-    return reply.send(await authService.bootstrap(request.userId, xOrgId));
+    const preview = request.headers['x-config-preview'] === '1';
+    return reply.send(await authService.bootstrap(request.userId, xOrgId, preview));
   });
   // POST /api/v1/auth/change-password — self-service password change for all users
   app.post('/change-password', {

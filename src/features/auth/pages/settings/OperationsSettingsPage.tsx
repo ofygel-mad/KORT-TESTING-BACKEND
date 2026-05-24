@@ -140,7 +140,7 @@ function CatalogsTab() {
         <CatalogSection
           title="Модели продуктов"
           items={getList('productCatalog')}
-          placeholder="Назар — жұп шапан..."
+          placeholder="Название модели/продукта..."
           onAdd={v => addItem('productCatalog', v)}
           onRemove={v => removeItem('productCatalog', v)}
         />

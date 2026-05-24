@@ -18,7 +18,7 @@ const PERIOD_LABELS: Record<Period, string> = {
 };
 
 const STATUS_RU: Record<string, string> = {
-  new: 'Новый', confirmed: 'Подтверждён', in_production: 'В цехе',
+  new: 'Новый', confirmed: 'Подтверждён', in_production: 'В производстве',
   ready: 'Готов', transferred: 'Передан', on_warehouse: 'На складе',
   shipped: 'Отправлен', completed: 'Завершён', cancelled: 'Отменён',
 };
@@ -191,7 +191,10 @@ function OverviewTables({ data }: { data: NonNullable<ReturnType<typeof useAnaly
               <tr>
                 <th>Менеджер</th>
                 <th className={styles.thRight}>Заказов</th>
+                <th className={styles.thRight}>Завершено</th>
                 <th className={styles.thRight}>Сумма</th>
+                <th className={styles.thRight}>Выручка по завершённым</th>
+                <th className={styles.thRight}>Средний чек</th>
                 <th className={styles.thRight}>Оплачено</th>
               </tr>
             </thead>
@@ -200,7 +203,10 @@ function OverviewTables({ data }: { data: NonNullable<ReturnType<typeof useAnaly
                 <tr key={m.id}>
                   <td>{m.name}</td>
                   <td className={styles.tdRight}>{m.count}</td>
+                  <td className={styles.tdRight}>{m.completedCount}</td>
                   <td className={styles.tdRight}>{fmt(m.totalAmount)}</td>
+                  <td className={styles.tdRight} style={{ fontWeight: 600 }}>{fmt(m.completedRevenue)}</td>
+                  <td className={styles.tdRight}>{fmt(m.avgTicket)}</td>
                   <td className={styles.tdRight} style={{ color: m.paidAmount < m.totalAmount ? '#EF4444' : '#10B981' }}>
                     {fmt(m.paidAmount)}
                   </td>
@@ -210,9 +216,77 @@ function OverviewTables({ data }: { data: NonNullable<ReturnType<typeof useAnaly
           </table>
         </div>
       )}
+
+      {/* P4: By template */}
+      {data.byTemplate && data.byTemplate.length > 0 && (
+        <div className={styles.tableBlock}>
+          <div className={styles.tableTitle}>По шаблонам заказов</div>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>Шаблон</th>
+                <th className={styles.thRight}>Заказов</th>
+                <th className={styles.thRight}>Завершено</th>
+                <th className={styles.thRight}>Сумма</th>
+                <th className={styles.thRight}>Выручка по завершённым</th>
+                <th className={styles.thRight}>Средний чек</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.byTemplate.map((row) => (
+                <tr key={row.id}>
+                  <td>{row.name}</td>
+                  <td className={styles.tdRight}>{row.count}</td>
+                  <td className={styles.tdRight}>{row.completedCount}</td>
+                  <td className={styles.tdRight}>{fmt(row.totalAmount)}</td>
+                  <td className={styles.tdRight} style={{ fontWeight: 600 }}>{fmt(row.completedRevenue)}</td>
+                  <td className={styles.tdRight}>{fmt(row.avgTicket)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* P4: By lifecycle stage */}
+      {data.byLifecycleStage && data.byLifecycleStage.length > 0 && (
+        <div className={styles.tableBlock}>
+          <div className={styles.tableTitle}>По стадии жизненного цикла</div>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>Стадия</th>
+                <th className={styles.thRight}>Заказов</th>
+                <th className={styles.thRight}>Завершено</th>
+                <th className={styles.thRight}>Сумма</th>
+                <th className={styles.thRight}>Выручка по завершённым</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.byLifecycleStage.map((row) => (
+                <tr key={row.id}>
+                  <td>{LIFECYCLE_LABEL[row.id] ?? row.name}</td>
+                  <td className={styles.tdRight}>{row.count}</td>
+                  <td className={styles.tdRight}>{row.completedCount}</td>
+                  <td className={styles.tdRight}>{fmt(row.totalAmount)}</td>
+                  <td className={styles.tdRight}>{fmt(row.completedRevenue)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
+
+const LIFECYCLE_LABEL: Record<string, string> = {
+  draft: 'Черновик',
+  committed: 'Подтверждён',
+  fulfilling: 'В исполнении',
+  completed: 'Завершён',
+  cancelled: 'Отменён',
+};
 
 // ── Charts view ───────────────────────────────────────────────────────────────
 

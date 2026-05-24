@@ -65,7 +65,7 @@ function SalesReport() {
     byManager[name].amount += d.amount ?? 0;
   });
 
-  // Orders by manager (Chapan)
+  // Orders by manager
   const completedOrders = orders.filter((o: any) => o.status === 'completed' || o.status === 'transferred');
   const totalRevenue = completedOrders.reduce((s: number, o: any) => s + orderTotalDue(o), 0);
   const totalPaid = completedOrders.reduce((s: number, o: any) => s + (o.paidAmount ?? 0), 0);
@@ -93,7 +93,7 @@ function SalesReport() {
               </div>
             </div>
             <div className={styles.summaryCard}>
-              <div className={styles.scLabel}>Выручка Чапан</div>
+              <div className={styles.scLabel}>Выручка бизнеса</div>
               <div className={styles.scValue} style={{ color:'var(--fill-positive)' }}>
                 {fmtMoney(totalRevenue)}
               </div>
@@ -236,7 +236,7 @@ function ProductionReport() {
   const orders = (ordersData as any)?.results ?? [];
 
   const STATUS_LABEL: Record<string, string> = {
-    new: 'Новые', confirmed: 'Подтверждённые', in_production: 'В цехе',
+    new: 'Новые', confirmed: 'Подтверждённые', in_production: 'В производстве',
     ready: 'Готовы', transferred: 'Переданы', completed: 'Завершены', cancelled: 'Отменены',
   };
 

@@ -44,9 +44,12 @@ function NotificationBell({ enabled }: { enabled: boolean }) {
     enabled,
     onNotification: (data) => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      // Invalidate operations queries on generic notification events
+      // Invalidate operations queries ONLY when the notification names a
+      // concrete order/production entity. Without this guard, generic
+      // notifications (no entity field) refetched every list on every page
+      // and felt like the whole UI was auto-refreshing.
       const entity = (data?.entity ?? data?.type ?? '') as string;
-      if (!entity || entity.startsWith('order') || entity.startsWith('production')) {
+      if (entity.startsWith('order') || entity.startsWith('production')) {
         queryClient.invalidateQueries({ queryKey: ['orders'] });
         queryClient.invalidateQueries({ queryKey: ['production'] });
         queryClient.invalidateQueries({ queryKey: ['invoices'] });
@@ -171,10 +174,8 @@ function NotificationBell({ enabled }: { enabled: boolean }) {
 
 function useDynamicCrumb(enabled: boolean): { parent: string; parentPath: string; current: string } | null {
   const matchCustomer = useMatch('/crm/customers/:id');
-  const matchDeal = useMatch('/crm/deals/:id');
   const matchTask = useMatch('/crm/tasks/:id');
   const customerId = matchCustomer?.params.id;
-  const dealId = matchDeal?.params.id;
 
   const { data: customer } = useQuery({
     queryKey: ['customer-name', customerId],
@@ -184,34 +185,79 @@ function useDynamicCrumb(enabled: boolean): { parent: string; parentPath: string
     select: (data: any) => data.full_name as string,
   });
 
-  const { data: deal } = useQuery({
-    queryKey: ['deal-name', dealId],
-    queryFn: () => api.get(`/deals/${dealId}/`),
-    enabled: enabled && Boolean(dealId),
-    staleTime: 60000,
-    select: (data: any) => data.title as string,
-  });
-
   if (customerId) return { parent: 'Клиенты', parentPath: '/crm/customers', current: customer ?? '...' };
-  if (dealId) return { parent: 'Сделки', parentPath: '/crm/deals', current: deal ?? '...' };
   if (matchTask) return { parent: 'Задачи', parentPath: '/crm/tasks', current: 'Задача' };
   return null;
 }
 
 const BREADCRUMBS: Record<string, string> = {
   '/': 'Главная',
+  // CRM
   '/crm/leads': 'Лиды',
-  '/crm/deals': 'Сделки',
   '/crm/customers': 'Клиенты',
   '/crm/tasks': 'Задачи',
+  // Sales
+  '/sales': 'Продажи',
+  '/sales/new': 'Новый заказ',
+  '/sales/archive': 'Архив заказов',
+  '/sales/trash': 'Корзина',
+  '/sales/returns': 'Возвраты',
+  '/sales/kaspi': 'Kaspi',
+  '/sales/kaspi/new': 'Kaspi · Новые',
+  '/sales/kaspi/in-progress': 'Kaspi · В работе',
+  '/sales/kaspi/completed': 'Kaspi · Завершённые',
+  '/sales/kaspi/cancelled': 'Kaspi · Отменённые',
+  '/sales/kaspi/issues': 'Kaspi · Проблемы',
+  '/sales/kaspi/stock': 'Kaspi · Остатки',
+  // Warehouse & operations
   '/warehouse': 'Склад',
+  '/warehouse/purchase': 'Закупки',
+  '/production': 'Производство',
+  '/production/ready': 'Готово',
+  '/logistics': 'Логистика',
+  '/products': 'Продукты',
+  // Finance
+  '/finance': 'Финансы',
+  // Reports
   '/reports': 'Отчёты',
+  '/reports/analytics': 'Аналитика',
+  // Documents
+  '/documents': 'Документы',
+  '/documents/invoices': 'Накладные',
+  // Settings
   '/settings': 'Настройки',
+  '/settings/operations': 'Операционные настройки',
+  '/settings/order-templates': 'Шаблоны заказов',
+  '/settings/profile': 'Профиль',
+  // Onboarding
+  '/onboarding': 'Онбординг',
 };
 
-function resolveBackTarget(pathname: string) {
-  if (pathname.startsWith('/settings')) return '/';
-  return '/';
+// Top-level section paths (anything the sidebar links to). The Back button
+// is hidden on these — the sidebar IS the navigation. Sub-routes get a
+// back button.
+const TOP_LEVEL_PATHS = new Set<string>([
+  '/',
+  '/onboarding',
+  '/crm/leads',
+  '/crm/customers',
+  '/crm/tasks',
+  '/sales',
+  '/warehouse',
+  '/production',
+  '/logistics',
+  '/products',
+  '/finance',
+  '/reports',
+  '/documents',
+  '/settings',
+]);
+
+/** Fallback: strip the last path segment. `/a/b/c` → `/a/b`; `/a` → `/`. */
+function parentPath(pathname: string): string {
+  const idx = pathname.lastIndexOf('/');
+  if (idx <= 0) return '/';
+  return pathname.slice(0, idx);
 }
 
 export function Topbar({ chromeTone = 'dark' }: { chromeTone?: 'canvas' | 'dark' | 'light' }) {
@@ -223,10 +269,31 @@ export function Topbar({ chromeTone = 'dark' }: { chromeTone?: 'canvas' | 'dark'
   const isMobile = useIsMobile();
   const { locale, setLocale } = useT();
   const dynamic = useDynamicCrumb(hasCompanyAccess);
-  const crumb = BREADCRUMBS[location.pathname] ?? location.pathname.slice(1);
+  // Unknown paths render an empty crumb (preferable to a raw URL slug
+  // bleeding through as a pseudo-heading). Add the path to BREADCRUMBS
+  // above when introducing a new top-level route.
+  const crumb = BREADCRUMBS[location.pathname] ?? '';
   const isDashboard = location.pathname === '/';
-  const showBack = location.pathname !== '/' && location.pathname !== '/onboarding';
-  const backTarget = resolveBackTarget(location.pathname);
+  // Back button: only when we're DEEPER than a top-level section. The
+  // sidebar already covers section-level navigation. Target = parent
+  // path (one segment up), so `/settings/order-templates/abc` → `/settings/
+  // order-templates`, then a second click takes the user to `/settings`.
+  const showBack = !TOP_LEVEL_PATHS.has(location.pathname) && location.pathname !== '/';
+  const handleBack = () => {
+    // Use real browser history first — that's what the user actually
+    // wants: "вернись на предыдущий экран, где я был". This correctly
+    // handles cross-section navigation (e.g., reached
+    // /settings/order-templates from /sales via the template picker —
+    // Back should land on /sales, not on /settings).
+    //
+    // Falls back to the structural parent path only when there's no
+    // navigable history (e.g., the user opened the URL directly).
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate(parentPath(location.pathname));
+    }
+  };
   const plan = usePlan();
   const [showPlanModal, setShowPlanModal] = useState(false);
   const { onlineStatus, lastActivityAt } = useProfileStore();
@@ -259,7 +326,7 @@ export function Topbar({ chromeTone = 'dark' }: { chromeTone?: 'canvas' | 'dark'
     <header className={styles.topbar} data-chrome={chromeTone}>
       <div className={styles.left}>
         {showBack && (
-          <button className={styles.backBtn} onClick={() => navigate(backTarget)} aria-label="Назад">
+          <button className={styles.backBtn} onClick={handleBack} aria-label="Назад">
             <ArrowLeft size={14} />
             {!isMobile && <span>Назад</span>}
           </button>

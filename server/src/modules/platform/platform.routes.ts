@@ -10,6 +10,7 @@ import { z, ZodError } from 'zod';
 import { AppError } from '../../lib/errors.js';
 import { enforceIpAllowlist, verifyServiceToken } from './platform.auth.js';
 import * as svc from './platform.service.js';
+import { compositionPlatformRoutes } from './composition.platform.routes.js';
 
 // HTTP status → contract error code (PLATFORM_API_CONTRACT.md § Модель ошибок).
 const ERROR_CODE: Record<number, string> = {
@@ -124,4 +125,7 @@ export async function platformRoutes(app: FastifyInstance) {
       .parse(request.query);
     return svc.getMetrics(query.from, query.to);
   });
+
+  // ── /platform/v1/composition/* — ЧАСТЬ X composition endpoints ──────────
+  await app.register(compositionPlatformRoutes, { prefix: '/composition' });
 }

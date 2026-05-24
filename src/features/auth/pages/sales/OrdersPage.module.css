@@ -1087,3 +1087,44 @@
   transition: background 120ms, color 120ms;
 }
 .calendarClear:hover { background: rgba(239,68,68,.06); color: var(--ch-red, #EF4444); }
+
+/* Lifecycle chip row — quick status filters + archive/trash links */
+.lifecycleRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.lifecycleChip,
+.lifecycleLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--ch-border);
+  background: var(--ch-surface);
+  color: var(--ch-text-dim);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color 140ms, background 140ms, color 140ms;
+}
+
+.lifecycleChip:hover,
+.lifecycleLink:hover {
+  border-color: var(--ch-border-plat);
+  color: var(--ch-text);
+}
+
+.lifecycleChipActive {
+  background: color-mix(in srgb, var(--fill-accent, #4A8BD4) 18%, var(--bg-surface-elevated));
+  border-color: color-mix(in srgb, var(--fill-accent, #4A8BD4) 45%, transparent);
+  color: var(--text-tint, var(--fill-accent, #4A8BD4));
+}
+
+.lifecycleLink {
+  border-style: dashed;
+}

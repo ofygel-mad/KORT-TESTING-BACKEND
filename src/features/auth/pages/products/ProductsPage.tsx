@@ -16,7 +16,7 @@ import { productPhotosApi } from '@/entities/warehouse/api';
 import type { WarehouseFieldDefinition, WarehouseProductCatalog } from '@/entities/warehouse/types';
 import { SearchInput } from '@/shared/ui/SearchInput';
 import styles from './ProductsPage.module.css';
-import s from '../warehouse/stock/WarehouseCatalog.module.css';
+import s from '../warehouse/WarehouseCatalog.module.css';
 
 type Tab = 'catalog' | 'fields';
 type DefType = 'select' | 'text' | 'number' | 'boolean';

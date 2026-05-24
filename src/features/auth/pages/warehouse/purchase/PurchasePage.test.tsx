@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import ChapanPurchasePage from './PurchasePage';
+import PurchasePage from './PurchasePage';
 
 const useManualInvoicesMock = vi.fn();
 const archiveMutateMock = vi.fn();
@@ -38,7 +38,7 @@ vi.mock('./PurchaseInvoicePreviewModal', () => ({
   default: () => null,
 }));
 
-describe('ChapanPurchasePage', () => {
+describe('PurchasePage', () => {
   beforeEach(() => {
     useManualInvoicesMock.mockReset();
     archiveMutateMock.mockReset();
@@ -67,7 +67,7 @@ describe('ChapanPurchasePage', () => {
               items: [
                 {
                   id: 'item-1',
-                  productName: 'Chapan',
+                  productName: 'Coat',
                   quantity: 2,
                   unitPrice: 1000,
                 },
@@ -93,7 +93,7 @@ describe('ChapanPurchasePage', () => {
 
     render(
       <MemoryRouter>
-        <ChapanPurchasePage />
+        <PurchasePage />
       </MemoryRouter>,
     );
 

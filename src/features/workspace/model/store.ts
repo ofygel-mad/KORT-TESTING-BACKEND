@@ -35,7 +35,6 @@ const TILE_SIZE = { width: 260, height: 210 };
 
 const DEFAULT_TILE_SIZE: Record<WorkspaceWidgetKind, { width: number; height: number }> = {
   leads: TILE_SIZE,
-  deals: TILE_SIZE,
   customers: TILE_SIZE,
   tasks: TILE_SIZE,
   sales: TILE_SIZE,
@@ -44,7 +43,6 @@ const DEFAULT_TILE_SIZE: Record<WorkspaceWidgetKind, { width: number; height: nu
   logistics: TILE_SIZE,
   products: TILE_SIZE,
   finance: TILE_SIZE,
-  employees: TILE_SIZE,
   reports: TILE_SIZE,
   documents: TILE_SIZE,
 };
@@ -70,6 +68,7 @@ interface PersistedWorkspaceState {
   zoom?: unknown;
   topZIndex?: unknown;
   sceneTheme?: unknown;
+  sceneThemeAuto?: unknown;
   sceneTerrainMode?: unknown;
   sceneBgMode?: unknown;
 }
@@ -273,14 +272,13 @@ function sanitizeTile(raw: unknown, fallbackZIndex: number): WorkspaceTile | nul
   if (!isWorkspaceWidgetKind(tile.kind)) return null;
 
   const version = Math.max(1, Math.round(toFiniteNumber(tile.version, 1)));
-  const isLegacyProductionShortcut = (tile.kind as string) === 'chapan' && version < WORKSPACE_TILE_VERSION;
-  const kind: WorkspaceWidgetKind = isLegacyProductionShortcut ? 'production' : tile.kind;
+  const kind: WorkspaceWidgetKind = tile.kind;
   const size = DEFAULT_TILE_SIZE[kind];
   const fallbackCreatedAt = nowIsoString();
   const zIndex = Math.max(1, Math.round(toFiniteNumber(tile.zIndex, fallbackZIndex)));
   const status = isWorkspaceTileStatus(tile.status) ? tile.status : 'floating';
   const legacyTitle = typeof tile.title === 'string' ? tile.title.trim() : '';
-  const title = isLegacyProductionShortcut ? TITLES.production : legacyTitle || TITLES[kind];
+  const title = legacyTitle || TITLES[kind];
 
   return {
     id: typeof tile.id === 'string' && tile.id.trim() ? tile.id : nanoid(),
@@ -333,10 +331,12 @@ export function sanitizeWorkspacePersistedState(persistedRaw: unknown) {
       tiles.reduce((max, tile) => Math.max(max, tile.zIndex ?? 10), 10),
     ),
     sceneTheme: isWorkspaceSceneTheme(persisted.sceneTheme) ? persisted.sceneTheme : 'morning',
+    sceneThemeAuto:
+      typeof persisted.sceneThemeAuto === 'boolean' ? persisted.sceneThemeAuto : true,
     sceneTerrainMode: isWorkspaceSceneTerrainMode(persisted.sceneTerrainMode)
       ? persisted.sceneTerrainMode
       : 'full',
-    sceneBgMode: isWorkspaceSceneBgMode(persisted.sceneBgMode) ? persisted.sceneBgMode : 'photo',
+    sceneBgMode: isWorkspaceSceneBgMode(persisted.sceneBgMode) ? persisted.sceneBgMode : 'scene',
   };
 }
 
@@ -352,10 +352,10 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
       contextMenu: null,
       topZIndex: 10,
       sceneTheme: 'morning',
-      sceneThemeAuto: false,
+      sceneThemeAuto: true,
       sceneMode: 'surface',
       sceneTerrainMode: 'full',
-      sceneBgMode: 'photo',
+      sceneBgMode: 'scene',
       addTile: (kind) => {
         const { viewport, viewportSize, topZIndex, zoom } = get();
         const size = DEFAULT_TILE_SIZE[kind];
@@ -659,6 +659,7 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
         zoom: state.zoom,
         topZIndex: state.topZIndex,
         sceneTheme: state.sceneTheme,
+        sceneThemeAuto: state.sceneThemeAuto,
         sceneTerrainMode: state.sceneTerrainMode,
         sceneBgMode: state.sceneBgMode,
       }),

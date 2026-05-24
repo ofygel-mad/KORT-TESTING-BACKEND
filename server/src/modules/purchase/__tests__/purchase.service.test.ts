@@ -36,7 +36,7 @@ describe('purchase service XLSX export', () => {
       items: [
         {
           id: 'item-1',
-          productName: 'Chapan',
+          productName: 'Coat',
           gender: '\u0416\u0435\u043d\u0441\u043a\u0438\u0439',
           length: '\u0414\u043b\u0438\u043d\u043d\u044b\u0439',
           color: '\u0411\u043e\u0440\u0434\u043e\u0432\u044b\u0439',

@@ -182,7 +182,7 @@ export async function getSummary(orgId: string, period?: string) {
     periodAgg(prevPeriod),
   ]);
 
-  // Debts: chapan orders not fully paid
+  // Debts: orders not fully paid
   const debtOrders = await prisma.order.findMany({
     where: {
       orgId,
@@ -333,7 +333,7 @@ export async function getInventoryValue(orgId: string) {
 // ─────────────────────────────────────────────────────────────
 
 export async function getDebts(orgId: string) {
-  // Receivable: chapan orders not fully paid
+  // Receivable: orders not fully paid
   const orders = await prisma.order.findMany({
     where: { orgId, status: { notIn: ['cancelled'] } },
     select: {

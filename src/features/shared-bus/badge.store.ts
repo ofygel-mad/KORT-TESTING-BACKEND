@@ -10,7 +10,7 @@
  *   — Задачи: +1 при createTask(); сброс при moveStatus('done') ИЛИ deleteTask()
  *             (НЕ при просто открытии плитки)
  *
- * Все прочие плитки (reports, imports, chapan) — бейдж не используется.
+ * Все прочие плитки (reports, imports, sales) — бейдж не используется.
  */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';

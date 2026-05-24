@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { normalizeCurrency } from '../utils/format';
+import type { TenantConfigPayload } from '../composition/config-types';
 
 export type MembershipStatus = 'none' | 'pending' | 'active' | 'rejected';
 export type MembershipRole = 'owner' | 'admin' | 'manager' | 'viewer';
@@ -137,6 +138,8 @@ type AuthState = {
   refreshToken: string | null;
   role: string;
   capabilities: string[];
+  /** ЧАСТЬ X — composition config for the active tenant (null when signed out). */
+  tenantConfig: TenantConfigPayload | null;
   membership: Membership;
   inviteContext: InviteContext | null;
   userOrgs: OrgSummary[];
@@ -164,6 +167,7 @@ type AuthState = {
     membership: Membership;
     inviteContext?: InviteContext | null;
     orgs?: OrgSummary[];
+    tenantConfig?: TenantConfigPayload | null;
   }) => void;
   setRole: (role: string) => void;
   setUser: (user: Partial<User>) => void;
@@ -187,6 +191,7 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: null,
       role: 'viewer',
       capabilities: [],
+      tenantConfig: null,
       membership: DEFAULT_MEMBERSHIP,
       inviteContext: null,
       userOrgs: [],
@@ -220,13 +225,14 @@ export const useAuthStore = create<AuthState>()(
         });
       },
       setTokens: (token, refreshToken) => set({ token, refreshToken }),
-      syncSession: ({ user, org, capabilities, role = 'viewer', membership, inviteContext, orgs }) => set((state) => ({
+      syncSession: ({ user, org, capabilities, role = 'viewer', membership, inviteContext, orgs, tenantConfig }) => set((state) => ({
         user,
         org: membership.status === 'active'
           ? normalizeOrgState(org ?? buildOrgFromMembership(membership, state.org))
           : null,
         capabilities,
         role: deriveStoredRole(membership, role),
+        tenantConfig: tenantConfig ?? null,
         membership,
         inviteContext: inviteContext ?? state.inviteContext,
         userOrgs: orgs?.map(normalizeOrgSummaryState) ?? state.userOrgs,
@@ -273,6 +279,7 @@ export const useAuthStore = create<AuthState>()(
         refreshToken: null,
         role: 'viewer',
         capabilities: [],
+        tenantConfig: null,
         membership: DEFAULT_MEMBERSHIP,
         inviteContext: null,
         userOrgs: [],
@@ -293,6 +300,7 @@ export const useAuthStore = create<AuthState>()(
         refreshToken: state.refreshToken,
         role: state.role,
         capabilities: state.capabilities,
+        tenantConfig: state.tenantConfig,
         membership: state.membership,
         inviteContext: state.inviteContext,
         userOrgs: state.userOrgs,

@@ -779,3 +779,47 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* P6: schema-driven custom attributes section */
+.extrasGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px;
+}
+.extrasGridSpaced {
+  margin-bottom: 12px;
+}
+.extrasLabel {
+  font-size: 11px;
+  color: var(--text-secondary, #6b7280);
+  text-transform: uppercase;
+}
+.extrasValue {
+  font-size: 13px;
+}
+.itemAttrsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.itemAttrsRow {
+  border-top: 1px dashed var(--border-default, #e5e7eb);
+  padding-top: 6px;
+}
+.itemAttrsHeader {
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.itemAttrsChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.itemAttrsChip {
+  font-size: 11px;
+  color: var(--text-secondary, #6b7280);
+}
+.itemAttrsChip strong {
+  color: var(--text-primary, #111827);
+}

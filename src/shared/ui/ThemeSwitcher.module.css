@@ -1,5 +1,5 @@
 /* ThemeSwitcher — self-adapts via CSS var fallback chains:
-   --ch-* (ChapanShell) → global design tokens (AppShell) → hard fallback */
+   --ch-* (legacy shell) → global design tokens (AppShell) → hard fallback */
 
 .switcher {
   display: flex;

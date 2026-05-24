@@ -575,30 +575,40 @@
   transform: var(--feedback-soft-press);
 }
 
+/* Mix the brand tint over an opaque surface so the badge stays readable
+   even when the canvas (terrain scene) shows through behind it. */
 .planBadge[data-plan="basic"] {
   color: #5C8DFF;
-  background: color-mix(in srgb, #5C8DFF 12%, transparent);
-  border-color: color-mix(in srgb, #5C8DFF 30%, transparent);
+  background: color-mix(in srgb, #5C8DFF 22%, var(--bg-surface, #FFFFFF));
+  border-color: color-mix(in srgb, #5C8DFF 50%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
 }
 
 .planBadge[data-plan="advanced"] {
   color: #D97706;
-  background: color-mix(in srgb, #D97706 12%, transparent);
-  border-color: color-mix(in srgb, #D97706 30%, transparent);
+  background: color-mix(in srgb, #D97706 22%, var(--bg-surface, #FFFFFF));
+  border-color: color-mix(in srgb, #D97706 50%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
 }
 
 .planBadge[data-plan="industrial"] {
   color: #7C3AED;
-  background: color-mix(in srgb, #7C3AED 12%, transparent);
-  border-color: color-mix(in srgb, #7C3AED 30%, transparent);
+  background: color-mix(in srgb, #7C3AED 22%, var(--bg-surface, #FFFFFF));
+  border-color: color-mix(in srgb, #7C3AED 50%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
 }
 
 .planBadgeStatic {
   cursor: default;
-  opacity: 0.72;
+  /* Previously opacity: 0.72 — left the industrial badge looking
+     half-faded over the canvas. Full opacity restores contrast. */
+  opacity: 1;
 }
 
 .planBadgeStatic:hover {
-  opacity: 0.72;
+  opacity: 1;
   transform: none;
 }

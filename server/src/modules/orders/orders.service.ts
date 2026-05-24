@@ -5,7 +5,9 @@ import { buildCanonicalVariantKey } from '../../shared/variant-key.js';
 import { normalizeProductionStatus } from './workflow.js';
 import { syncOrderToSheets } from '../integrations/sheets/sheets.sync.js';
 import { syncOrderStatus } from '../production/production.service.js';
-import { validateStatusTransitionRules } from './status-validator.js';
+import { mapStatusToLifecycleStage, validateStatusTransitionRules } from './status-validator.js';
+import { getBusinessProfileForOrg } from '../composition/business-profile.js';
+import type { OrderStatus } from './types.js';
 import {
   applyWarehouseOrderTransitionSideEffectsTx as applyWarehouseOrderTransitionSideEffectsTxV2,
   consumeCanonicalWarehouseReservationsForOrder as consumeCanonicalWarehouseReservationsForOrderV2,
@@ -38,11 +40,13 @@ type CreateOrderInput = {
     color?: string;
     gender?: string;
     length?: string;
-    size: string;
+    size?: string; // P5: optional for non-clothing templates
     quantity: number;
     unitPrice: number;
     notes?: string;
     workshopNotes?: string;
+    // P5: schema-driven custom fields. Persisted to OrderItem.attributes.
+    attributes?: Record<string, unknown>;
   }>;
   dueDate?: string;
   prepayment?: number;
@@ -62,6 +66,12 @@ type CreateOrderInput = {
   managerNote?: string;
   sourceRequestId?: string;
   customerType?: string;
+  // P5: schema-driven order-level custom fields (client section). Persisted
+  // to Order.extraAttributes.
+  extraAttributes?: Record<string, unknown>;
+  // P5/Stage1: explicit OrderTemplate id selected by manager. Falls back to
+  // the org's default Clothing template when null.
+  templateId?: string;
 };
 
 type OrderRecord = Prisma.OrderGetPayload<{
@@ -142,7 +152,8 @@ async function buildOrderItemVariantSnapshot(
     color?: string | null;
     gender?: string | null;
     length?: string | null;
-    size: string;
+    // P5: size optional for non-clothing templates.
+    size?: string | null;
   },
 ) {
   const normalizedName = normalizeWarehouseName(item.productName);
@@ -461,6 +472,9 @@ async function resolveOrderClient(
 export async function list(orgId: string, filters?: {
   status?: string;
   statuses?: string[];
+  /** Exclude orders whose status is in this list (server-side counterpart
+   *  of the "Активные" chip — typically ['completed', 'cancelled']). */
+  statusNotIn?: string[];
   priority?: string;
   paymentStatus?: string;
   search?: string;
@@ -488,6 +502,10 @@ export async function list(orgId: string, filters?: {
     where.status = { in: filters.statuses };
   } else if (filters?.status && filters.status !== 'all') {
     where.status = filters.status;
+  } else if (filters?.statusNotIn && filters.statusNotIn.length > 0) {
+    // "Активные" chip: exclude terminal statuses on the server so
+    // pagination and other consumers see consistent semantics.
+    where.status = { notIn: filters.statusNotIn };
   }
   if (filters?.priority && filters.priority !== 'all') {
     where.priority = filters.priority;
@@ -654,6 +672,19 @@ export async function create(orgId: string, authorId: string, authorName: string
     // a rollback also rolls back the counter - no skipped numbers, no races.
     const orderNumber = await nextOrderNumber(orgId, tx);
     const client = await resolveOrderClient(tx, orgId, data);
+    // P5: tag every new order with a template. Manager-selected templateId
+    // wins; fallback is the system Clothing template so analytics-by-template
+    // always has a value to group on.
+    const { ensureSystemTemplatesForOrg } = await import('./templates.js');
+    const fallbackTemplateId = await ensureSystemTemplatesForOrg(orgId, tx);
+    let chosenTemplateId = fallbackTemplateId;
+    if (data.templateId) {
+      const row = await tx.orderTemplate.findFirst({
+        where: { id: data.templateId, orgId },
+        select: { id: true },
+      });
+      if (row) chosenTemplateId = row.id;
+    }
     const activityEntries: Prisma.OrderActivityCreateWithoutOrderInput[] = [
       {
         type: 'system',
@@ -690,12 +721,19 @@ export async function create(orgId: string, authorId: string, authorName: string
           color: item.color?.trim() || undefined,
           gender: item.gender?.trim() || undefined,
           length: item.length?.trim() || undefined,
-          size: item.size,
+          // P5: size defaults to empty string for non-clothing templates that
+          // omit it — the Prisma column is `String` (non-null) so we cannot
+          // pass undefined.
+          size: item.size ?? '',
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           fulfillmentMode: 'unassigned' as const,
           notes: item.notes,
           workshopNotes: item.workshopNotes,
+          // P5: schema-driven custom fields → OrderItem.attributes column.
+          attributes: item.attributes && Object.keys(item.attributes).length > 0
+            ? (item.attributes as Prisma.InputJsonValue)
+            : undefined,
           ...variantSnapshot,
         };
       }),
@@ -709,6 +747,15 @@ export async function create(orgId: string, authorId: string, authorName: string
         clientName: client.clientName,
         clientPhone: client.clientPhone,
         clientPhoneForeign: client.clientPhoneForeign ?? null,
+        // P2: persist lifecycle stage from creation onward. status defaults
+        // to 'new' which maps to 'draft' for all current profiles.
+        lifecycleStage: 'draft',
+        // P5: associate every new order with the chosen template id.
+        templateId: chosenTemplateId,
+        // P5: schema-driven client-section custom fields → Order.extraAttributes.
+        extraAttributes: data.extraAttributes && Object.keys(data.extraAttributes).length > 0
+          ? (data.extraAttributes as Prisma.InputJsonValue)
+          : undefined,
         priority: data.priority,
         urgency: data.urgency ?? (data.priority === 'urgent' ? 'urgent' : 'normal'),
         isDemandingClient: data.isDemandingClient ?? (data.priority === 'vip'),
@@ -855,6 +902,16 @@ async function applyItemRouting(
     throw new ValidationError('Нельзя оставить все позиции без маршрута');
   }
 
+  // P2: production routing is gated on the business profile. Retail/services
+  // profiles cannot send items through a workshop because they have no
+  // workshop module enabled — reject upfront rather than create orphan tasks.
+  const profile = await getBusinessProfileForOrg(orgId);
+  if (!profile.modules.production && productionItems.length > 0) {
+    throw new ValidationError(
+      'Профиль организации не поддерживает производство. Все позиции должны быть направлены на склад.',
+    );
+  }
+
   const nextStatus = productionItems.length > 0 ? 'confirmed' : 'ready';
 
   await prisma.$transaction(async (tx) => {
@@ -898,7 +955,10 @@ async function applyItemRouting(
 
     await tx.order.update({
       where: { id },
-      data: { status: nextStatus },
+      data: {
+        status: nextStatus,
+        lifecycleStage: mapStatusToLifecycleStage(nextStatus),
+      },
     });
 
     await tx.orderActivity.create({
@@ -1038,6 +1098,7 @@ export async function updateStatus(orgId: string, id: string, status: string, au
       })
     : null;
 
+  const profile = await getBusinessProfileForOrg(orgId);
   const transitionValidation = validateStatusTransitionRules(
     order.status as any,
     status as any,
@@ -1048,6 +1109,7 @@ export async function updateStatus(orgId: string, id: string, status: string, au
       requiresInvoice: order.requiresInvoice,
       hasConfirmedInvoice: !!confirmedInvoice,
     },
+    profile,
   );
 
   if (!transitionValidation.valid) {
@@ -1126,13 +1188,22 @@ export async function updateStatus(orgId: string, id: string, status: string, au
       });
     }
 
+    // P2: payroll-foundation. Freeze manager attribution at the moment of
+    // completion so future ZP calculations are immune to later reassignments.
+    const isCompleting = status === 'completed';
+    const managerSnapshot = isCompleting
+      ? { managerId: order.managerId ?? null, managerName: order.managerName ?? null }
+      : undefined;
+
     await tx.order.update({
       where: { id },
       data: {
         status,
-        completedAt: status === 'completed' ? now : null,
+        lifecycleStage: mapStatusToLifecycleStage(status as OrderStatus),
+        completedAt: isCompleting ? now : null,
         cancelledAt: status === 'cancelled' ? now : null,
         cancelReason: status === 'cancelled' ? cancelReason : null,
+        ...(managerSnapshot ? { managerSnapshot } : {}),
       },
     });
 
@@ -1565,11 +1636,17 @@ export async function close(orgId: string, id: string, authorId: string, authorN
       },
     });
 
+    // P2: snapshot manager attribution + write lifecycleStage.
     await tx.order.update({
       where: { id },
       data: {
         status: 'completed',
+        lifecycleStage: 'completed',
         completedAt: order.completedAt ?? now,
+        managerSnapshot: order.managerSnapshot ?? {
+          managerId: order.managerId ?? null,
+          managerName: order.managerName ?? null,
+        },
         isArchived: true,
         archivedAt: now,
       },
@@ -1818,6 +1895,16 @@ export async function approveChangeRequest(
   if (!order) throw new NotFoundError('Order', changeRequest.orderId);
 
   const proposedItems = changeRequest.proposedItems as ProposedItem[];
+
+  // P2: ChangeRequests force new items into 'production' fulfillment mode
+  // below. For profiles without a workshop this is meaningless — reject
+  // upfront so we don't create orphan ProductionTask rows.
+  const profile = await getBusinessProfileForOrg(orgId);
+  if (!profile.modules.production && proposedItems.length > 0) {
+    throw new ValidationError(
+      'Профиль организации не поддерживает производство — изменения позиций должны проходить через складской маршрут.',
+    );
+  }
 
   await prisma.$transaction(async (tx) => {
     await tx.changeRequest.update({

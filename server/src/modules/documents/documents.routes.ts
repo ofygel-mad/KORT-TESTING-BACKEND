@@ -3,9 +3,6 @@ import { z } from 'zod';
 import * as svc from './documents.service.js';
 
 export async function documentsRoutes(app: FastifyInstance) {
-  console.log('🟢 [documents] registering chapan documents routes');
-
-  // DEBUG: test route without auth
   app.get('/ping', async () => ({ ok: true, module: 'documents' }));
 
   app.addHook('preHandler', app.authenticate);

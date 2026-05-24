@@ -122,23 +122,38 @@
     inset 0 1px 0 rgba(255,255,255,0.05);
 }
 
+/* Collapsed by default: width = fit-content of "Сцена" + dot + chevron.
+   Expands on hover OR when the controls panel is open. */
 .sceneControlToggle {
-  width: min(320px, calc(100vw - 48px));
-  min-width: 248px;
-  min-height: 58px;
-  padding: 0 16px 0 18px;
+  width: auto;
+  min-width: 0;
+  max-width: min(320px, calc(100vw - 48px));
+  min-height: 40px;
+  padding: 0 12px 0 14px;
   border-radius: 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
+  gap: 10px;
   cursor: pointer;
-  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease,
+    padding 220ms ease,
+    min-height 220ms ease,
+    min-width 220ms ease,
+    gap 220ms ease;
 }
 
-.sceneControlToggle:hover {
+.sceneControlToggle:hover,
+.sceneControlToggle[data-open="true"] {
   transform: translateY(-1px);
   border-color: color-mix(in srgb, var(--scene-hud-border) 52%, white);
+  min-width: 248px;
+  min-height: 58px;
+  padding: 0 16px 0 18px;
+  gap: 14px;
 }
 
 .sceneControlMeta {
@@ -172,6 +187,19 @@
   font-size: 12px;
   line-height: 1.45;
   color: color-mix(in srgb, var(--scene-hud-text) 64%, transparent);
+  /* Hidden while collapsed; revealed on hover/open via grid-row tricks
+     would clip text; instead use max-height + opacity animation. */
+  max-height: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  opacity: 0;
+  transition: max-height 220ms ease, opacity 180ms ease 60ms;
+}
+
+.sceneControlToggle:hover .sceneControlSub,
+.sceneControlToggle[data-open="true"] .sceneControlSub {
+  max-height: 30px;
+  opacity: 1;
 }
 
 .sceneControlChevron {

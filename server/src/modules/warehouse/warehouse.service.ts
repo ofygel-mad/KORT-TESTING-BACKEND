@@ -5,7 +5,7 @@
  *  - CRUD for items, categories, locations
  *  - Movements (in/out/adjustment/write_off/return)
  *  - BOM (Bill of Materials) management
- *  - Shortage checking & auto-reservation for Chapan orders
+ *  - Shortage checking & auto-reservation for sales orders
  *  - Alert lifecycle (create → auto-resolve on stock-in)
  *  - Lot (batch) tracking
  */
@@ -573,7 +573,7 @@ async function tryResolveShortageAlerts(orgId: string, itemId: string) {
           where: { id: alert.id },
           data: { status: 'resolved', resolvedAt: new Date() },
         });
-        // Unblock production tasks for this chapan order
+        // Unblock production tasks for this order
         await prisma.productionTask.updateMany({
           where: { orderId: alert.sourceId, isBlocked: true },
           data: { isBlocked: false, blockReason: null },
@@ -840,7 +840,7 @@ async function reserveSimpleOrderItems(
 
     await prisma.$transaction(async (tx) => {
       await tx.warehouseReservation.create({
-        data: { orgId, itemId: warehouseItem.id, qty: needed, sourceId: orderId, sourceType: 'chapan_order', status: 'active' },
+        data: { orgId, itemId: warehouseItem.id, qty: needed, sourceId: orderId, sourceType: 'order', status: 'active' },
       });
       await tx.warehouseItem.update({
         where: { id: warehouseItem.id },
@@ -907,7 +907,7 @@ export async function reserveNewOrderItems(
           itemId: warehouseItem.id,
           qty: item.quantity,
           sourceId: orderId,
-          sourceType: 'chapan_order',
+          sourceType: 'order',
           status: 'active',
         },
       });
@@ -982,10 +982,10 @@ export async function reserveOrderWarehouseItems(
         warehouseSiteId: site.id,
         variantId: resolved.variantId,
         qty: item.quantity,
-        sourceType: 'chapan_order_item',
+        sourceType: 'order_item',
         sourceId: order.id,
         sourceLineId: item.id,
-        idempotencyKey: `chapan-order-item:${item.id}:reserve:v1`,
+        idempotencyKey: `order-item:${item.id}:reserve:v1`,
         actorName,
         reason: `Canonical reservation for order ${order.orderNumber}`,
       });
@@ -1038,7 +1038,7 @@ export async function consumeOrderWarehouseReservationsTx(
   const reservations = await tx.warehouseStockReservation.findMany({
     where: {
       orgId,
-      sourceType: 'chapan_order_item',
+      sourceType: 'order_item',
       sourceId: orderId,
       status: { in: ['active', 'consumed'] },
     },
@@ -1117,21 +1117,21 @@ export async function consumeOrderWarehouseReservationsTx(
 }
 
 // ─────────────────────────────────────────────────────────────
-//  Order BOM check & reservation (Chapan integration)
+//  Order BOM check & reservation (sales integration)
 // ─────────────────────────────────────────────────────────────
 
 /**
- * Checks if warehouse has enough stock for a Chapan order based on BOM.
+ * Checks if warehouse has enough stock for a sales order based on BOM.
  * If reserve=true, creates WarehouseReservation records for sufficient items.
  * Blocks production tasks for items with shortages.
  */
 export async function checkOrderBOM(
   orgId: string,
-  chapanOrderId: string,
+  orderId: string,
   reserve = true,
 ): Promise<ShortageReport> {
   const order = await prisma.order.findFirst({
-    where: { id: chapanOrderId, orgId },
+    where: { id: orderId, orgId },
     include: { items: true },
   });
   if (!order) throw new AppError(404, 'Заказ не найден');
@@ -1168,7 +1168,7 @@ export async function checkOrderBOM(
 
     // Check existing reservation for this order/item
     const existingRes = await prisma.warehouseReservation.findFirst({
-      where: { orgId, itemId, sourceId: chapanOrderId, status: 'active' },
+      where: { orgId, itemId, sourceId: orderId, status: 'active' },
     });
     const alreadyReserved = existingRes?.qty ?? 0;
 
@@ -1188,7 +1188,7 @@ export async function checkOrderBOM(
     if (shortage > 0) {
       shortageCount++;
       // Create/update shortage alert
-      await upsertShortageAlert(orgId, itemId, chapanOrderId, needed, available);
+      await upsertShortageAlert(orgId, itemId, orderId, needed, available);
     } else {
       reservedCount++;
       // Create reservation if requested and not already reserved
@@ -1199,8 +1199,8 @@ export async function checkOrderBOM(
               orgId,
               itemId,
               qty: needed,
-              sourceId: chapanOrderId,
-              sourceType: 'chapan_order',
+              sourceId: orderId,
+              sourceType: 'order',
               status: 'active',
             },
           });
@@ -1216,8 +1216,8 @@ export async function checkOrderBOM(
               qty: -needed,
               qtyBefore: freshItem.qty,
               qtyAfter: freshItem.qty,
-              sourceId: chapanOrderId,
-              sourceType: 'chapan_order',
+              sourceId: orderId,
+              sourceType: 'order',
               reason: `Резерв под заказ ${order.orderNumber}`,
               author: 'system',
             },
@@ -1239,19 +1239,19 @@ export async function checkOrderBOM(
       .join('; ');
 
     await prisma.productionTask.updateMany({
-      where: { orderId: chapanOrderId },
+      where: { orderId: orderId },
       data: { isBlocked: true, blockReason: `Нехватка материалов: ${shortageNames}` },
     });
   } else if (neededMap.size > 0) {
     // All good — unblock any previously blocked tasks
     await prisma.productionTask.updateMany({
-      where: { orderId: chapanOrderId, isBlocked: true },
+      where: { orderId: orderId, isBlocked: true },
       data: { isBlocked: false, blockReason: null },
     });
   }
 
   return {
-    orderId: chapanOrderId,
+    orderId: orderId,
     status,
     items: reportItems,
     reservedCount,
@@ -1303,7 +1303,7 @@ export async function consumeSimpleOrderReservations(
   authorName: string,
 ): Promise<void> {
   const reservations = await prisma.warehouseReservation.findMany({
-    where: { orgId, sourceId: orderId, sourceType: 'chapan_order', status: 'active' },
+    where: { orgId, sourceId: orderId, sourceType: 'order', status: 'active' },
     include: { item: { select: { id: true, qty: true, qtyReserved: true } } },
   });
 
@@ -1329,7 +1329,7 @@ export async function consumeSimpleOrderReservations(
             qtyBefore: item.qty,
             qtyAfter: newQty,
             sourceId: orderId,
-            sourceType: 'chapan_order_shipment',
+            sourceType: 'order_shipment',
             reason: 'Отгрузка клиенту',
             author: authorName,
           },
@@ -1371,7 +1371,7 @@ export async function consumeSimpleOrderReservations(
 
       // Idempotency: skip if an 'out' movement for this order+item already exists
       const existingMovement = await tx.warehouseMovement.findFirst({
-        where: { orgId, itemId: warehouseItem.id, sourceId: orderId, sourceType: 'chapan_order_shipment' },
+        where: { orgId, itemId: warehouseItem.id, sourceId: orderId, sourceType: 'order_shipment' },
       });
       if (existingMovement) continue;
 
@@ -1392,7 +1392,7 @@ export async function consumeSimpleOrderReservations(
           qtyBefore: warehouseItem.qty,
           qtyAfter: newQty,
           sourceId: orderId,
-          sourceType: 'chapan_order_shipment',
+          sourceType: 'order_shipment',
           reason: 'Отгрузка клиенту (метод накопления)',
           author: authorName,
         },
@@ -1411,7 +1411,7 @@ export async function releaseOrderReservationsTx(
     where: {
       orgId,
       sourceId,
-      sourceType: 'chapan_order_item',
+      sourceType: 'order_item',
     },
     select: {
       id: true,
@@ -1540,12 +1540,12 @@ export async function createLot(
 }
 
 // ─────────────────────────────────────────────────────────────
-//  Finished-goods availability check (Chapan integration)
+//  Finished-goods availability check (sales integration)
 // ─────────────────────────────────────────────────────────────
 
 /**
  * Checks whether finished products (by name) are available in warehouse.
- * Used by Chapan to skip production for in-stock items.
+ * Used by sales to skip production for in-stock items.
  */
 export async function checkProductNamesAvailability(
   orgId: string,

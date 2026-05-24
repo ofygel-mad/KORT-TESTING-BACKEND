@@ -1,7 +1,40 @@
 .root {
   padding: 28px;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
+}
+
+/* P5/Stage 2: 2-column layout — left main / right sticky summary. */
+.formGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.formMain {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+.formAside {
+  position: relative;
+}
+
+.formAsideSticky {
+  position: sticky;
+  top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
 .pageHeader {
@@ -9,6 +42,13 @@
   align-items: center;
   gap: 14px;
   margin-bottom: 28px;
+}
+
+.pageHeaderRight {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .backLink {

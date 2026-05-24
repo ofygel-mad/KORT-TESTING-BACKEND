@@ -438,7 +438,7 @@ export const useReleaseWarehouseFoundationReservation = () => {
   });
 };
 
-/** Check finished-goods availability for a list of product names (Chapan integration) */
+/** Check finished-goods availability for a list of product names (sales integration) */
 export const useConsumeWarehouseFoundationReservation = () => {
   const qc = useQueryClient();
   return useMutation({

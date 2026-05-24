@@ -501,12 +501,10 @@ export const TILE_DISTANCE_OPTIONS: TileDistanceOption[] = [
 export const WORKSPACE_WIDGET_ACCENTS: Record<WorkspaceWidgetKind | 'reports' | 'imports', WidgetVisualAccent> = {
   leads: { accent: '#f1b56d', screen: '#2a1910' },
   customers: { accent: '#f5b56f', screen: '#2b1b10' },
-  deals: { accent: '#7acbff', screen: '#122132' },
   tasks: { accent: '#c6a7ff', screen: '#22183a' },
   warehouse: { accent: '#bba76d', screen: '#2a2310' },
   production: { accent: '#ffbe66', screen: '#2d1b10' },
   finance: { accent: '#72e2c4', screen: '#10261f' },
-  employees: { accent: '#c7d6ef', screen: '#162233' },
   reports: { accent: '#8de8c0', screen: '#10261e' },
   documents: { accent: '#9ab6ff', screen: '#151f34' },
   imports: { accent: '#ffb09d', screen: '#311712' },
@@ -518,12 +516,10 @@ export const WORKSPACE_WIDGET_ACCENTS: Record<WorkspaceWidgetKind | 'reports' | 
 export const WORKSPACE_WIDGET_SHELL_PROFILES: Record<WorkspaceWidgetKind | 'reports' | 'imports', WorkspaceWidgetShellProfile> = {
   leads: { depthFactor: 0.108, screenInset: 0.848, hoverLift: 1.03, introLift: 10.8 },
   customers: { depthFactor: 0.112, screenInset: 0.85, hoverLift: 1.08, introLift: 11.2 },
-  deals: { depthFactor: 0.102, screenInset: 0.86, hoverLift: 1.02, introLift: 10.1 },
   tasks: { depthFactor: 0.104, screenInset: 0.845, hoverLift: 1.04, introLift: 10.4 },
   warehouse: { depthFactor: 0.095, screenInset: 0.838, hoverLift: 0.99, introLift: 9.6 },
   production: { depthFactor: 0.103, screenInset: 0.848, hoverLift: 1.02, introLift: 10.2 },
   finance: { depthFactor: 0.101, screenInset: 0.844, hoverLift: 1.01, introLift: 9.9 },
-  employees: { depthFactor: 0.1, screenInset: 0.846, hoverLift: 1.01, introLift: 9.8 },
   reports: { depthFactor: 0.098, screenInset: 0.84, hoverLift: 0.98, introLift: 9.7 },
   documents: { depthFactor: 0.099, screenInset: 0.842, hoverLift: 1, introLift: 9.9 },
   imports: { depthFactor: 0.106, screenInset: 0.848, hoverLift: 1.01, introLift: 10.6 },
@@ -533,11 +529,14 @@ export const WORKSPACE_WIDGET_SHELL_PROFILES: Record<WorkspaceWidgetKind | 'repo
 };
 
 export function getThemeByTime(): WorkspaceSceneTheme {
+  // Day = morning ("рассвет") until dusk; dusk (sunset) 17:00-20:00; night
+  // from 20:00. The `overcast` theme is no longer auto-selected by time —
+  // it remains available as a manual choice but no longer hijacks the
+  // daytime hours, which the user expected to stay in "рассвет".
   const hour = new Date().getHours();
-  if (hour >= 5 && hour < 9) return 'morning';
-  if (hour >= 9 && hour < 17) return 'overcast';
-  if (hour >= 17 && hour < 21) return 'dusk';
-  return 'night';
+  if (hour >= 17 && hour < 20) return 'dusk';
+  if (hour >= 20 || hour < 5) return 'night';
+  return 'morning';
 }
 
 export function getTileDistanceOffset(distance: WorkspaceTileDistance) {

@@ -19,7 +19,14 @@ import {
 } from '@/shared/lib/productCatalogDefaults';
 import { calculateOrderFinancials } from '@/shared/lib/orderFinancials';
 import { useAuthStore } from '@/shared/stores/auth';
+import { useActiveOrderTemplate } from '@/entities/order/templatesApi';
+import { getItemsSection } from '@/entities/order/templates';
+import { TemplateAttributeRenderer } from '@/shared/ui/TemplateAttributeRenderer';
+import { useBusinessProfile } from '@/entities/tenant/businessProfile';
 import styles from './NewOrderPage.module.css';
+
+// P5: legacy item-field keys that have dedicated OrderItem columns (dual-write target).
+const LEGACY_ITEM_KEYS = new Set(['gender', 'color', 'length', 'size', 'product', 'productName']);
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -121,13 +128,16 @@ const DELIVERY = ['Самовывоз', 'Курьер по городу', 'Ка�
 
 const itemSchema = z.object({
   productName: z.string().min(1, 'Укажите модель'),
-  size:        z.string().min(1, 'Укажите размер'),
+  // P5: size optional so non-clothing templates can omit it (matches NewOrder)
+  size:        z.string().optional().default(''),
   quantity:    z.coerce.number().int().min(1),
   unitPrice:   z.coerce.number().min(0).default(0),
   color:        z.string().optional(),
   gender:       z.string().optional(),
   length:       z.string().optional(),
   workshopNotes: z.string().optional(),
+  // P5: schema-driven per-item custom fields
+  customFields: z.record(z.string(), z.unknown()).optional().default({}),
 });
 
 const schema = z.object({
@@ -203,9 +213,24 @@ export default function EditOrderPage() {
     || can('orders.admin');
   const mineOnlyOrderContext = location.pathname.startsWith('/sales/') && !canViewAllOrderCards;
 
+  const businessProfile = useBusinessProfile();
+  const workshopLabel = businessProfile.modules.production ? 'Комментарий для цеха' : 'Комментарий исполнителю';
+
   const { data: order, isLoading, isError } = useOrder(
     id!,
     mineOnlyOrderContext ? { mineOnly: true } : undefined,
+  );
+
+  // P5: schema-driven form. EditOrderPage uses whatever template the order
+  // was created with (frozen at creation time) — switching templates on an
+  // existing order would scramble custom attribute storage.
+  const { data: template } = useActiveOrderTemplate(order?.templateId ?? null);
+  const itemsSection = getItemsSection(template);
+  const templateKeys = new Set((itemsSection?.fields ?? []).map((f) => f.key));
+  const showLegacy = (key: string) =>
+    !template || itemsSection === null || templateKeys.has(key);
+  const customItemFields = (itemsSection?.fields ?? []).filter(
+    (f) => !LEGACY_ITEM_KEYS.has(f.key),
   );
   const updateOrder = useUpdateOrder();
   const requestItemChange = useRequestItemChange();
@@ -455,7 +480,7 @@ export default function EditOrderPage() {
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, padding: '60px 20px', color: 'var(--ch-text-muted)' }}>
           <AlertTriangle size={24} />
           <p>Заказ не найден</p>
-          <button onClick={() => navigate('/orders')} style={{ padding: '8px 18px', background: 'var(--ch-surface)', border: '1px solid var(--ch-border)', borderRadius: 7, color: 'var(--ch-plat-bright)', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13 }}>
+          <button onClick={() => navigate('/sales')} style={{ padding: '8px 18px', background: 'var(--ch-surface)', border: '1px solid var(--ch-border)', borderRadius: 7, color: 'var(--ch-plat-bright)', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13 }}>
             ← Назад к заказам
           </button>
         </div>
@@ -469,7 +494,9 @@ export default function EditOrderPage() {
         <h1 className={styles.pageTitle}>Редактировать заказ</h1>
       </div>
 
-      {isInProduction && (
+      {/* P5: production-flow warnings are scoped to profiles that actually
+          have a workshop. Retail/services profiles skip this branch. */}
+      {isInProduction && businessProfile.modules.production && (
         <div style={{
           display: 'flex', alignItems: 'flex-start', gap: 10, padding: '12px 16px',
           background: 'rgba(217,79,79,.08)', border: '1px solid rgba(217,79,79,.25)',
@@ -635,27 +662,29 @@ export default function EditOrderPage() {
                           onChange={f.onChange}
                           onBlur={f.onBlur}
                           disabled={!editable}
-                          placeholder="Назар — жуп шапан"
+                          placeholder="Название товара или услуги"
                           className={`${styles.input} ${errors.items?.[idx]?.productName ? styles.inputError : ''}`}
                         />
                       )} />
                       {errors.items?.[idx]?.productName && <span className={styles.fieldError}>{errors.items[idx]?.productName?.message}</span>}
                     </div>
-                    <div className={styles.field}>
-                      <label className={styles.label}>Размер <span className={styles.req}>*</span></label>
-                      <Controller control={control} name={`items.${idx}.size`} render={({ field: f }) => (
-                        <SearchableSelect
-                          options={sizeOptions}
-                          value={f.value}
-                          onChange={f.onChange}
-                          onBlur={f.onBlur}
-                          disabled={!editable}
-                          placeholder="48"
-                          className={`${styles.input} ${errors.items?.[idx]?.size ? styles.inputError : ''}`}
-                        />
-                      )} />
-                      {errors.items?.[idx]?.size && <span className={styles.fieldError}>{errors.items[idx]?.size?.message}</span>}
-                    </div>
+                    {showLegacy('size') && (
+                      <div className={styles.field}>
+                        <label className={styles.label}>Размер <span className={styles.req}>*</span></label>
+                        <Controller control={control} name={`items.${idx}.size`} render={({ field: f }) => (
+                          <SearchableSelect
+                            options={sizeOptions}
+                            value={f.value}
+                            onChange={f.onChange}
+                            onBlur={f.onBlur}
+                            disabled={!editable}
+                            placeholder="48"
+                            className={`${styles.input} ${errors.items?.[idx]?.size ? styles.inputError : ''}`}
+                          />
+                        )} />
+                        {errors.items?.[idx]?.size && <span className={styles.fieldError}>{errors.items[idx]?.size?.message}</span>}
+                      </div>
+                    )}
                   </div>
 
                   {/* Кол-во + Цена */}
@@ -701,48 +730,80 @@ export default function EditOrderPage() {
                     </div>
                   )}
 
-                  {/* Цвет + Пол + Длина */}
-                  <div className={styles.itemRow2}>
-                    <div className={styles.field}>
-                      <label className={styles.label}>Цвет</label>
-                      <input
-                        {...register(`items.${idx}.color`)}
-                        disabled={!editable}
-                        className={styles.input}
-                        placeholder="Тёмно-синий, бордо..."
-                      />
+                  {/* P5: legacy clothing fields shown only when the active
+                      template includes them. */}
+                  {(showLegacy('color') || showLegacy('gender')) && (
+                    <div className={styles.itemRow2}>
+                      {showLegacy('color') && (
+                        <div className={styles.field}>
+                          <label className={styles.label}>Цвет</label>
+                          <input
+                            {...register(`items.${idx}.color`)}
+                            disabled={!editable}
+                            className={styles.input}
+                            placeholder="Тёмно-синий, бордо..."
+                          />
+                        </div>
+                      )}
+                      {showLegacy('gender') && (
+                        <div className={styles.field}>
+                          <label className={styles.label}>Пол</label>
+                          <Controller control={control} name={`items.${idx}.gender`} render={({ field: f }) => (
+                            <select {...f} disabled={!editable} className={styles.select}>
+                              <option value="">— не указан —</option>
+                              <option value="муж">Мужской</option>
+                              <option value="жен">Женский</option>
+                              <option value="унисекс">Унисекс</option>
+                            </select>
+                          )} />
+                        </div>
+                      )}
                     </div>
-                    <div className={styles.field}>
-                      <label className={styles.label}>Пол</label>
-                      <Controller control={control} name={`items.${idx}.gender`} render={({ field: f }) => (
-                        <select {...f} disabled={!editable} className={styles.select}>
-                          <option value="">— не указан —</option>
-                          <option value="муж">Мужской</option>
-                          <option value="жен">Женский</option>
-                          <option value="унисекс">Унисекс</option>
-                        </select>
-                      )} />
+                  )}
+                  {showLegacy('length') && (
+                    <div className={styles.itemRow2}>
+                      <div className={styles.field}>
+                        <label className={styles.label}>Длина</label>
+                        <input
+                          {...register(`items.${idx}.length`)}
+                          disabled={!editable}
+                          className={styles.input}
+                          placeholder="Макси, 120 см..."
+                        />
+                      </div>
+                      <div className={styles.field} />
                     </div>
-                  </div>
-                  <div className={styles.itemRow2}>
-                    <div className={styles.field}>
-                      <label className={styles.label}>Длина</label>
-                      <input
-                        {...register(`items.${idx}.length`)}
-                        disabled={!editable}
-                        className={styles.input}
-                        placeholder="Макси, 120 см..."
-                      />
+                  )}
+
+                  {/* P5: schema-driven custom fields from the active template. */}
+                  {customItemFields.length > 0 && (
+                    <div className={styles.itemRow4}>
+                      {customItemFields.map((tplField) => (
+                        <div key={tplField.id} className={styles.field}>
+                          <Controller
+                            control={control}
+                            name={`items.${idx}.customFields.${tplField.key}` as `items.${number}.customFields.${string}`}
+                            render={({ field: f }) => (
+                              <TemplateAttributeRenderer
+                                field={tplField}
+                                value={f.value as never}
+                                onChange={(next) => f.onChange(next)}
+                                mode="edit"
+                                disabled={!editable}
+                              />
+                            )}
+                          />
+                        </div>
+                      ))}
                     </div>
-                    <div className={styles.field} />
-                  </div>
+                  )}
 
                   <div className={styles.itemNoteField}>
                     <input
                       {...register(`items.${idx}.workshopNotes`)}
                       disabled={!editable}
                       className={styles.itemNoteInput}
-                      placeholder="Комментарий для цеха (необязательно)..."
+                      placeholder={`${workshopLabel} (необязательно)...`}
                     />
                   </div>
                 </div>
@@ -754,7 +815,7 @@ export default function EditOrderPage() {
                 <button
                   type="button"
                   className={styles.addItemBtn}
-                  onClick={() => append({ productName: '', size: '', quantity: 1, unitPrice: 0, color: '', gender: '', length: '', workshopNotes: '' })}
+                  onClick={() => append({ productName: '', size: '', quantity: 1, unitPrice: 0, color: '', gender: '', length: '', workshopNotes: '', customFields: {} })}
                 >
                   <Plus size={13} />
                   Добавить позицию

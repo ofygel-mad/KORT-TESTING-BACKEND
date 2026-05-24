@@ -12,6 +12,9 @@ export const ordersApi = {
   list: (params?: {
     status?: string;
     statuses?: string;
+    /** Comma-separated list of statuses to EXCLUDE (e.g. "completed,cancelled"
+     *  to back the lifecycle "Активные" chip). */
+    statusNotIn?: string;
     priority?: string;
     paymentStatus?: string;
     search?: string;
@@ -265,7 +268,7 @@ export const returnsApi = {
     api.delete<{ ok: boolean }>(`/returns/${id}`),
 };
 
-// ── Chapan Clients API ────────────────────────────────────────────────────────
+// ── Clients API ───────────────────────────────────────────────────────────────
 export const clientsApi = {
   list: (params?: CustomersListParams) =>
     api.get<{ count: number; results: CustomerAggregated[] }>('/clients', { params }),

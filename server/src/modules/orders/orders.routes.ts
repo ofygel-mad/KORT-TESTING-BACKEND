@@ -73,11 +73,15 @@ export async function ordersRoutes(app: FastifyInstance) {
     const statuses = query.statuses
       ? query.statuses.split(',').map((value) => value.trim()).filter(Boolean)
       : undefined;
+    const statusNotIn = query.statusNotIn
+      ? query.statusNotIn.split(',').map((value) => value.trim()).filter(Boolean)
+      : undefined;
     const createdFrom = query.createdFrom ? new Date(query.createdFrom) : undefined;
     const createdTo = query.createdTo ? new Date(query.createdTo) : undefined;
     const orders = await svc.list(request.orgId, {
       status: query.status,
       statuses,
+      statusNotIn,
       priority: query.priority,
       paymentStatus: query.paymentStatus,
       search: query.search,

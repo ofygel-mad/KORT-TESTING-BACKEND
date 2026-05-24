@@ -52,7 +52,7 @@ export const KASPI_STAGE_META: Array<{
   {
     key: 'stock',
     label: '\u0421\u043a\u043b\u0430\u0434 Kaspi',
-    description: '\u041e\u0442\u0434\u0435\u043b\u044c\u043d\u044b\u0439 \u0441\u0440\u0435\u0437 \u043f\u043e SKU, reservations \u0438 stock impact \u0431\u0435\u0437 \u0441\u043c\u0435\u0448\u0438\u0432\u0430\u043d\u0438\u044f \u0441 Chapan warehouse.',
+    description: '\u041e\u0442\u0434\u0435\u043b\u044c\u043d\u044b\u0439 \u0441\u0440\u0435\u0437 \u043f\u043e SKU, reservations \u0438 stock impact \u0431\u0435\u0437 \u0441\u043c\u0435\u0448\u0438\u0432\u0430\u043d\u0438\u044f \u0441 \u043e\u0441\u043d\u043e\u0432\u043d\u044b\u043c warehouse.',
     to: '/sales/kaspi/stock',
   },
 ];

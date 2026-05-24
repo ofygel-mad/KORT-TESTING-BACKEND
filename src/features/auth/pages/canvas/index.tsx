@@ -77,14 +77,13 @@ function MobileMenuCard({ item }: { item: MobileMenuItem }) {
 function useCanAccessNavItem(id: ShortcutNavItemId): boolean {
   const { isOwner, isAdmin } = useRole();
   const perms = useEmployeePermissions();
-  const chapan = useOperationsAccess();
+  const ops = useOperationsAccess();
 
   if (isOwner || isAdmin) return true;
   if (perms.permissions.length === 0) return true; // обычный member
 
   switch (id) {
     case 'leads':
-    case 'deals':
     case 'customers':
     case 'tasks':
       return perms.canAccessSales;
@@ -96,12 +95,10 @@ function useCanAccessNavItem(id: ShortcutNavItemId): boolean {
     case 'reports':
     case 'documents':
       return perms.canAccessFinancial;
-    case 'employees':
-      return perms.canManageTeam;
     case 'sales':
     case 'logistics':
     case 'products':
-      return chapan.hasAnyAccess;
+      return ops.hasAnyAccess;
     default:
       return true;
   }
@@ -118,7 +115,7 @@ export default function CanvasPage() {
   const navigate = useNavigate();
   const { isOwner, isAdmin } = useRole();
   const perms = useEmployeePermissions();
-  const chapan = useOperationsAccess();
+  const ops = useOperationsAccess();
 
   const hasEmployeePerms = perms.permissions.length > 0 && !isOwner && !isAdmin;
 
@@ -130,18 +127,17 @@ export default function CanvasPage() {
           if (!planIncludes(plan, item.planTier)) return false;
           if (!hasEmployeePerms) return true;
           switch (item.id) {
-            case 'leads': case 'deals': case 'customers': case 'tasks':
+            case 'leads': case 'customers': case 'tasks':
               return perms.canAccessSales;
             case 'warehouse': return perms.canAccessWarehouse;
             case 'production': return perms.canAccessProduction;
             case 'finance': case 'reports': case 'documents':
               return perms.canAccessFinancial;
-            case 'employees': return perms.canManageTeam;
             default: return true;
           }
         }),
       })).filter((section) => section.items.length > 0),
-    [plan, hasEmployeePerms, perms, chapan],
+    [plan, hasEmployeePerms, perms, ops],
   );
 
   function handleAddTile(kind: WorkspaceWidgetKind) {

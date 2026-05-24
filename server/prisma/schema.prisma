@@ -207,6 +207,13 @@ model Organization {
   roles              Role[]
   subscription       Subscription?
 
+  // Composability (ЧАСТЬ X — конфигурируемые поверхности)
+  tenantConfig          TenantConfig?
+  tenantConfigRevisions TenantConfigRevision[]
+  tenantConfigPreview   TenantConfigPreview?
+  // P3: schema-driven order forms (separate concern from TenantConfig).
+  orderTemplates        OrderTemplate[]
+
   // CRM
   customers Customer[]
   leads     Lead[]
@@ -306,6 +313,63 @@ model Subscription {
   org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
 
   @@map("subscriptions")
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  COMPOSABILITY: TENANT CONFIG  (ЧАСТЬ X — конфигурируемые поверхности)
+// ═══════════════════════════════════════════════════════════════
+
+// The single ACTIVE configurable-surfaces config per org. KORT reads it at
+// bootstrap and applies it autonomously. See server/COMPOSABILITY_CONTRACT.md.
+model TenantConfig {
+  id              String   @id @default(cuid())
+  orgId           String   @unique @map("org_id")
+  schemaVersion   Int      @default(1) @map("schema_version")
+  revision        Int      @default(1)
+  config          Json
+  manifestVersion String   @map("manifest_version")
+  source          String   @default("default") // default | platform | rollback
+  appliedAt       DateTime @default(now()) @map("applied_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@map("tenant_configs")
+}
+
+// Append-only journal of applied configs — lets KORT self-rollback without CP.
+model TenantConfigRevision {
+  id              String   @id @default(cuid())
+  orgId           String   @map("org_id")
+  revision        Int
+  schemaVersion   Int      @map("schema_version")
+  config          Json
+  manifestVersion String   @map("manifest_version")
+  source          String // default | platform | rollback
+  note            String?
+  actor           String? // CP operator id from the service token, or "system"
+  appliedAt       DateTime @default(now()) @map("applied_at")
+
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, revision])
+  @@index([orgId, appliedAt])
+  @@map("tenant_config_revisions")
+}
+
+// Staged preview config — visible only to a preview-flagged operator session.
+model TenantConfigPreview {
+  id              String   @id @default(cuid())
+  orgId           String   @unique @map("org_id")
+  config          Json
+  manifestVersion String   @map("manifest_version")
+  stagedBy        String   @map("staged_by")
+  expiresAt       DateTime @map("expires_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@map("tenant_config_previews")
 }
 
 model KaspiConnection {
@@ -825,6 +889,14 @@ model Order {
   dueDate               DateTime? @map("due_date")
   completedAt           DateTime? @map("completed_at")
   cancelledAt           DateTime? @map("cancelled_at")
+  // P2: business-level lifecycle stage, derived from `status` + per-item
+  // fulfillmentSubstatus. Decouples business stages (draft/committed/
+  // fulfilling/completed/cancelled) from the legacy 9-value `status` string.
+  lifecycleStage        String?   @map("lifecycle_stage")
+  // P2: frozen manager attribution at the moment of completion. Protects
+  // future salary calculations from manager edits/reassignments after the
+  // order closed. Shape: { managerId, managerName }.
+  managerSnapshot       Json?     @map("manager_snapshot")
   cancelReason          String?   @map("cancel_reason")
   streetAddress         String?   @map("street_address")
   city                  String?
@@ -848,11 +920,19 @@ model Order {
   managerId             String?   @map("manager_id")
   managerName           String?   @map("manager_name")
   customerType          String    @default("retail") @map("customer_type")
+  // P3: schema-driven forms. `templateId` references the OrderTemplate used
+  // when this order was created/edited. `extraAttributes` is a free-form bag
+  // for client-level custom fields declared by the template's client section.
+  // Both are nullable for orders predating the migration; backfill populates
+  // them with the org's default Clothing template + empty attributes.
+  templateId            String?   @map("template_id")
+  extraAttributes       Json?     @map("extra_attributes")
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @updatedAt @map("updated_at")
 
   org             Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
   client          Customer          @relation(fields: [clientId], references: [id])
+  template        OrderTemplate?    @relation(fields: [templateId], references: [id])
   items           OrderItem[]
   productionTasks ProductionTask[]
   payments        Payment[]
@@ -881,6 +961,10 @@ model OrderItem {
   quantity          Int     @default(1)
   unitPrice         Float   @map("unit_price")
   fulfillmentMode   String  @default("unassigned") @map("fulfillment_mode")
+  // P2: per-item lifecycle stage independent of fulfillmentMode (which is a
+  // routing decision). Values: warehouse_pick | in_production | in_transit |
+  // delivered | returned. Null = not yet committed.
+  fulfillmentSubstatus String? @map("fulfillment_substatus")
   gender            String?
   length            String?
   notes             String?
@@ -889,6 +973,12 @@ model OrderItem {
   variantKey        String? @map("variant_key")
   attributesJson    Json?   @map("attributes_json")
   attributesSummary String? @map("attributes_summary")
+  // P3: schema-driven forms. Free-form bag for per-item custom fields
+  // declared by the active OrderTemplate's items section. Distinct from
+  // `attributesJson` (canonical warehouse variant fingerprint) — `attributes`
+  // is the *template* payload (whatever the org's fields define), while
+  // `attributesJson` stays the strict variant key for inventory lookups.
+  attributes        Json?   @map("attributes")
 
   order          Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
   productionTask ProductionTask?
@@ -967,6 +1057,12 @@ model Payment {
   method  String
   notes   String?
   paidAt  DateTime @default(now()) @map("paid_at")
+  // P2: payroll-foundation. When a payment is matched against an external
+  // source (Kaspi tx, bank statement line, receipt photo), record when and
+  // by which channel. verificationSource ∈ { kaspi | bank_statement |
+  // receipt_photo | manual }. Null = unverified.
+  verifiedAt          DateTime? @map("verified_at")
+  verificationSource  String?   @map("verification_source")
 
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
@@ -1001,6 +1097,44 @@ model OrderActivity {
   @@index([orderId])
   @@index([orderId, createdAt])
   @@map("order_activities")
+}
+
+// P3: Schema-driven form templates per organization.
+//
+// An OrderTemplate describes the fields shown on the New Order form for a
+// given org. Two section kinds: 'client' (top-of-form client/order attrs)
+// and 'items' (per-line item attrs). Field types match the 9 declared in
+// new orders/design_handoff_new_order/FIELD_TYPES.md.
+//
+// `sections` is intentionally a Json blob — schema-driven forms must let
+// admins author arbitrary field combinations without a Prisma migration.
+// Server-side validation against the design-handoff schema happens at
+// write time in the orders/templates module (P7).
+//
+// `isSystem = true` marks seeded templates (Blank, Clothing, Watches, etc.)
+// that ship with KORT — admins cannot delete them, only clone.
+model OrderTemplate {
+  id                String   @id @default(cuid())
+  orgId             String   @map("org_id")
+  name              String
+  /// What a line item is called in this template ("позицию", "часы", ...).
+  itemNoun          String   @default("позицию") @map("item_noun")
+  /// Default unit for the items section ("шт", "т", "кг", ...).
+  primaryUnit       String   @default("шт") @map("primary_unit")
+  /// Decimal precision for the primary unit (0 for шт, 3 for tonnes).
+  primaryPrecision  Int      @default(0) @map("primary_precision")
+  /// Full sections+fields shape per design_handoff/SCHEMA_SHAPE.md.
+  sections          Json
+  isSystem          Boolean  @default(false) @map("is_system")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  org    Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  orders Order[]
+
+  @@unique([orgId, name])
+  @@index([orgId])
+  @@map("order_templates")
 }
 
 model UnpaidAlert {
@@ -1210,9 +1344,9 @@ model WarehouseMovement {
   qty        Float
   qtyBefore  Float    @map("qty_before")
   qtyAfter   Float    @map("qty_after")
-  // Reference to source document (chapan order, deal, etc.)
+  // Reference to source document (order, deal, etc.)
   sourceId   String?  @map("source_id")
-  sourceType String?  @map("source_type") // chapan_order | deal | manual
+  sourceType String?  @map("source_type") // order | deal | manual
   lotId      String?  @map("lot_id")
   reason     String?
   author     String
@@ -1231,8 +1365,8 @@ model WarehouseReservation {
   orgId      String   @map("org_id")
   itemId     String   @map("item_id")
   qty        Float
-  sourceId   String   @map("source_id") // ChapanOrder.id or Deal.id
-  sourceType String   @map("source_type") // chapan_order | deal | manual
+  sourceId   String   @map("source_id") // Order.id or Deal.id
+  sourceType String   @map("source_type") // order | deal | manual
   // active | released | fulfilled
   status     String   @default("active")
   createdAt  DateTime @default(now()) @map("created_at")
@@ -1267,7 +1401,7 @@ model WarehouseTransitEntry {
   orgId      String   @map("org_id")
   zoneId     String   @map("zone_id")
   itemId     String   @map("item_id")
-  orderId    String?  @map("order_id") // ссылка на ChapanOrder (если по заказу)
+  orderId    String?  @map("order_id") // ссылка на Order (если по заказу)
   qty        Float
   // in_transit | dispatched | cancelled
   status     String   @default("in_transit")
@@ -1289,7 +1423,7 @@ model WarehouseTransitEntry {
 model WarehouseBOMLine {
   id         String @id @default(cuid())
   orgId      String @map("org_id")
-  // Key: matches ChapanCatalogProduct.name or WorkshopProduct.name
+  // Key: matches product catalog name
   productKey String @map("product_key")
   itemId     String @map("item_id")
   qtyPerUnit Float  @map("qty_per_unit")

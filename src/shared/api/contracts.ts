@@ -6,6 +6,7 @@ import type {
   OrgSummary,
   User,
 } from '../stores/auth';
+import type { TenantConfigPayload } from '../composition/config-types';
 
 // Permission model lives in entities/employee — imported + re-exported for back-compat.
 import type { Permission, Employee, PermissionOverride } from '@/entities/employee/types';
@@ -56,6 +57,8 @@ export interface AuthSessionResponse {
   membership: Membership;
   onboarding_completed?: boolean;
   orgs?: OrgSummary[];
+  /** ЧАСТЬ X — composition config for the active tenant. */
+  config?: TenantConfigPayload | null;
 }
 
 export interface CompanyDirectoryItem extends Org {

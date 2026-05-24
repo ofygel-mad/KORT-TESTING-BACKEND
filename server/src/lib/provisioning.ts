@@ -3,6 +3,8 @@
 // (platform), so the create-org logic lives in exactly one place.
 
 import { Prisma } from '@prisma/client';
+import { createDefaultConfigRecords } from '../modules/composition/composition.service.js';
+import { ensureSystemTemplatesForOrg } from '../modules/orders/templates.js';
 
 const SLUG_MAX = 48;
 
@@ -100,6 +102,13 @@ export async function provisionOrganization(
       employeeAccountStatus: 'active',
     },
   });
+
+  // ЧАСТЬ X — seed the default composition config so a tenant is never config-less.
+  await createDefaultConfigRecords(tx, org.id);
+
+  // P3 — seed system OrderTemplates (Blank + Clothing) so every org has a
+  // working form from day one.
+  await ensureSystemTemplatesForOrg(org.id, tx);
 
   return { user, org, membership };
 }

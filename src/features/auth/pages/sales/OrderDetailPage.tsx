@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Building2, CalendarDays, CheckCircle2, Clock, CreditCard, Megaphone, MessageSquare, AlertTriangle, Pencil, ArchiveIcon, RotateCcw, Download, Package, Star, User, XCircle, FileText, Paperclip, Trash2, Upload, Undo2 } from 'lucide-react';
-import { useOrder, useChangeOrderStatus, useAddPayment, useAddOrderActivity, useRestoreOrder, useCloseOrder, useCreateInvoice, useSetRequiresInvoice, useRouteSingleItem, useUploadAttachment, useDeleteAttachment, useReassignManager, useOrgManagers, useReturns, useCreateReturn, useConfirmReturn, orderKeys } from '@/entities/order/queries';
+import { useOrder, useChangeOrderStatus, useAddPayment, useAddOrderActivity, useRestoreOrder, useCloseOrder, useArchiveOrder, useCreateInvoice, useSetRequiresInvoice, useRouteSingleItem, useUploadAttachment, useDeleteAttachment, useReassignManager, useOrgManagers, useReturns, useCreateReturn, useConfirmReturn, orderKeys } from '@/entities/order/queries';
 import { useOperationsAccess } from '@/shared/hooks/useOperationsAccess';
 import { useEmployeePermissions } from '@/shared/hooks/useEmployeePermissions';
 import { useRole } from '@/shared/hooks/useRole';
@@ -19,12 +19,13 @@ import { useOperationsUiStore } from '@/shared/stores/operationsUi';
 import { buildItemLine } from '@/shared/utils/itemLine';
 import { calculateOrderFinancials, getOrderBalance } from '@/shared/lib/orderFinancials';
 import { formatOrderItemNumber } from '@/shared/utils/orderItemNumber';
+import { useBusinessProfile } from '@/entities/tenant/businessProfile';
 import styles from './OrderDetailPage.module.css';
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
   new: 'Новый',
   confirmed: 'Подтверждён',
-  in_production: 'В цехе',
+  in_production: 'В производстве',
   ready: 'Готов',
   transferred: 'Передан',
   on_warehouse: 'На складе',
@@ -102,11 +103,36 @@ function formatPaymentMethod(method: string) {
   return PAYMENT_METHOD_LABEL[method] ?? method;
 }
 
-function formatItemMeta(item: Pick<OrderItem, 'size' | 'quantity'>) {
-  const meta = [item.size].filter(Boolean).join(' · ');
+function formatItemMeta(
+  item: Pick<OrderItem, 'size' | 'quantity'> & { attributes?: Record<string, unknown> | null },
+) {
+  // P5/Stage 4: schema-aware. Pulls up to 3 non-empty attribute values from
+  // the item's `attributes` bag (dual-write source) and falls back to
+  // legacy `size` column for orders predating P5.
+  const attrs = (item.attributes ?? {}) as Record<string, unknown>;
+  const parts: string[] = [];
+  for (const [key, value] of Object.entries(attrs)) {
+    if (key === 'product' || key === 'productName') continue;
+    if (value === null || value === undefined || value === '') continue;
+    if (Array.isArray(value)) {
+      if (value.length > 0) parts.push(String(value.join(', ')));
+      continue;
+    }
+    parts.push(String(value));
+    if (parts.length >= 3) break;
+  }
+  if (parts.length === 0 && item.size) parts.push(String(item.size));
+  const meta = parts.join(' · ');
   return item.quantity > 1 ? `${meta}${meta ? ' · ' : ''}× ${item.quantity}` : meta;
 }
 
+// P6: formats template-driven attribute values for read-only display.
+function formatAttributeValue(value: unknown): string {
+  if (value === null || value === undefined || value === '') return '—';
+  if (Array.isArray(value)) return value.length > 0 ? value.join(', ') : '—';
+  if (typeof value === 'boolean') return value ? 'Да' : 'Нет';
+  return String(value);
+}
 
 function resolveItemFulfillmentMode(order: { status: OrderStatus; productionTasks?: Array<{ orderItemId: string }> }, item: OrderItem): OrderItemFulfillmentMode {
   if (item.fulfillmentMode === 'warehouse' || item.fulfillmentMode === 'production') return item.fulfillmentMode;
@@ -160,16 +186,23 @@ export default function OrderDetailPage() {
   }, [setSelectedOrderId]);
 
   const detailContext = (() => {
-    if (location.pathname.startsWith('/ready/')) {
-      return { backPath: '/ready', backLabel: 'Готово' };
+    // Post-R1 URLs: OrderDetailPage is rendered at `/sales/:id` and
+    // `/logistics/:id`. The other branches are dormant until the per-stage
+    // routes (e.g. `/production/ready/:id`) are wired — they're kept here so
+    // those routes can ship without re-touching this logic.
+    if (location.pathname.startsWith('/production/ready/')) {
+      return { backPath: '/production/ready', backLabel: 'Готово' };
     }
-    if (location.pathname.startsWith('/sales/')) {
-      return { backPath: '/archive', backLabel: 'Архив' };
+    if (location.pathname.startsWith('/sales/archive/')) {
+      return { backPath: '/sales/archive', backLabel: 'Архив' };
     }
     if (location.pathname.startsWith('/warehouse/')) {
       return { backPath: '/warehouse', backLabel: 'Склад' };
     }
-    return { backPath: '/orders', backLabel: 'Заказы' };
+    if (location.pathname.startsWith('/logistics/')) {
+      return { backPath: '/logistics', backLabel: 'Логистика' };
+    }
+    return { backPath: '/sales', backLabel: 'Заказы' };
   })();
 
   const canViewAllOrderCards = isOwner
@@ -187,6 +220,7 @@ export default function OrderDetailPage() {
   const addActivity = useAddOrderActivity();
   const restoreOrder = useRestoreOrder();
   const closeOrder = useCloseOrder();
+  const archiveOrder = useArchiveOrder();
   const createInvoice = useCreateInvoice();
   const setRequiresInvoice = useSetRequiresInvoice();
   const routeSingleItem = useRouteSingleItem();
@@ -373,6 +407,8 @@ export default function OrderDetailPage() {
   const isOverdue = order.dueDate && new Date(order.dueDate) < new Date() && order.status !== 'completed';
   const orderItems = order.items ?? [];
   const productionTaskByItemId = new Map((order.productionTasks ?? []).map((task) => [task.orderItemId, task]));
+  // P6: profile-driven gating of sections (production, returns, etc.).
+  const profile = useBusinessProfile();
   const currentRoutes = Object.fromEntries(orderItems.map((item) => [item.id, resolveItemFulfillmentMode(order, item)]));
 
   const warehouseItems = orderItems.filter((item) => currentRoutes[item.id] === 'warehouse');
@@ -503,11 +539,9 @@ export default function OrderDetailPage() {
                         )}
                       </div>
                       <span className={styles.itemMeta}>{formatItemMeta(item)}</span>
-                      {item.length && (
-                        <span className={styles.itemMeta} style={{ color: 'var(--text-tertiary)', fontSize: 11 }}>
-                          дл. {item.length}
-                        </span>
-                      )}
+                      {/* P5/Stage 4: legacy length-column rendering folded into
+                          formatItemMeta() via attributes bag. The standalone
+                          "дл." badge was clothing-specific and is now obsolete. */}
                       {item.workshopNotes && <span className={styles.itemNote}>↳ {item.workshopNotes}</span>}
                       {order.status === 'new' && stock !== undefined && (
                         <span className={hasEnoughStock ? styles.stockBadgeIn : styles.stockBadgeOut}>
@@ -792,14 +826,19 @@ export default function OrderDetailPage() {
                 </div>
               )}
 
-              {['ready', 'transferred', 'on_warehouse', 'completed'].includes(order.status) && (
+              {/* P6: Download invoice — gated on the profile's invoices module,
+                  not on a hardcoded set of clothing-flow statuses. */}
+              {profile.modules.invoices && order.status !== 'new' && order.status !== 'cancelled' && (
                 <button className={`${styles.actionBtn} ${styles.actionSecondary}`} onClick={handleInvoiceDownload} disabled={invoiceDownloading}>
                   <Download size={13} />
                   {invoiceDownloading ? 'Подготовка накладной...' : 'Скачать накладную'}
                 </button>
               )}
 
-              {order.status === 'ready' && pendingInvoice && (
+              {/* P6: Pending invoice panel — production-module specific
+                  (seamstress + warehouse double-confirm). Hidden for
+                  retail/services profiles that lack a workshop. */}
+              {profile.modules.production && order.status === 'ready' && pendingInvoice && (
                 <div className={styles.invoicePanel}>
                   <div className={styles.invoicePanelTitle}>
                     <Clock size={12} />
@@ -820,9 +859,34 @@ export default function OrderDetailPage() {
                   </div>
                 </div>
               )}
-              {order.status === 'transferred' && <button className={`${styles.actionBtn} ${styles.actionSecondary}`} onClick={() => changeStatus.mutate({ id: order.id, status: 'completed' })} disabled={changeStatus.isPending}>Завершить заказ</button>}
 
-              {['ready', 'transferred', 'on_warehouse', 'completed'].includes(order.status) && !order.isArchived && (
+              {/* P6: profile-driven status-transition buttons. Reads allowed
+                  targets from the active BusinessProfile and renders one
+                  button per target. Cancellation is handled by its own
+                  dedicated button below. */}
+              {(() => {
+                const allowed: string[] = (profile.lifecycle.transitions[order.status as OrderStatus] ?? [])
+                  .filter((t) => t !== 'cancelled');
+                if (allowed.length === 0) return null;
+                return allowed.map((target) => (
+                  <button
+                    key={target}
+                    type="button"
+                    className={`${styles.actionBtn} ${styles.actionSecondary}`}
+                    onClick={() => changeStatus.mutate({ id: order.id, status: target })}
+                    disabled={changeStatus.isPending}
+                  >
+                    {STATUS_LABEL[target as OrderStatus] ?? target}
+                  </button>
+                ));
+              })()}
+
+              {/* P6: "Close deal" — uses lifecycleStage instead of specific
+                  clothing statuses, so it shows up across all profiles whose
+                  order is past the draft/committed stages and not yet archived. */}
+              {!order.isArchived
+                && ['fulfilling', 'completed'].includes(order.lifecycleStage ?? '')
+                && (
                 <button
                   className={`${styles.actionBtn} ${styles.actionArchive}`}
                   onClick={() => { closeOrder.mutate(order.id); }}
@@ -830,6 +894,26 @@ export default function OrderDetailPage() {
                 >
                   <ArchiveIcon size={13} />
                   {closeOrder.isPending ? 'Закрытие...' : 'Закрыть сделку'}
+                </button>
+              )}
+
+              {/* "Архивировать" — explicit move-to-archive action. Distinct
+                  from "Закрыть сделку" (which closes + archives in one
+                  fulfilling-only step). This button shows for any
+                  terminal-status order (completed OR cancelled) that
+                  hasn't yet been archived — server enforces the same
+                  rule. */}
+              {!order.isArchived
+                && (order.status === 'completed' || order.status === 'cancelled')
+                && (
+                <button
+                  type="button"
+                  className={`${styles.actionBtn} ${styles.actionArchive}`}
+                  onClick={() => { archiveOrder.mutate(order.id); }}
+                  disabled={archiveOrder.isPending}
+                >
+                  <ArchiveIcon size={13} />
+                  {archiveOrder.isPending ? 'Архивирование...' : 'Архивировать'}
                 </button>
               )}
 
@@ -854,7 +938,7 @@ export default function OrderDetailPage() {
             </div>
           </div>
 
-          {existingReturns.length > 0 && (
+          {existingReturns.length > 0 && profile.modules.returns && (
             <div className={styles.card}>
               <div className={styles.cardLabel}>Возвраты</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -887,7 +971,7 @@ export default function OrderDetailPage() {
             </div>
           )}
 
-          {warehouseItems.length > 0 && (
+          {warehouseItems.length > 0 && profile.modules.warehouse && (
             <div className={styles.card}>
               <div className={styles.cardLabel}>Склад</div>
               <div className={styles.routeList}>
@@ -904,7 +988,48 @@ export default function OrderDetailPage() {
             </div>
           )}
 
-          {productionItems.length > 0 && (
+          {/* P6: schema-driven custom attributes — only render if non-empty. */}
+          {(() => {
+            const extras = (order.extraAttributes ?? {}) as Record<string, unknown>;
+            const itemAttrs = orderItems
+              .map((item) => ({ item, attrs: (item.attributes ?? {}) as Record<string, unknown> }))
+              .filter((row) => Object.keys(row.attrs).length > 0);
+            const hasExtras = Object.keys(extras).length > 0;
+            if (!hasExtras && itemAttrs.length === 0) return null;
+            return (
+              <div className={styles.card}>
+                <div className={styles.cardLabel}>Дополнительные атрибуты</div>
+                {hasExtras && (
+                  <div className={`${styles.extrasGrid}${itemAttrs.length > 0 ? ` ${styles.extrasGridSpaced}` : ''}`}>
+                    {Object.entries(extras).map(([key, value]) => (
+                      <div key={key}>
+                        <div className={styles.extrasLabel}>{key}</div>
+                        <div className={styles.extrasValue}>{formatAttributeValue(value)}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {itemAttrs.length > 0 && (
+                  <div className={styles.itemAttrsList}>
+                    {itemAttrs.map(({ item, attrs }) => (
+                      <div key={item.id} className={styles.itemAttrsRow}>
+                        <div className={styles.itemAttrsHeader}>{item.productName}</div>
+                        <div className={styles.itemAttrsChips}>
+                          {Object.entries(attrs).map(([key, value]) => (
+                            <span key={key} className={styles.itemAttrsChip}>
+                              <strong>{key}:</strong>{' '}{formatAttributeValue(value)}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
+          {productionItems.length > 0 && profile.modules.production && (
             <div className={styles.card}>
               <div className={styles.cardLabel}>Производство</div>
               <div className={styles.prodList}>

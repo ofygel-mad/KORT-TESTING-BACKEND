@@ -1,257 +1,154 @@
-.page {
-  padding: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-height: 100%;
-}
+/* ── KaspiOrdersPage — modern re-skin (Variant C, 2026-05-23) ──
+   Aligns with OrdersPage / OrderDetailPage idioms: `--ch-*` operational
+   tokens for surfaces/borders, modern `--text-*` / `--fill-accent` /
+   `--bg-surface` tokens for primary UI. Primitives from `@/shared/ui`
+   replace the old custom `.button` / `.field` / `.search` reimplementations.
+*/
 
-/* ── Header ── */
-.header {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-bottom: 4px;
-}
+.root { padding: 24px; display: flex; flex-direction: column; gap: 16px; min-height: 100%; }
 
-.titleWrap { display: flex; flex-direction: column; gap: 4px; }
+/* ── Header ─────────────────────────────────────────── */
+.header { display: flex; flex-direction: column; gap: 4px; margin-bottom: 4px; }
+.headerTitle { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 700; color: var(--ch-text); }
+.headerSub { font-size: 12px; color: var(--ch-text-muted); padding-left: 28px; }
 
-.title { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 700; color: var(--ch-text); }
-
-.subtitle {
-  font-size: 12px;
-  color: var(--ch-text-muted);
-  padding-left: 28px;
-}
-
-.headerActions {
-  display: flex;
-  gap: 8px;
+/* ── Connection ribbon ─────────────────────────────────
+   Compact one-line panel showing current Kaspi store. Replaces the
+   bulky ConnectionPanel <table>. */
+.ribbon {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
   flex-wrap: wrap;
 }
+.ribbonStatus {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 12px; font-weight: 600; color: var(--ch-text);
+  white-space: nowrap;
+}
+.ribbonDot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--ch-plat); box-shadow: 0 0 8px var(--ch-plat-border);
+}
+.ribbonDotOk { background: var(--ch-green); box-shadow: 0 0 8px rgba(16,185,129,.45); }
+.ribbonDotWarn { background: var(--ch-amber); box-shadow: 0 0 8px rgba(245,158,11,.45); }
+.ribbonDotOff { background: var(--ch-text-muted); box-shadow: none; }
+.ribbonSeparator { width: 1px; height: 16px; background: var(--border-subtle); }
+.ribbonMeta { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ch-text-muted); }
+.ribbonMeta strong { color: var(--ch-text); font-weight: 600; }
+.ribbonMono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; color: var(--ch-text-dim); }
+.ribbonActions { display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; }
+.ribbonError {
+  margin-top: 6px;
+  width: 100%;
+  font-size: 11px;
+  color: var(--ch-red);
+  background: rgba(239,68,68,.08);
+  border: 1px solid rgba(239,68,68,.25);
+  border-radius: 6px;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
 
-/* ── Panel ── */
-.panel {
-  background: var(--ch-surface);
-  border: 1px solid var(--ch-border);
+.tabBarSummary { margin-left: auto; }
+
+/* ── Stat bar ──────────────────────────────────────────
+   Six KPI tiles matching KASPI_STAGE_META + total. Same shape as
+   the OrdersPage filter dropdowns, but horizontal and clickable. */
+.statBar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+.statTile {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 12px 14px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: border-color 140ms, background 140ms, transform 100ms;
+}
+.statTile:hover {
+  border-color: var(--ch-border-plat);
+  background: var(--bg-surface-elevated);
+  transform: translateY(-1px);
+}
+.statTileActive {
+  border-color: var(--ch-plat-border);
+  background: var(--ch-plat-soft);
+}
+.statLabel {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ch-text-muted);
+}
+.statTileActive .statLabel { color: var(--ch-plat-bright); }
+.statValue { font-size: 20px; font-weight: 700; color: var(--ch-text); }
+.statTileActive .statValue { color: var(--ch-plat-bright); }
+.statDesc { font-size: 11px; color: var(--ch-text-muted); line-height: 1.35; }
+
+/* ── Tab bar (sub-route nav) ───────────────────────────
+   Pills exactly mirroring OrdersPage `.tabBar`. */
+.tabBar { display: flex; align-items: center; gap: 6px; padding-bottom: 12px; border-bottom: 1px solid var(--border-subtle); flex-wrap: wrap; }
+.tab {
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 13px; font-weight: 500;
+  border: 1px solid var(--border-subtle);
+  background: transparent;
+  color: var(--ch-text-muted);
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex; align-items: center; gap: 8px;
+  transition: background 140ms, color 140ms, border-color 140ms;
+}
+.tab:hover { background: var(--bg-surface-elevated); color: var(--ch-text); }
+.tabActive { background: var(--fill-accent); color: var(--text-on-accent); border-color: var(--fill-accent); }
+.tabBadge {
+  font-size: 11px; font-weight: 700;
+  min-width: 22px;
+  padding: 1px 7px;
+  border-radius: 10px;
+  background: var(--bg-surface-elevated);
+  color: var(--ch-text);
+}
+.tabActive .tabBadge { background: rgba(255,255,255,.18); color: #fff; }
+
+/* ── Card / panel ──────────────────────────────────────
+   Mirrors OrderDetailPage card style. */
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
   border-radius: 10px;
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
-
-.panelHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.cardHeader {
+  display: flex; align-items: flex-start; justify-content: space-between;
   gap: 12px;
 }
+.cardTitleGroup { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cardTitle { font-size: 14px; font-weight: 700; color: var(--ch-text); }
+.cardSub { font-size: 12px; color: var(--ch-text-muted); }
+.cardActions { display: flex; gap: 6px; flex-wrap: wrap; }
 
-.panelTitle {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--ch-text);
-}
-
-.panelSub {
-  font-size: 12px;
-  color: var(--ch-text-muted);
-  margin-top: 2px;
-}
-
-.toolbarNote {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 34px;
-  padding: 8px 12px;
-  border: 1px solid var(--ch-border);
-  border-radius: 8px;
-  color: var(--ch-text-muted);
-  background: var(--ch-card);
-  font-size: 12px;
-}
-
-.inlineStats {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 10px;
-  padding: 8px 12px;
-  border: 1px solid var(--ch-border);
-  border-radius: 8px;
-  background: var(--ch-card);
-  color: var(--ch-text);
-}
-
-.inlineStatLabel {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: .06em;
-  color: var(--ch-text-muted);
-}
-
-/* ── Connection meta grid ── */
-.metaGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 8px;
-}
-
-.metaCard {
-  background: var(--ch-card);
-  border: 1px solid var(--ch-border);
-  border-radius: 8px;
-  padding: 10px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.metaLabel {
-  font-size: 11px;
-  color: var(--ch-text-muted);
-}
-
-.metaValue {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ch-text);
-  word-break: break-word;
-}
-
-/* ── Registry records ── */
-.recordTableWrap {
-  overflow: auto;
-  border: 1px solid var(--ch-border);
-  border-radius: 10px;
-  background: var(--ch-surface);
-}
-
-.compactTable {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 640px;
-}
-
-.compactTable th,
-.compactTable td {
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--ch-border);
-  text-align: left;
-  vertical-align: top;
-  font-size: 12px;
-  color: var(--ch-text);
-}
-
-.compactTable thead th {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: .05em;
-  text-transform: uppercase;
-  color: var(--ch-text-muted);
-  background: var(--ch-card);
-}
-
-.compactTable tbody th {
-  width: 18%;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-  color: var(--ch-text-muted);
-  background: var(--ch-card);
-}
-
-.compactTable tbody tr:last-child th,
-.compactTable tbody tr:last-child td,
-.compactTable thead + tbody tr:last-child th,
-.compactTable thead + tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.sectionNav {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.sectionPill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--ch-border);
-  background: transparent;
-  color: var(--ch-text-muted);
-  font-size: 12px;
-  text-decoration: none;
-}
-
-.sectionPill strong {
-  color: var(--ch-text);
-  font-size: 12px;
-}
-
-.sectionPill:hover {
-  border-color: var(--ch-border-plat);
-  background: var(--ch-card);
-  color: var(--ch-text);
-}
-
-.sectionPillActive {
-  color: var(--ch-plat-bright);
-  border-color: var(--ch-plat-border);
-  background: var(--ch-plat-soft);
-}
-
-.sectionLink {
-  color: var(--ch-text);
-  text-decoration: none;
-  font-weight: 600;
-}
-
-.sectionLink:hover {
-  color: var(--ch-plat-bright);
-}
-
-.sectionLinkActive {
-  color: var(--ch-plat-bright);
-}
-
-/* ── Toolbar ── */
-.toolbar {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.search {
-  flex: 1 1 240px;
-  min-width: 200px;
-  padding: 9px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--ch-border);
-  background: var(--ch-surface);
-  color: var(--ch-text);
-  font-family: inherit;
-  font-size: 13px;
-  outline: none;
-  transition: border-color 160ms;
-}
-.search:focus { border-color: var(--ch-plat-border); }
-.search::placeholder { color: var(--ch-text-muted); }
-
-.presetRow {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
+/* ── Toolbar (sub-page) ────────────────────────────────
+   Search + filter chips for stage / stock pages. */
+.toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.searchWrap { flex: 1 1 240px; min-width: 200px; max-width: 380px; }
+.chipRow { display: flex; gap: 6px; flex-wrap: wrap; }
 .chip {
-  border: 1px solid var(--ch-border);
+  border: 1px solid var(--border-subtle);
   background: transparent;
   color: var(--ch-text-muted);
   border-radius: 8px;
@@ -259,246 +156,229 @@
   font-size: 12px;
   font-family: inherit;
   cursor: pointer;
-  transition: border-color 140ms, color 140ms, background 140ms;
+  transition: background 140ms, color 140ms, border-color 140ms;
 }
-.chip:hover { border-color: var(--ch-border-plat); color: var(--ch-text); background: var(--ch-card); }
-
+.chip:hover { border-color: var(--ch-border-plat); background: var(--bg-surface-elevated); color: var(--ch-text); }
 .chipActive {
   color: var(--ch-plat-bright);
   border-color: var(--ch-plat-border);
   background: var(--ch-plat-soft);
 }
+.toolbarSpacer { flex: 1; }
+.toolbarCount { font-size: 12px; color: var(--ch-text-muted); }
+.toolbarCount strong { color: var(--ch-text); font-weight: 700; }
+.toolbarNote {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 11px; color: var(--ch-text-muted);
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--bg-surface-elevated);
+  border: 1px dashed var(--border-subtle);
+}
 
-/* ── Table ── */
+/* ── Tables ────────────────────────────────────────────
+   Cleaner OrdersPage-style spacing; row hover; sticky header. */
 .tableWrap {
   overflow: auto;
-  border: 1px solid var(--ch-border);
+  border: 1px solid var(--border-subtle);
   border-radius: 10px;
-  background: var(--ch-surface);
+  background: var(--bg-surface);
 }
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 900px;
-}
-
-.table th,
-.table td {
+.table { width: 100%; border-collapse: collapse; min-width: 900px; }
+.table th, .table td {
   padding: 10px 14px;
-  border-bottom: 1px solid var(--ch-border);
+  border-bottom: 1px solid var(--border-subtle);
   text-align: left;
   vertical-align: top;
+  font-size: 13px;
+  color: var(--text-primary);
 }
-
+.table thead th {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: .05em; text-transform: uppercase;
+  color: var(--text-tertiary);
+  background: var(--bg-surface-elevated);
+  position: sticky; top: 0; z-index: 1;
+}
 .table tbody tr:last-child td { border-bottom: none; }
+.rowButton { cursor: pointer; transition: background 120ms; }
+.rowButton:hover { background: var(--bg-surface-elevated); }
 
-.table th {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: .05em;
-  text-transform: uppercase;
-  color: var(--ch-text-muted);
-  background: var(--ch-card);
-}
+/* Inline grouping in cells */
+.stack { display: flex; flex-direction: column; gap: 2px; }
+.metaLabel { font-size: 11px; color: var(--ch-text-muted); }
+.mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; }
+.badgeRow { display: flex; gap: 5px; flex-wrap: wrap; }
+.primaryCell { font-weight: 600; color: var(--text-primary); }
 
-.rowButton {
-  cursor: pointer;
-  transition: background 120ms;
-}
-.rowButton:hover { background: var(--ch-card); }
-
-/* ── Cell helpers ── */
-.stack {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.mono {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-size: 11px;
-}
-
-.badgeRow {
-  display: flex;
-  gap: 5px;
-  flex-wrap: wrap;
-}
-
-/* ── Status badges ── */
+/* ── Status badges ─────────────────────────────────────
+   Modern tone-mapped chips. */
 .badge {
-  display: inline-flex;
-  align-items: center;
+  display: inline-flex; align-items: center;
   gap: 5px;
-  border-radius: 4px;
+  border-radius: 5px;
   padding: 2px 8px;
   font-size: 11px;
-  font-weight: 700;
-  letter-spacing: .04em;
+  font-weight: 600;
+  letter-spacing: .02em;
   border: 1px solid transparent;
   white-space: nowrap;
 }
-
 .statusDefault {
-  background: color-mix(in srgb, var(--ch-text-muted) 12%, transparent);
+  background: color-mix(in srgb, var(--ch-text-muted) 14%, transparent);
   color: var(--ch-text-dim);
-  border-color: color-mix(in srgb, var(--ch-text-muted) 22%, transparent);
+  border-color: color-mix(in srgb, var(--ch-text-muted) 24%, transparent);
 }
-
-.statusWarn {
+.statusWarn  {
   background: color-mix(in srgb, var(--ch-amber) 14%, transparent);
   color: var(--ch-amber);
-  border-color: color-mix(in srgb, var(--ch-amber) 28%, transparent);
+  border-color: color-mix(in srgb, var(--ch-amber) 30%, transparent);
 }
-
-.statusGood {
+.statusGood  {
   background: color-mix(in srgb, var(--ch-green) 14%, transparent);
   color: var(--ch-green);
-  border-color: color-mix(in srgb, var(--ch-green) 28%, transparent);
+  border-color: color-mix(in srgb, var(--ch-green) 30%, transparent);
 }
-
-.statusBad {
+.statusBad   {
   background: color-mix(in srgb, var(--ch-red) 14%, transparent);
   color: var(--ch-red);
-  border-color: color-mix(in srgb, var(--ch-red) 28%, transparent);
+  border-color: color-mix(in srgb, var(--ch-red) 30%, transparent);
 }
-
-.statusInfo {
+.statusInfo  {
   background: color-mix(in srgb, var(--ch-blue) 14%, transparent);
   color: var(--ch-blue);
-  border-color: color-mix(in srgb, var(--ch-blue) 28%, transparent);
+  border-color: color-mix(in srgb, var(--ch-blue) 30%, transparent);
 }
 
-/* ── Buttons ── */
-.button {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 13px;
-  border: 1px solid var(--ch-border);
-  background: var(--ch-surface);
-  color: var(--ch-text-dim);
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
-  transition: border-color 140ms, color 140ms, background 140ms;
-}
-.button:hover { border-color: var(--ch-border-plat); color: var(--ch-text); background: var(--ch-card); }
-
-.buttonPrimary {
-  background: var(--ch-plat-soft);
-  border-color: var(--ch-plat-border);
-  color: var(--ch-plat-bright);
-}
-.buttonPrimary:hover { background: color-mix(in srgb, var(--ch-plat) 18%, var(--ch-surface)); }
-
-.button:disabled {
-  opacity: 0.5;
-  cursor: default;
-  pointer-events: none;
-}
-
-/* ── Empty state ── */
-.empty {
-  border: 1px dashed var(--ch-border);
-  border-radius: 10px;
-  padding: 36px 20px;
-  text-align: center;
-  color: var(--ch-text-muted);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  align-items: center;
-  font-size: 13px;
-}
-
-/* ── Connection form ── */
+/* ── Connection drawer (form) ─────────────────────────── */
 .formGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+.formFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.formNote {
+  font-size: 12px;
+  color: var(--ch-text-muted);
+  line-height: 1.5;
+  padding: 10px 12px;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+}
+
+/* ── History (in Drawer) ──────────────────────────────── */
+.historyList { display: flex; flex-direction: column; gap: 10px; }
+.historyRow {
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: var(--bg-surface);
+  display: flex; align-items: flex-start; justify-content: space-between;
   gap: 10px;
 }
+.historyRowActive { border-color: var(--ch-plat-border); background: var(--ch-plat-soft); }
+.historyMain { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
+.historyTitle { font-size: 13px; font-weight: 700; color: var(--ch-text); }
+.historySub { font-size: 11px; color: var(--ch-text-muted); }
+.historyCounters { display: flex; gap: 12px; font-size: 11px; color: var(--ch-text-muted); }
+.historyCounters strong { color: var(--ch-text); font-weight: 700; }
+.historyActions { display: flex; flex-direction: column; gap: 6px; }
 
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.field label {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: .04em;
+/* ── Loading / error / empty (sub-pages) ───────────────
+   Use a soft inline block; full-screen empty handled by <EmptyState>. */
+.statePanel {
+  border: 1px dashed var(--border-subtle);
+  border-radius: 10px;
+  padding: 28px 20px;
+  text-align: center;
   color: var(--ch-text-muted);
-}
-
-.field input {
-  border: 1px solid var(--ch-border);
-  background: var(--ch-card);
-  color: var(--ch-text);
-  border-radius: 8px;
-  padding: 9px 12px;
-  font-family: inherit;
+  display: flex; flex-direction: column; gap: 10px;
+  align-items: center;
   font-size: 13px;
-  outline: none;
-  transition: border-color 160ms;
 }
-.field input:focus { border-color: var(--ch-plat-border); }
-.field input::placeholder { color: var(--ch-text-muted); }
 
-/* ── Detail page layout ── */
+/* ── Detail page ──────────────────────────────────────── */
+.detailHeader {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap;
+}
+.detailTitleGroup { display: flex; flex-direction: column; gap: 6px; }
+.detailBackRow { display: flex; align-items: center; gap: 12px; }
+.detailTitleText { display: flex; flex-direction: column; gap: 2px; }
+.detailTitleHeading { display: inline-flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 700; color: var(--ch-text); }
+.detailMeta { font-size: 12px; color: var(--ch-text-muted); }
 .detailGrid {
   display: grid;
   grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.7fr);
   gap: 16px;
 }
+.detailColumn { display: flex; flex-direction: column; gap: 16px; }
 
-.detailColumn {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.sectionTitle {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--ch-text);
-}
-
-.simpleList {
+.metaGrid {
   display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 8px;
 }
-
-.listRow {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  border-bottom: 1px solid var(--ch-border);
-  padding-bottom: 8px;
+.metaCard {
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.metaCardLabel {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--ch-text-muted);
+}
+.metaCardValue {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ch-text);
+  word-break: break-word;
 }
 
-.listRow:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
+.kvList { display: grid; gap: 8px; }
+.kvRow {
+  display: flex; justify-content: space-between; gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.kvRow:last-child { border-bottom: none; padding-bottom: 0; }
+.kvKey { font-size: 12px; color: var(--ch-text-muted); }
+.kvValue { font-size: 13px; color: var(--ch-text); font-weight: 600; text-align: right; }
+
+.subSectionTitle {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--ch-text-muted);
 }
 
 .jsonBox {
-  background: var(--ch-card);
+  background: var(--bg-surface-elevated);
   color: var(--ch-text-dim);
   border-radius: 8px;
-  border: 1px solid var(--ch-border);
+  border: 1px solid var(--border-subtle);
   padding: 10px 12px;
   overflow: auto;
   font-size: 11px;
   font-family: 'JetBrains Mono', ui-monospace, monospace;
+  max-height: 240px;
 }
 
+/* ── Responsive ──────────────────────────────────────── */
 @media (max-width: 900px) {
-  .page { padding: 16px; }
+  .root { padding: 16px; }
   .detailGrid { grid-template-columns: 1fr; }
-  .compactTable { min-width: 0; }
+  .table { min-width: 0; }
+  .ribbonActions { margin-left: 0; }
 }

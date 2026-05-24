@@ -19,6 +19,7 @@ import {
 import { sendPasswordResetEmail } from '../../lib/email.js';
 import { normalizeOrgCurrency } from '../../lib/currency.js';
 import { provisionOrganization } from '../../lib/provisioning.js';
+import { resolveConfigForBootstrap } from '../composition/composition.service.js';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -464,7 +465,11 @@ export async function refreshTokens(refreshToken: string) {
 
 // ─── bootstrap ────────────────────────────────────────────────────────────────
 
-export async function bootstrap(userId: string, selectedOrgId?: string) {
+export async function bootstrap(
+  userId: string,
+  selectedOrgId?: string,
+  preview = false,
+) {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) return null;
 
@@ -492,6 +497,11 @@ export async function bootstrap(userId: string, selectedOrgId?: string) {
     active?.role?.permissions ?? [],
     active?.permissionOverrides ?? [],
   );
+
+  // ЧАСТЬ X — composition config; lazily seeds the default on first read.
+  const config = active?.org
+    ? await resolveConfigForBootstrap(active.org.id, { preview })
+    : null;
 
   return {
     user: {
@@ -536,6 +546,7 @@ export async function bootstrap(userId: string, selectedOrgId?: string) {
       onboarding_completed: m.org.onboardingCompleted,
       is_owner: m.isOwner,
     })),
+    config,
   };
 }
 

@@ -283,7 +283,7 @@ export async function confirm(
         type: 'return',
         qty: item.qty,
         sourceId: id,
-        sourceType: 'chapan_return',
+        sourceType: 'customer_return',
         reason: `Возврат ${ret.returnNumber} — ${item.productName} (${item.condition})`,
         author: userName,
       });

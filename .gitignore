@@ -11,6 +11,7 @@ server/coverage/
 *.db
 *.db-journal
 *.dump
+*.log
 
 # DB reports — contain raw data including password hashes and tokens, NEVER commit
 _database-report/

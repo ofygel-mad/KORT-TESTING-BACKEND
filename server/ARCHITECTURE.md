@@ -41,8 +41,7 @@ server/
 │       ├── customers/
 │       ├── leads/
 │       ├── deals/
-│       ├── tasks/
-│       └── chapan/
+│       └── tasks/
 ├── package.json
 ├── tsconfig.json
 ├── .env.example
@@ -182,52 +181,11 @@ All endpoints are prefixed with `/api/v1`.
 | POST | `/tasks/:id/activities` | Yes+Org | Add activity (comment, etc.) |
 | DELETE | `/tasks/:id` | Yes+Org | Delete task |
 
-### Chapan: Orders (`/chapan/orders`)
+### Sales, Production, Warehouse, Returns, Integrations
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| GET | `/chapan/orders?status=&priority=&paymentStatus=&search=&sortBy=` | Yes+Org | List orders with filters |
-| GET | `/chapan/orders/:id` | Yes+Org | Get order with items, tasks, payments, activities |
-| POST | `/chapan/orders` | Yes+Org | Create order (auto-calculates totalAmount) |
-| POST | `/chapan/orders/:id/confirm` | Yes+Org | Confirm order (auto-creates production tasks from items) |
-| PATCH | `/chapan/orders/:id/status` | Yes+Org | Change order status |
-| POST | `/chapan/orders/:id/payments` | Yes+Org | Add payment (auto-updates paymentStatus) |
-| POST | `/chapan/orders/:id/transfer` | Yes+Org | Initiate transfer |
-| POST | `/chapan/orders/:id/transfer/confirm` | Yes+Org | Confirm transfer (by: manager or client) |
-| POST | `/chapan/orders/:id/activities` | Yes+Org | Add comment/activity |
-
-### Chapan: Production (`/chapan/production`)
-
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| GET | `/chapan/production?status=&assignedTo=` | Yes+Org | List all production tasks (manager view, includes client data) |
-| GET | `/chapan/production/workshop` | Yes+Org | Workshop view (NO client names/phones — privacy) |
-| PATCH | `/chapan/production/:id/status` | Yes+Org | Move task status (auto-sets order to "ready" when all tasks done) |
-| PATCH | `/chapan/production/:id/assign` | Yes+Org | Assign worker to task |
-| POST | `/chapan/production/:id/flag` | Yes+Org | Block task with reason |
-| POST | `/chapan/production/:id/unflag` | Yes+Org | Unblock task |
-| PATCH | `/chapan/production/:id/defect` | Yes+Org | Set/clear defect note |
-
-### Chapan: Requests (`/chapan/requests`)
-
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| GET | `/chapan/requests?status=` | Yes+Org | List client requests |
-| POST | `/chapan/requests` | Yes+Org | Submit request internally (from manager) |
-| PATCH | `/chapan/requests/:id/status` | Yes+Org | Update request status |
-| POST | `/chapan/requests/public/:orgId` | **No** | Public form submission (no auth) |
-| GET | `/chapan/requests/public/:orgId/profile` | **No** | Get public form config + catalogs |
-
-### Chapan: Settings (`/chapan/settings`)
-
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| GET | `/chapan/settings/profile` | Yes+Org | Get workshop profile |
-| PATCH | `/chapan/settings/profile` | Admin+ | Update workshop profile |
-| GET | `/chapan/settings/catalogs` | Yes+Org | Get catalogs (products, fabrics, sizes, workers) |
-| PUT | `/chapan/settings/catalogs` | Admin+ | Replace catalogs |
-| GET | `/chapan/settings/clients` | Yes+Org | List chapan clients |
-| POST | `/chapan/settings/clients` | Yes+Org | Create chapan client |
+Module-specific route tables have been removed from this doc as they go stale fast.
+The source of truth for current route registrations is `src/index.ts` (buildApp)
+and the per-module `*.routes.ts` files.
 
 ### Utility
 
@@ -255,22 +213,17 @@ All endpoints are prefixed with `/api/v1`.
 - `deal_activities` — deal event log
 - `tasks` — to-do items, optionally linked to deals
 
-### Chapan Workshop (17 tables)
+### Sales / Production
 
-- `chapan_profiles` — per-org workshop settings (name, prefix, counters, public form config)
-- `chapan_clients` — workshop-specific client records
-- `chapan_orders` — orders with status/payment/priority axes
-- `chapan_order_items` — line items (product, fabric, size, quantity, price)
-- `chapan_production_tasks` — 1:1 with order items, tracks production pipeline
-- `chapan_payments` — payment records per order
-- `chapan_transfers` — two-party handoff confirmation
-- `chapan_activities` — full audit log with author
-- `chapan_requests` — client intake requests (from public form or internal)
-- `chapan_request_items` — items within a request
-- `chapan_workers` — worker names (per-org catalog)
-- `chapan_catalog_products` — product catalog
-- `chapan_catalog_fabrics` — fabric catalog
-- `chapan_catalog_sizes` — size catalog
+- `orders` — orders with status/payment/priority axes
+- `order_items` — line items
+- `production_tasks` — 1:1 with order items, tracks production pipeline
+- `payments` — payment records per order
+- `order_transfers` — two-party handoff confirmation
+- `order_activities` — full audit log with author
+- `workers`, `product_sizes`, `payment_methods` — per-org catalogs
+
+(Full inventory: see `prisma/schema.prisma`.)
 
 ## Key Behaviors
 
@@ -281,7 +234,7 @@ new → confirmed → in_production → ready → transferred → completed
                                        ↘ cancelled
 ```
 
-- **Confirm** auto-creates `chapan_production_tasks` from `chapan_order_items`.
+- **Confirm** auto-creates `production_tasks` from `order_items`.
 - **All tasks done** → order auto-transitions to `ready`.
 - **Transfer** requires both manager + client confirmation.
 
@@ -300,11 +253,11 @@ Tasks can be blocked/unblocked with a reason at any stage.
 
 ### Data Isolation (Workshop Console)
 
-The `/chapan/production/workshop` endpoint returns tasks **without** `clientName` and `clientPhone`. This is the endpoint used by workshop_lead/worker roles who should not see client PII.
+The production workshop endpoint returns tasks **without** `clientName` and `clientPhone`. This is the endpoint used by workshop_lead/worker roles who should not see client PII.
 
 ### Activity Log
 
-Every significant action (status change, payment, production update, comment, transfer) creates a `chapan_activities` record with `authorId` + `authorName`. No more hardcoded "Менеджер".
+Every significant action (status change, payment, production update, comment, transfer) creates an `order_activities` record with `authorId` + `authorName`. No more hardcoded "Менеджер".
 
 ## Running
 

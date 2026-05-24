@@ -1,4 +1,4 @@
-Roadmap for Warehouse Management System for Chapan
+Roadmap for Warehouse Management System
 
 
 P0 - Бизенс-логика электронной складской системы
