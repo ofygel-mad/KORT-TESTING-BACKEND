@@ -3,6 +3,10 @@ import { prisma } from '../../lib/prisma.js';
 import { NotFoundError, ValidationError } from '../../lib/errors.js';
 import { buildCanonicalVariantKey } from '../../shared/variant-key.js';
 import { normalizeName as normalizeWarehouseName } from '../../shared/normalize-name.js';
+import {
+  buildAxisFieldsForVariantKey,
+  filterAttributesToAxes,
+} from '../../shared/template-axes.js';
 import { normalizeProductionStatus } from './workflow.js';
 import { syncOrderToSheets } from '../integrations/sheets/sheets.sync.js';
 import { syncOrderStatus } from '../production/production.service.js';
@@ -146,12 +150,21 @@ async function buildOrderItemVariantSnapshot(
   orgId: string,
   item: {
     productName: string;
+    // P5/legacy: per-axis fields kept for backward-compat with old callers.
     color?: string | null;
     gender?: string | null;
     length?: string | null;
-    // P5: size optional for non-clothing templates.
     size?: string | null;
+    // P5: schema-driven generic custom attributes (concentration, material, …).
+    attributes?: Record<string, unknown> | null;
   },
+  /**
+   * P4: when present, axes are filtered to those marked
+   * `affectsAvailability` in the order's template snapshot. When absent (no
+   * template selected, or legacy call-path) every attribute is treated as
+   * an axis.
+   */
+  templateSnapshot?: Prisma.JsonValue | null,
 ) {
   const normalizedName = normalizeWarehouseName(item.productName);
   const product = await tx.warehouseProductCatalog.findFirst({
@@ -165,18 +178,31 @@ async function buildOrderItemVariantSnapshot(
     female: 'Женский', male: 'Мужской',
   };
 
-  const rawAttributes = Object.fromEntries(
-    Object.entries({
-      color: item.color?.trim() || '',
-      gender: item.gender?.trim() || '',
-      length: item.length?.trim() || '',
-      size: item.size?.trim() || '',
-    }).filter(([, value]) => value),
-  );
+  // P4: merge legacy flat fields with the generic attributes bag. Generic
+  // values win when both supply the same key.
+  const rawAttributes: Record<string, string> = {};
+  const addIfPresent = (key: string, raw: string | null | undefined) => {
+    const value = typeof raw === 'string' ? raw.trim() : '';
+    if (value) rawAttributes[key] = value;
+  };
+  addIfPresent('color', item.color);
+  addIfPresent('gender', item.gender);
+  addIfPresent('length', item.length);
+  addIfPresent('size', item.size);
+  if (item.attributes && typeof item.attributes === 'object') {
+    for (const [key, raw] of Object.entries(item.attributes)) {
+      const trimmedKey = key.trim();
+      const trimmedValue = typeof raw === 'string'
+        ? raw.trim()
+        : raw == null
+          ? ''
+          : String(raw).trim();
+      if (trimmedKey && trimmedValue) rawAttributes[trimmedKey] = trimmedValue;
+    }
+  }
 
-  // P0: WarehouseFieldDefinition removed — treat every attribute as an axis.
-  // TODO(P4): derive `fieldsForKey` from OrderTemplate.sections.
-  const fieldsForKey = Object.keys(rawAttributes).map((code) => ({ code, affectsAvailability: true }));
+  const axisAttributes = filterAttributesToAxes(templateSnapshot, rawAttributes);
+  const fieldsForKey = buildAxisFieldsForVariantKey(templateSnapshot, rawAttributes);
 
   const attributesSummary = Object.entries(rawAttributes)
     .sort(([a], [b]) => a.localeCompare(b))
@@ -184,7 +210,7 @@ async function buildOrderItemVariantSnapshot(
     .join(', ');
 
   return {
-    variantKey: buildCanonicalVariantKey(product?.name ?? item.productName, rawAttributes, fieldsForKey),
+    variantKey: buildCanonicalVariantKey(product?.name ?? item.productName, axisAttributes, fieldsForKey),
     attributesJson: Object.keys(rawAttributes).length > 0 ? rawAttributes : undefined,
     attributesSummary: attributesSummary || undefined,
   };
@@ -673,6 +699,18 @@ export async function create(orgId: string, authorId: string, authorName: string
       });
       if (row) chosenTemplateId = row.id;
     }
+    // P4/P6: load the template's sections to freeze them onto the Order as a
+    // snapshot. variant-key computation reads axis flags from this snapshot
+    // so a Chemicals order with `concentration` keeps its distinct stock
+    // position even when the legacy 4-axis fields are absent.
+    const chosenTemplate = chosenTemplateId
+      ? await tx.orderTemplate.findFirst({
+          where: { id: chosenTemplateId, orgId },
+          select: { sections: true },
+        })
+      : null;
+    const chosenTemplateSnapshot: Prisma.JsonValue | null =
+      (chosenTemplate?.sections as Prisma.JsonValue | undefined) ?? null;
     const activityEntries: Prisma.OrderActivityCreateWithoutOrderInput[] = [
       {
         type: 'system',
@@ -702,7 +740,7 @@ export async function create(orgId: string, authorId: string, authorName: string
 
     const orderItemCreates = await Promise.all(
       data.items.map(async (item, index) => {
-        const variantSnapshot = await buildOrderItemVariantSnapshot(tx, orgId, item);
+        const variantSnapshot = await buildOrderItemVariantSnapshot(tx, orgId, item, chosenTemplateSnapshot);
         // P0: per-attribute columns (color/gender/length/size) collapsed into
         // attributesJson. Fold legacy DTO fields into the JSON bag so callers
         // that still pass them keep working until the FE migrates in P4.
@@ -833,25 +871,24 @@ export async function create(orgId: string, authorId: string, authorName: string
   try {
     const { autoCreateFromOrder, reserveNewOrderItems, createOrderTransitEntries } =
       await import('../warehouse/warehouse.service.js');
-    // P0: per-attribute columns collapsed into attributesJson. Read them out
-    // for downstream warehouse calls that still expect the legacy shape.
+    // P4: warehouse layer now consumes a generic `attributes: Record<string,string>`
+    // map directly from OrderItem.attributesJson. The previous bridge that
+    // extracted only color/gender/length/size is gone — that was the original
+    // source of the totals-summing bug for custom-axis templates.
     const warehouseItems = mapped.items.map((item) => {
-      const attrs = (item.attributesJson && typeof item.attributesJson === 'object' && !Array.isArray(item.attributesJson))
+      const attrsRaw = (item.attributesJson && typeof item.attributesJson === 'object' && !Array.isArray(item.attributesJson))
         ? (item.attributesJson as Record<string, unknown>)
         : {};
-      const readStr = (key: string): string | null => {
-        const raw = attrs[key];
-        if (raw === undefined || raw === null) return null;
-        const str = String(raw).trim();
-        return str || null;
-      };
+      const attributes: Record<string, string> = {};
+      for (const [key, value] of Object.entries(attrsRaw)) {
+        const trimmedKey = key.trim();
+        const trimmedValue = typeof value === 'string' ? value.trim() : value == null ? '' : String(value).trim();
+        if (trimmedKey && trimmedValue) attributes[trimmedKey] = trimmedValue;
+      }
       return {
         id: item.id,
         productName: item.productName,
-        color: readStr('color'),
-        gender: readStr('gender'),
-        length: readStr('length'),
-        size: readStr('size'),
+        attributes,
         quantity: item.quantity,
         variantKey: item.variantKey,
         attributesJson: item.attributesJson as Record<string, string> | null,

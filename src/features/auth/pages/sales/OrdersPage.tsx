@@ -378,9 +378,9 @@ const setViewMode = (mode: ViewMode) => {
     for (const o of orders) {
       if (o.status !== 'new' && o.status !== 'confirmed') continue;
       for (const item of o.items ?? []) {
-        const variant = buildVariantAvailabilityInput(item.productName, item);
+        const variant = buildVariantAvailabilityInput(item.productName, item as unknown as Record<string, unknown>);
         if (!variant) continue;
-        const key = buildVariantLookupKey(variant.name, variant);
+        const key = buildVariantLookupKey(variant.name, variant.attributes);
         if (seen.has(key)) continue;
         seen.add(key);
         result.push(variant);
@@ -939,9 +939,9 @@ const OrderCard = memo(function OrderCard({ order, onSelectOrder, hasAlert, stoc
   const first = order.items?.[0];
   const more = (order.items?.length ?? 0) - 1;
   const isNewOrConfirmed = order.status === 'new' || order.status === 'confirmed';
-  const variantInput = first?.productName ? buildVariantAvailabilityInput(first.productName, first) : null;
+  const variantInput = first?.productName ? buildVariantAvailabilityInput(first.productName, first as unknown as Record<string, unknown>) : null;
   const stockInfo: VariantAvailabilityResult | undefined = (isNewOrConfirmed && variantInput && stockMap)
-    ? stockMap[buildVariantLookupKey(variantInput.name, variantInput)]
+    ? stockMap[buildVariantLookupKey(variantInput.name, variantInput.attributes)]
     : undefined;
   const isUrgent = (order.urgency ?? order.priority) === 'urgent';
   const isDemanding = order.isDemandingClient ?? (order.priority === 'vip');
@@ -1153,9 +1153,9 @@ const OrderRow = memo(function OrderRow({ order, onSelectOrder, hasAlert, stockM
   const first = order.items?.[0];
   const more = (order.items?.length ?? 0) - 1;
   const isNewOrConfirmed = order.status === 'new' || order.status === 'confirmed';
-  const variantInput = first?.productName ? buildVariantAvailabilityInput(first.productName, first) : null;
+  const variantInput = first?.productName ? buildVariantAvailabilityInput(first.productName, first as unknown as Record<string, unknown>) : null;
   const stockInfo: VariantAvailabilityResult | undefined = (isNewOrConfirmed && variantInput && stockMap)
-    ? stockMap[buildVariantLookupKey(variantInput.name, variantInput)]
+    ? stockMap[buildVariantLookupKey(variantInput.name, variantInput.attributes)]
     : undefined;
   const isUrgent = (order.urgency ?? order.priority) === 'urgent';
   const isDemanding = order.isDemandingClient ?? (order.priority === 'vip');

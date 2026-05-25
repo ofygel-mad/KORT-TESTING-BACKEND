@@ -81,7 +81,7 @@ export function LineItemsBlock() {
               const allAxesFilled = requiredAxes.length > 0 && missingAxes.length === 0;
               const isCommodity = requiredAxes.length === 0;
               const variantStock = availabilityInput && variantMap && allAxesFilled
-                ? variantMap[buildVariantLookupKey(availabilityInput.name, availabilityInput, productFields)]
+                ? variantMap[buildVariantLookupKey(availabilityInput.name, availabilityInput.attributes, productFields)]
                 : undefined;
               const productStock = _item?.productName && stockMap ? stockMap[_item.productName] : undefined;
               const itemStock = variantStock
@@ -225,7 +225,7 @@ export function LineItemsBlock() {
             const lineTotal = Math.max(0, linePrice - lineDisc);
             const availabilityInput = getAvailabilityInput(_item);
             const variantStock = availabilityInput && variantMap
-              ? variantMap[buildVariantLookupKey(availabilityInput.name, availabilityInput, getEffectiveFields(_item?.productName?.trim() ?? ''))]
+              ? variantMap[buildVariantLookupKey(availabilityInput.name, availabilityInput.attributes, getEffectiveFields(_item?.productName?.trim() ?? ''))]
               : undefined;
             const productStock = _item?.productName && stockMap ? stockMap[_item.productName] : undefined;
             const productFields = getEffectiveFields(_item?.productName?.trim() ?? '');

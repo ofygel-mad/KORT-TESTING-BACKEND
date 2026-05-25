@@ -57,7 +57,10 @@ describe('buildVariantAvailabilityInput', () => {
       { color: 'Белый', gender: 'Мужской', size: '38' },
       GENDER_OFF,
     );
-    expect(result).toEqual({ name: 'Абай', color: 'Белый', size: '38' });
+    // P4: input shape switched from flat to { name, attributes: {...} } so
+    // arbitrary template-driven axes (concentration, material, …) can survive
+    // the round-trip to the warehouse.
+    expect(result).toEqual({ name: 'Абай', attributes: { color: 'Белый', size: '38' } });
   });
 });
 

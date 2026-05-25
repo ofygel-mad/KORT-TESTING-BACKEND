@@ -15,6 +15,10 @@ import { AppError } from '../../lib/errors.js';
 import { nanoid } from 'nanoid';
 import { buildCanonicalVariantKey } from '../../shared/variant-key.js';
 import { normalizeName as normalizeWarehouseName } from '../../shared/normalize-name.js';
+import {
+  buildAxisFieldsForVariantKey,
+  filterAttributesToAxes,
+} from '../../shared/template-axes.js';
 import { Prisma } from '@prisma/client';
 import {
   createStockReservation as createCanonicalStockReservation,
@@ -38,7 +42,13 @@ export interface CreateItemDto {
   locationId?: string;
   tags?: string[];
   notes?: string;
-  // Variant attributes — used to compute variantKey
+  /**
+   * P4: generic template-driven axes used to compute variantKey. Replaces the
+   * legacy {color,gender,size,length} flat fields, which are still accepted
+   * for backward-compat and merged into `attributes` if both are present.
+   */
+  attributes?: Record<string, string>;
+  // Legacy 4-axis fields (deprecated).
   color?: string;
   gender?: string;
   size?: string;
@@ -76,6 +86,14 @@ export interface SetBOMDto {
 
 export interface ImportOpeningBalanceRow {
   name: string;
+  /**
+   * P4: generic template-driven axes (replaces color/gender/size/length).
+   * For backward-compat the legacy flat fields are also accepted and merged
+   * into `attributes` by the route handler.
+   */
+  attributes?: Record<string, string>;
+  // Legacy fields — accepted via route normalization but no longer the
+  // canonical shape inside the service.
   color?: string;
   gender?: string;
   size?: string;
@@ -145,10 +163,34 @@ export interface WarehouseOrderConsumptionSummary {
 // P0.5: every attribute that survives pre-filtering is an availability axis at
 // this call-site. The canonical builder expects an explicit field-def list so
 // it can ignore non-axis attributes; here we synthesise a permissive list.
-// TODO(P4): pass real fields from OrderTemplate.sections so non-axis attrs are
-// excluded at the source instead of via this synthetic mapping.
+// P4: when an Order.templateSnapshot is in reach (e.g. via
+// findOrCreateCanonicalVariantForOrderItem) callers should prefer
+// `buildAxisFieldsForVariantKey(snapshot, attrs)` from shared/template-axes;
+// this fallback applies only when no snapshot is available.
 function fieldsFromAttrs(attributes: Record<string, string>) {
   return Object.keys(attributes).map((code) => ({ code, affectsAvailability: true }));
+}
+
+/**
+ * P4: normalize a heterogeneous attributes record (may come from JSON, a DTO,
+ * or readStringMapFromJson) into a clean `Record<string,string>` with trimmed
+ * keys/values and empties dropped.
+ */
+function normalizeAttributeMap(input?: Record<string, unknown> | null): Record<string, string> {
+  if (!input) return {};
+  const out: Record<string, string> = {};
+  for (const [rawKey, rawValue] of Object.entries(input)) {
+    const key = rawKey?.trim();
+    if (!key) continue;
+    const value = typeof rawValue === 'string'
+      ? rawValue.trim()
+      : rawValue == null
+        ? ''
+        : String(rawValue).trim();
+    if (!value) continue;
+    out[key] = value;
+  }
+  return out;
 }
 
 function readStringMapFromJson(value?: Prisma.JsonValue | null): Record<string, string> {
@@ -284,12 +326,12 @@ export async function getItem(orgId: string, id: string) {
 export async function createItem(orgId: string, dto: CreateItemDto, authorName: string) {
   const qrCode = `KORT-WH-${nanoid(10)}`;
 
-  // Compute variantKey when color/gender/size/length are provided
-  const attrs: Record<string, string> = {};
-  if (dto.color?.trim()) attrs.color = dto.color.trim();
-  if (dto.gender?.trim()) attrs.gender = dto.gender.trim();
-  if (dto.size?.trim()) attrs.size = dto.size.trim();
-  if (dto.length?.trim()) attrs.length = dto.length.trim();
+  // P4: generic attributes path with legacy-fields backward-compat merge.
+  const attrs = normalizeAttributeMap(dto.attributes);
+  if (!('color' in attrs) && dto.color?.trim()) attrs.color = dto.color.trim();
+  if (!('gender' in attrs) && dto.gender?.trim()) attrs.gender = dto.gender.trim();
+  if (!('size' in attrs) && dto.size?.trim()) attrs.size = dto.size.trim();
+  if (!('length' in attrs) && dto.length?.trim()) attrs.length = dto.length.trim();
   const variantKey = buildCanonicalVariantKey(dto.name, attrs, fieldsFromAttrs(attrs));
   const attributesSummary = summarizeVariantAttributes(attrs) || null;
 
@@ -378,11 +420,14 @@ export async function bulkImportOpeningBalance(
       const qty = Number(row.qty);
       if (isNaN(qty) || qty < 0) { result.skipped++; continue; }
 
-      const attrs: Record<string, string> = {};
-      if (row.color?.trim()) attrs.color = row.color.trim();
-      if (row.gender?.trim()) attrs.gender = row.gender.trim();
-      if (row.size?.trim()) attrs.size = row.size.trim();
-      if (row.length?.trim()) attrs.length = row.length.trim();
+      // P4: generic attributes — merge legacy flat fields into the same bag
+      // so existing Excel templates with named color/gender/size/length
+      // columns still import correctly.
+      const attrs = normalizeAttributeMap(row.attributes);
+      if (!('color' in attrs) && row.color?.trim()) attrs.color = row.color.trim();
+      if (!('gender' in attrs) && row.gender?.trim()) attrs.gender = row.gender.trim();
+      if (!('size' in attrs) && row.size?.trim()) attrs.size = row.size.trim();
+      if (!('length' in attrs) && row.length?.trim()) attrs.length = row.length.trim();
 
       const variantKey = buildCanonicalVariantKey(name, attrs, fieldsFromAttrs(attrs));
       const attributesSummary = summarizeVariantAttributes(attrs) || null;
@@ -671,10 +716,6 @@ type WarehouseReservationOrderItem = {
   id: string;
   productName: string;
   quantity: number;
-  color?: string | null;
-  gender?: string | null;
-  size?: string | null;
-  length?: string | null;
   variantKey?: string | null;
   attributesJson?: Prisma.JsonValue | null;
   attributesSummary?: string | null;
@@ -683,6 +724,12 @@ type WarehouseReservationOrderItem = {
 async function findOrCreateCanonicalVariantForOrderItem(
   orgId: string,
   orderItem: WarehouseReservationOrderItem,
+  /**
+   * P4: when present, axes are taken from the order's frozen template
+   * snapshot. When absent (legacy code-path) every attribute is treated as
+   * an axis — matches the P0 behaviour after WarehouseFieldLink was dropped.
+   */
+  templateSnapshot?: Prisma.JsonValue | null,
 ): Promise<{ variantId?: string; variantKey?: string; reason?: string }> {
   const product = await prisma.warehouseProductCatalog.findFirst({
     where: {
@@ -697,14 +744,16 @@ async function findOrCreateCanonicalVariantForOrderItem(
   }
 
   const attributes = readStringMapFromJson(orderItem.attributesJson);
-  // TODO(P4): filter attributes by `affectsAvailability` flag once template
-  // sections expose it. P0 treats every attribute as a variant axis to match
-  // the legacy write path.
-  const attributesForKey = attributes;
+  // P4: when the snapshot tells us which fields are axes, we drop non-axis
+  // attributes from the key — they may legitimately differ between two
+  // orders without producing distinct stock positions (e.g. a `notes` field).
+  // When no snapshot is available, all attributes are treated as axes.
+  const attributesForKey = filterAttributesToAxes(templateSnapshot, attributes);
+  const fieldsForKey = buildAxisFieldsForVariantKey(templateSnapshot, attributes);
 
   const variantKey =
     orderItem.variantKey?.trim() ||
-    buildCanonicalVariantKey(product.name ?? orderItem.productName, attributesForKey, fieldsFromAttrs(attributesForKey));
+    buildCanonicalVariantKey(product.name ?? orderItem.productName, attributesForKey, fieldsForKey);
 
   if (!variantKey) {
     return { reason: 'variant_key_missing' };
@@ -765,10 +814,11 @@ async function reserveSimpleOrderItems(
   warehouseItems: Array<{
     id: string;
     productName: string;
-    color?: string | null;
-    gender?: string | null;
-    size?: string | null;
-    length?: string | null;
+    /**
+     * P4: generic template-driven axes. Replaced the legacy
+     * {color,gender,size,length} parameters so any business shape works.
+     */
+    attributes: Record<string, string>;
     quantity: number;
     variantKey?: string | null;
   }>,
@@ -786,19 +836,16 @@ async function reserveSimpleOrderItems(
     const name = orderItem.productName?.trim();
     if (!name) { summary.skippedCount++; continue; }
 
-    // Build variantKey (same logic as checkVariantAvailability)
-    const attrs: Record<string, string> = {};
-    if (orderItem.color?.trim()) attrs.color = orderItem.color.trim();
-    if (orderItem.gender?.trim()) attrs.gender = orderItem.gender.trim();
-    if (orderItem.size?.trim()) attrs.size = orderItem.size.trim();
-    if (orderItem.length?.trim()) attrs.length = orderItem.length.trim();
-    const variantKey = buildCanonicalVariantKey(name, attrs, fieldsFromAttrs(attrs));
+    const attrs = normalizeAttributeMap(orderItem.attributes);
+    const variantKey = orderItem.variantKey?.trim()
+      || buildCanonicalVariantKey(name, attrs, fieldsFromAttrs(attrs));
 
+    // P4: removed the contains-by-name fallback. It was the secondary root
+    // cause of the totals-summing bug — two distinct variants (Худи 50 vs
+    // Худи 48) would both match `name contains "Худи"` and the larger row
+    // would soak the reservation. Lookups are now strictly by variantKey.
     const warehouseItem = await prisma.warehouseItem.findFirst({
       where: { orgId, variantKey },
-      select: { id: true, qty: true, qtyReserved: true },
-    }) ?? await prisma.warehouseItem.findFirst({
-      where: { orgId, name: { contains: name, mode: 'insensitive' } },
       select: { id: true, qty: true, qtyReserved: true },
     });
 
@@ -854,10 +901,8 @@ export async function reserveNewOrderItems(
   orderId: string,
   items: Array<{
     productName: string;
-    color?: string | null;
-    gender?: string | null;
-    size?: string | null;
-    length?: string | null;
+    /** P4: generic template-driven axes (replaces color/gender/size/length). */
+    attributes: Record<string, string>;
     quantity: number;
     variantKey?: string | null;
   }>,
@@ -869,11 +914,7 @@ export async function reserveNewOrderItems(
     const name = item.productName?.trim();
     if (!name || item.quantity <= 0) { skipped++; continue; }
 
-    const attrs: Record<string, string> = {};
-    if (item.color?.trim())  attrs.color  = item.color.trim();
-    if (item.gender?.trim()) attrs.gender = item.gender.trim();
-    if (item.size?.trim())   attrs.size   = item.size.trim();
-    if (item.length?.trim()) attrs.length = item.length.trim();
+    const attrs = normalizeAttributeMap(item.attributes);
     const variantKey = item.variantKey ?? buildCanonicalVariantKey(name, attrs, fieldsFromAttrs(attrs));
 
     const warehouseItem = await prisma.warehouseItem.findFirst({
@@ -939,7 +980,17 @@ export async function reserveOrderWarehouseItems(
   const site = await getSingleActiveWarehouseSite(orgId);
   if (!site) {
     // P3: No canonical WMS site — fall back to simple WarehouseItem.qtyReserved reservation
-    return reserveSimpleOrderItems(orgId, orderId, warehouseItems);
+    return reserveSimpleOrderItems(
+      orgId,
+      orderId,
+      warehouseItems.map((item) => ({
+        id: item.id,
+        productName: item.productName,
+        attributes: readStringMapFromJson(item.attributesJson),
+        quantity: item.quantity,
+        variantKey: item.variantKey,
+      })),
+    );
   }
 
   const summary: WarehouseOrderReservationSummary = {
@@ -953,7 +1004,10 @@ export async function reserveOrderWarehouseItems(
   };
 
   for (const item of warehouseItems) {
-    const resolved = await findOrCreateCanonicalVariantForOrderItem(orgId, item);
+    // P4: thread the order's frozen template snapshot through so the variant
+    // key is built from the axes the order was created with, not from
+    // whatever shape the template happens to have right now.
+    const resolved = await findOrCreateCanonicalVariantForOrderItem(orgId, item, order.templateSnapshot);
     if (!resolved.variantId || !resolved.variantKey) {
       summary.skippedCount += 1;
       summary.items.push({
@@ -1348,7 +1402,11 @@ export async function consumeSimpleOrderReservations(
       // OrderItem.attributesJson. Read the JSON bag directly.
       const attrs = readStringMapFromJson(orderItem.attributesJson);
 
-      const variantKey = buildCanonicalVariantKey(name, attrs, fieldsFromAttrs(attrs));
+      // P4: prefer template snapshot for axis selection. Falls back to
+      // all-attrs-are-axes when no snapshot is set (legacy orders).
+      const axisAttrs = filterAttributesToAxes(order.templateSnapshot, attrs);
+      const fieldsForKey = buildAxisFieldsForVariantKey(order.templateSnapshot, attrs);
+      const variantKey = buildCanonicalVariantKey(name, axisAttrs, fieldsForKey);
       const warehouseItem = await tx.warehouseItem.findFirst({
         where: { orgId, variantKey },
         select: { id: true, qty: true, qtyReserved: true },
@@ -1621,34 +1679,22 @@ export interface VariantAvailabilityResult {
 
 export async function checkVariantAvailability(
   orgId: string,
-  variants: Array<{ name: string; color?: string; size?: string; gender?: string; length?: string }>,
+  variants: Array<{ name: string; attributes?: Record<string, string> }>,
 ): Promise<Record<string, VariantAvailabilityResult>> {
   const result: Record<string, VariantAvailabilityResult> = {};
-
-  // P0: WarehouseFieldDefinition table removed. Fall back to the legacy
-  // four-axis variant fingerprint so existing FE callers keep working until
-  // P4 wires this up to OrderTemplate.sections.
-  // TODO(P4): load axes from OrderTemplate.sections for the active business.
-  const fieldsForKey = [
-    { code: 'color',  affectsAvailability: true },
-    { code: 'gender', affectsAvailability: true },
-    { code: 'length', affectsAvailability: true },
-    { code: 'size',   affectsAvailability: true },
-  ];
 
   for (const v of variants) {
     const name = v.name?.trim();
     if (!name) continue;
 
-    const attrs: Record<string, string> = {};
-    if (v.color?.trim()) attrs.color = v.color.trim();
-    if (v.gender?.trim()) attrs.gender = v.gender.trim();
-    if (v.size?.trim()) attrs.size = v.size.trim();
-    if (v.length?.trim()) attrs.length = v.length.trim();
+    // P4: take the FULL generic attributes map. Treat every attribute as an
+    // axis at this seam — callers are responsible for filtering via
+    // template-snapshot context if they need to drop non-axes. The hardcoded
+    // four-axis fingerprint (color/gender/length/size) is gone.
+    const attrs = normalizeAttributeMap(v.attributes);
+    const fieldsForKey = fieldsFromAttrs(attrs);
 
     const variantKey = buildCanonicalVariantKey(name, attrs, fieldsForKey);
-    const allowedAxes = new Set(fieldsForKey.filter((f) => f.affectsAvailability).map((f) => f.code));
-    const hasAttributes = Object.keys(attrs).some((code) => allowedAxes.has(code));
     const normalizedName = normalizeWarehouseName(name);
 
     // 1. New catalog system: WarehouseProductCatalog → WarehouseVariant → WarehouseStockBalance.
@@ -1661,6 +1707,12 @@ export async function checkVariantAvailability(
     });
 
     if (catalogProduct) {
+      // P4: when attrs is non-empty we look up by exact variantKey. When attrs
+      // is empty we accept any variant of this product (commodity items with
+      // no axes). We do NOT fall back to summing across the whole catalog
+      // when attrs are set — that was the root cause of the bug where
+      // "Худи 50" and "Худи 48" got combined into a single totalQty.
+      const hasAttributes = Object.keys(attrs).length > 0;
       const catalogVariants = await prisma.warehouseVariant.findMany({
         where: hasAttributes
           ? { orgId, productCatalogId: catalogProduct.id, variantKey }
@@ -1691,22 +1743,15 @@ export async function checkVariantAvailability(
       }
     }
 
-    // 2. Fall back to legacy WarehouseItem.
-    // Sum across all rows that share the same variantKey — historically the table
-    // accumulated duplicate rows (separate batches, manual receipts), and findFirst
-    // would non-deterministically pick one of them. The accounting truth is the sum.
-    const rows = await prisma.warehouseItem.findMany({
+    // 2. Fall back to legacy WarehouseItem rows matched by exact variantKey.
+    // P4: removed the previous `name contains: name` fallback. That branch
+    // summed totalQty across every row matching just the product name, which
+    // collapsed distinct variants ("Худи 50" + "Худи 48") into one number —
+    // the exact bug this phase is closing. Lookups are strictly by variantKey.
+    const workingRows = await prisma.warehouseItem.findMany({
       where: { orgId, variantKey },
       select: { name: true, qty: true, qtyReserved: true, qtyMin: true },
     });
-
-    let workingRows = rows;
-    if (workingRows.length === 0 && !hasAttributes) {
-      workingRows = await prisma.warehouseItem.findMany({
-        where: { orgId, name: { contains: name, mode: 'insensitive' } },
-        select: { name: true, qty: true, qtyReserved: true, qtyMin: true },
-      });
-    }
 
     if (workingRows.length === 0) {
       result[variantKey] = { qty: 0, available: 0, status: 'none', itemName: null };
@@ -1949,10 +1994,12 @@ export async function autoCreateFromOrder(
   orderItems: Array<{
     id: string;
     productName: string;
-    color?: string | null;
-    gender?: string | null;
-    size?: string | null;
-    length?: string | null;
+    /**
+     * P4: generic template-driven axes. Prefer this; if absent we fall back
+     * to reading `attributesJson` directly. Accepts the full Prisma JSON
+     * shape so callers can splat raw OrderItem rows in.
+     */
+    attributes?: Prisma.JsonValue | Record<string, string>;
     quantity: number;
     variantKey?: string | null;
     attributesJson?: Prisma.JsonValue | null;
@@ -1970,11 +2017,9 @@ export async function autoCreateFromOrder(
       continue;
     }
 
-    const attrs: Record<string, string> = {};
-    if (orderItem.color?.trim()) attrs.color = orderItem.color.trim();
-    if (orderItem.gender?.trim()) attrs.gender = orderItem.gender.trim();
-    if (orderItem.size?.trim()) attrs.size = orderItem.size.trim();
-    if (orderItem.length?.trim()) attrs.length = orderItem.length.trim();
+    const attrs = orderItem.attributes && typeof orderItem.attributes === 'object' && !Array.isArray(orderItem.attributes)
+      ? normalizeAttributeMap(orderItem.attributes as Record<string, unknown>)
+      : readStringMapFromJson(orderItem.attributesJson);
 
     const variantKey = orderItem.variantKey?.trim() || buildCanonicalVariantKey(name, attrs, fieldsFromAttrs(attrs));
     const attributesSummary = orderItem.attributesSummary?.trim() || summarizeVariantAttributes(attrs) || null;
@@ -2096,10 +2141,8 @@ export async function createOrderTransitEntries(
   orderId: string,
   items: Array<{
     productName: string;
-    color?: string | null;
-    gender?: string | null;
-    size?: string | null;
-    length?: string | null;
+    /** P4: generic template-driven axes (replaces color/gender/size/length). */
+    attributes: Record<string, string>;
     quantity: number;
     variantKey?: string | null;
   }>,
@@ -2111,11 +2154,7 @@ export async function createOrderTransitEntries(
     const name = item.productName?.trim();
     if (!name || item.quantity <= 0) continue;
 
-    const attrs: Record<string, string> = {};
-    if (item.color?.trim())  attrs.color  = item.color.trim();
-    if (item.gender?.trim()) attrs.gender = item.gender.trim();
-    if (item.size?.trim())   attrs.size   = item.size.trim();
-    if (item.length?.trim()) attrs.length = item.length.trim();
+    const attrs = normalizeAttributeMap(item.attributes);
     const variantKey = item.variantKey ?? buildCanonicalVariantKey(name, attrs, fieldsFromAttrs(attrs));
 
     const warehouseItem = await prisma.warehouseItem.findFirst({

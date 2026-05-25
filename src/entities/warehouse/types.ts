@@ -1153,10 +1153,13 @@ export interface VariantAvailabilityResult {
 
 export interface VariantAvailabilityInput {
   name: string;
-  color?: string;
-  size?: string;
-  gender?: string;
-  length?: string;
+  /**
+   * P4: full template-driven attribute map. Replaced the legacy 4 named axes
+   * (color/gender/length/size) so that any business-specific axis declared by
+   * the active OrderTemplate (concentration, material, width, …) survives the
+   * round-trip to the warehouse.
+   */
+  attributes: Record<string, string>;
 }
 
 /** key = variantKey (e.g. "платье:color=красный:size=m") */

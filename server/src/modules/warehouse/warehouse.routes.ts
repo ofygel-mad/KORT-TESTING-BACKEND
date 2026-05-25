@@ -205,11 +205,31 @@ export const warehouseRoutes: FastifyPluginAsync = async (app) => {
   });
 
   // POST /api/v1/warehouse/items/variant-availability
-  // Body: { variants: Array<{ name, color?, size?, gender? }> }
+  // P4: body shape is now { variants: Array<{ name, attributes: Record<string,string> }> }.
+  // The legacy {color,size,gender,length} flat fields are still tolerated for
+  // backward compat with old in-flight payloads — they get merged into
+  // `attributes` here so the service layer only ever sees the generic shape.
   app.post<{
-    Body: { variants: Array<{ name: string; color?: string; size?: string; gender?: string; length?: string }> };
+    Body: { variants: Array<{
+      name: string;
+      attributes?: Record<string, string>;
+      // Legacy fields (deprecated):
+      color?: string; size?: string; gender?: string; length?: string;
+    }> };
   }>('/items/variant-availability', async (req) => {
-    return svc.checkVariantAvailability(req.orgId!, req.body.variants ?? []);
+    const normalized = (req.body.variants ?? []).map((v) => {
+      const attributes: Record<string, string> = { ...(v.attributes ?? {}) };
+      // Backward-compat merge: if old client still sends flat fields, lift
+      // them into the generic attributes map.
+      for (const legacyKey of ['color', 'gender', 'size', 'length'] as const) {
+        const raw = v[legacyKey];
+        if (typeof raw === 'string' && raw.trim() && !(legacyKey in attributes)) {
+          attributes[legacyKey] = raw.trim();
+        }
+      }
+      return { name: v.name, attributes };
+    });
+    return svc.checkVariantAvailability(req.orgId!, normalized);
   });
 
   app.post<{ Params: { orderId: string }; Body?: { reserve?: boolean } }>(

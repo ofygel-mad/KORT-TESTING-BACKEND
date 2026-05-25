@@ -201,7 +201,10 @@ export const warehouseApi = {
   checkProducts: (names: string[]) =>
     api.post<ProductsAvailabilityMap>('/warehouse/products-availability', { names }),
 
-  // Sales integration: check stock by full variant (name + color/size/gender)
+  // Sales integration: check stock by full variant (name + generic attributes).
+  // P4: switched payload shape from {color,size,gender,length} to a flat
+  // attributes map so non-clothing templates (concentration, material, …)
+  // round-trip correctly.
   checkVariants: (variants: VariantAvailabilityInput[]) =>
     api.post<VariantAvailabilityMap>('/warehouse/items/variant-availability', { variants }),
 

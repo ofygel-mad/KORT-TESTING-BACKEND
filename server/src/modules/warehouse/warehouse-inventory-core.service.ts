@@ -362,9 +362,11 @@ export async function upsertVariant(orgId: string, dto: UpsertWarehouseVariantDt
   }
 
   const attributes = normalizeStringMap(dto.attributesJson);
-  // P0: WarehouseFieldDefinition removed — treat every attribute as a variant
-  // axis (matches the legacy fallback path). TODO(P4): pull axes from
-  // OrderTemplate.sections so non-axis attributes are excluded from the key.
+  // P4: there's no order/template context at this call-site (it's the raw
+  // catalog variant creation API). Treat every passed attribute as a variant
+  // axis — callers are expected to only pass axis-relevant attributes here.
+  // When axes need to be filtered (order-driven flows) that happens via
+  // findOrCreateCanonicalVariantForOrderItem which threads templateSnapshot.
   const fieldsForKey = Object.keys(attributes).map((code) => ({ code, affectsAvailability: true }));
 
   const variantKey = dto.variantKey?.trim() || buildCanonicalVariantKey(product.name, attributes, fieldsForKey);

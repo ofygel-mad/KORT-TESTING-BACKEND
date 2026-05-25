@@ -645,17 +645,26 @@ export const useProductsAvailability = (names: string[]) => {
 export const useVariantAvailability = (
   variants: VariantAvailabilityInput[],
 ) => {
+  // P4: serialize the FULL generic attributes map, not just the legacy 4 keys.
+  // Sorting attribute entries keeps queryKey stable across key insertion order.
   const stable = JSON.stringify(
     [...variants]
       .filter((v) => v.name?.trim())
-      .map((variant) => ({
-        name: variant.name.trim(),
-        color: variant.color?.trim() || undefined,
-        gender: variant.gender?.trim() || undefined,
-        length: variant.length?.trim() || undefined,
-        size: variant.size?.trim() || undefined,
-      }))
-      .sort((a, b) => buildVariantLookupKey(a.name, a).localeCompare(buildVariantLookupKey(b.name, b))),
+      .map((variant) => {
+        const sortedAttrs: Record<string, string> = {};
+        for (const key of Object.keys(variant.attributes ?? {}).sort()) {
+          const value = variant.attributes?.[key];
+          if (typeof value === 'string' && value.trim()) {
+            sortedAttrs[key] = value.trim();
+          }
+        }
+        return { name: variant.name.trim(), attributes: sortedAttrs };
+      })
+      .sort((a, b) =>
+        buildVariantLookupKey(a.name, a.attributes).localeCompare(
+          buildVariantLookupKey(b.name, b.attributes),
+        ),
+      ),
   );
   return useQuery({
     queryKey: ['warehouse_variant_availability', stable],
