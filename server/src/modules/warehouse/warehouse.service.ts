@@ -692,11 +692,6 @@ async function findOrCreateCanonicalVariantForOrderItem(
       normalizedName: normalizeWarehouseName(orderItem.productName),
       isActive: true,
     },
-    include: {
-      fieldLinks: {
-        include: { definition: true },
-      },
-    },
   });
 
   if (!product) {
@@ -704,15 +699,10 @@ async function findOrCreateCanonicalVariantForOrderItem(
   }
 
   const attributes = readStringMapFromJson(orderItem.attributesJson);
-  const availabilityFields = new Set(
-    product.fieldLinks
-      .filter((link) => link.definition.affectsAvailability)
-      .map((link) => link.definition.code),
-  );
-  const attributesForKey =
-    availabilityFields.size > 0
-      ? Object.fromEntries(Object.entries(attributes).filter(([key]) => availabilityFields.has(key)))
-      : attributes;
+  // TODO(P4): filter attributes by `affectsAvailability` flag once template
+  // sections expose it. P0 treats every attribute as a variant axis to match
+  // the legacy write path.
+  const attributesForKey = attributes;
 
   const variantKey =
     orderItem.variantKey?.trim() ||
@@ -1356,11 +1346,9 @@ export async function consumeSimpleOrderReservations(
       const name = orderItem.productName?.trim();
       if (!name) continue;
 
-      const attrs: Record<string, string> = {};
-      if (orderItem.color?.trim()) attrs.color = orderItem.color.trim();
-      if (orderItem.gender?.trim()) attrs.gender = orderItem.gender.trim();
-      if (orderItem.size?.trim()) attrs.size = orderItem.size.trim();
-      if (orderItem.length?.trim()) attrs.length = orderItem.length.trim();
+      // P0: legacy per-column attrs (color/gender/size/length) replaced by
+      // OrderItem.attributesJson. Read the JSON bag directly.
+      const attrs = readStringMapFromJson(orderItem.attributesJson);
 
       const variantKey = buildWarehouseVariantKey(name, attrs);
       const warehouseItem = await tx.warehouseItem.findFirst({
@@ -1639,21 +1627,16 @@ export async function checkVariantAvailability(
 ): Promise<Record<string, VariantAvailabilityResult>> {
   const result: Record<string, VariantAvailabilityResult> = {};
 
-  // Load org-level field definitions once. Variant-key construction must use
-  // affectsAvailability filtering so the response key matches what the FE built
-  // when issuing the request — see buildCanonicalVariantKey contract.
-  const orgFieldDefs = await prisma.warehouseFieldDefinition.findMany({
-    where: { orgId },
-    select: { code: true, affectsAvailability: true },
-  });
-  const fieldsForKey = orgFieldDefs.length > 0
-    ? orgFieldDefs
-    : [
-        { code: 'color',  affectsAvailability: true },
-        { code: 'gender', affectsAvailability: true },
-        { code: 'length', affectsAvailability: true },
-        { code: 'size',   affectsAvailability: true },
-      ];
+  // P0: WarehouseFieldDefinition table removed. Fall back to the legacy
+  // four-axis variant fingerprint so existing FE callers keep working until
+  // P4 wires this up to OrderTemplate.sections.
+  // TODO(P4): load axes from OrderTemplate.sections for the active business.
+  const fieldsForKey = [
+    { code: 'color',  affectsAvailability: true },
+    { code: 'gender', affectsAvailability: true },
+    { code: 'length', affectsAvailability: true },
+    { code: 'size',   affectsAvailability: true },
+  ];
 
   for (const v of variants) {
     const name = v.name?.trim();

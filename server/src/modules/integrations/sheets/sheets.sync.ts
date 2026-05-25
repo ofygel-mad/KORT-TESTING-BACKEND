@@ -143,18 +143,31 @@ export async function syncOrderToSheets(
           }
           return left.id.localeCompare(right.id);
         })
-        .map(item => ({
-          position: (item as any).position ?? null,
-          productName: item.productName,
-          color: item.color,
-          gender: item.gender,
-          length: item.length,
-          size: item.size,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          itemDiscount: (item as any).itemDiscount ?? 0,
-          workshopNotes: item.workshopNotes,
-        })),
+        .map(item => {
+          // P0: per-attribute columns (color/gender/length/size) collapsed
+          // into attributesJson. Read them back out for the sheets export.
+          const attrs = (item.attributesJson && typeof item.attributesJson === 'object' && !Array.isArray(item.attributesJson))
+            ? (item.attributesJson as Record<string, unknown>)
+            : {};
+          const stringify = (key: string): string | null => {
+            const raw = attrs[key];
+            if (raw === undefined || raw === null) return null;
+            const value = String(raw).trim();
+            return value || null;
+          };
+          return {
+            position: (item as any).position ?? null,
+            productName: item.productName,
+            color: stringify('color'),
+            gender: stringify('gender'),
+            length: stringify('length'),
+            size: stringify('size'),
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            itemDiscount: (item as any).itemDiscount ?? 0,
+            workshopNotes: item.workshopNotes,
+          };
+        }),
       payments: order.payments.map(payment => ({
         method: payment.method,
         amount: (payment as any).amount ?? 0,

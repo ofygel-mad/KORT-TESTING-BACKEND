@@ -31,6 +31,19 @@ interface OrderForInvoice {
   }>;
 }
 
+// P0: OrderItem.color/gender/length/size were collapsed into attributesJson.
+// This helper safely reads the JSON bag back as a Record<string, string>.
+function readAttrStringMap(value: unknown): Record<string, string> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const out: Record<string, string> = {};
+  for (const [key, raw] of Object.entries(value as Record<string, unknown>)) {
+    if (raw === undefined || raw === null) continue;
+    const str = String(raw).trim();
+    if (str) out[key] = str;
+  }
+  return out;
+}
+
 interface TableColumn {
   key: InvoiceDocumentColumnKey;
   width: number;
@@ -258,24 +271,39 @@ export async function generateInvoiceXlsx(
     return generateDefaultInvoiceTemplateXlsx(orgId, orderId);
   }
 
-  const order = await prisma.order.findFirst({
+  const orderRaw = await prisma.order.findFirst({
     where: { id: orderId, orgId },
     include: {
       items: {
         select: {
           productName: true,
-          size: true,
           quantity: true,
           unitPrice: true,
-          color: true,
+          attributesJson: true,
         },
       },
     },
   });
 
-  if (!order) {
+  if (!orderRaw) {
     throw new NotFoundError('Order', orderId);
   }
+
+  const order: OrderForInvoice = {
+    id: orderRaw.id,
+    orderNumber: orderRaw.orderNumber,
+    createdAt: orderRaw.createdAt,
+    items: orderRaw.items.map((item) => {
+      const attrs = readAttrStringMap(item.attributesJson);
+      return {
+        productName: item.productName,
+        size: attrs.size ?? '',
+        color: attrs.color ?? null,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+      };
+    }),
+  };
 
   const linkedInvoice = await prisma.invoice.findFirst({
     where: {
@@ -296,7 +324,7 @@ export async function generateInvoiceXlsx(
     select: { name: true, currency: true },
   });
   const orgName = org?.name ?? 'KORT';
-  const fallbackDocument = ordersToDocument([order as OrderForInvoice], linkedInvoice ?? undefined);
+  const fallbackDocument = ordersToDocument([order], linkedInvoice ?? undefined);
   const linkedInvoiceDocumentPayload = (linkedInvoice as { documentPayload?: unknown } | null)?.documentPayload;
   const document = linkedInvoiceDocumentPayload && typeof linkedInvoiceDocumentPayload === 'object'
     ? normalizeInvoiceDocumentPayload(linkedInvoiceDocumentPayload, fallbackDocument)
@@ -316,25 +344,40 @@ export async function generateBatchInvoiceXlsx(
     return generateDefaultBatchInvoiceTemplateXlsx(orgId, orderIds, invoiceMeta);
   }
 
-  const orders = await prisma.order.findMany({
+  const ordersRaw = await prisma.order.findMany({
     where: { id: { in: orderIds }, orgId },
     include: {
       items: {
         select: {
           productName: true,
-          size: true,
           quantity: true,
           unitPrice: true,
-          color: true,
+          attributesJson: true,
         },
       },
     },
     orderBy: { createdAt: 'asc' },
   });
 
-  if (orders.length === 0) {
+  if (ordersRaw.length === 0) {
     throw new NotFoundError('Order', orderIds.join(','));
   }
+
+  const orders: OrderForInvoice[] = ordersRaw.map((o) => ({
+    id: o.id,
+    orderNumber: o.orderNumber,
+    createdAt: o.createdAt,
+    items: o.items.map((item) => {
+      const attrs = readAttrStringMap(item.attributesJson);
+      return {
+        productName: item.productName,
+        size: attrs.size ?? '',
+        color: attrs.color ?? null,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+      };
+    }),
+  }));
 
   const org = await prisma.organization.findUnique({
     where: { id: orgId },
@@ -345,7 +388,7 @@ export async function generateBatchInvoiceXlsx(
     invoiceNumber: await getNextInvoiceNumberCandidate(prisma, orgId, new Date()),
     createdAt: new Date(),
   };
-  const fallbackDocument = ordersToDocument(orders as OrderForInvoice[], resolvedInvoiceMeta);
+  const fallbackDocument = ordersToDocument(orders, resolvedInvoiceMeta);
   const document = documentPayload
     ? normalizeInvoiceDocumentPayload(
       {

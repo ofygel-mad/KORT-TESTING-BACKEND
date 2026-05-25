@@ -164,15 +164,20 @@ export async function importOrders(
         }
         usedPositions.add(position);
 
+        const attributes: Record<string, string> = {};
+        if (size && size !== '—') attributes.size = size;
+        if (row.color?.trim()) attributes.color = row.color.trim();
+        if (row.gender?.trim()) attributes.gender = row.gender.trim();
+
         await prisma.orderItem.create({
           data: {
             orderId: order.id,
             position,
             productName,
-            size,
             quantity: qty,
             unitPrice,
-            notes: [row.color, row.gender, row.notes].filter(Boolean).join(', ') || undefined,
+            attributesJson: Object.keys(attributes).length > 0 ? attributes : undefined,
+            notes: row.notes?.trim() || undefined,
           },
         });
       }

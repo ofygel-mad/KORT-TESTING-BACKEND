@@ -126,13 +126,7 @@ async function getVariantOrThrow(orgId: string, variantId: string) {
   const variant = await prisma.warehouseVariant.findFirst({
     where: { id: variantId, orgId },
     include: {
-      productCatalog: {
-        include: {
-          fieldLinks: {
-            include: { definition: true },
-          },
-        },
-      },
+      productCatalog: true,
     },
   });
   if (!variant) {
@@ -362,25 +356,16 @@ export async function listVariants(orgId: string) {
 export async function upsertVariant(orgId: string, dto: UpsertWarehouseVariantDto) {
   const product = await prisma.warehouseProductCatalog.findFirst({
     where: { id: dto.productCatalogId, orgId },
-    include: {
-      fieldLinks: {
-        include: { definition: true },
-      },
-    },
   });
   if (!product) {
     throw new AppError(404, 'Каталожный продукт не найден', 'NOT_FOUND');
   }
 
   const attributes = normalizeStringMap(dto.attributesJson);
-  // If product has registered field links, use them (canonical filtering by affectsAvailability).
-  // Legacy products without field links keep all attributes as axes — preserves prior behavior.
-  const fieldsForKey = product.fieldLinks.length > 0
-    ? product.fieldLinks.map((link) => ({
-        code: link.definition.code,
-        affectsAvailability: link.definition.affectsAvailability,
-      }))
-    : Object.keys(attributes).map((code) => ({ code, affectsAvailability: true }));
+  // P0: WarehouseFieldDefinition removed — treat every attribute as a variant
+  // axis (matches the legacy fallback path). TODO(P4): pull axes from
+  // OrderTemplate.sections so non-axis attributes are excluded from the key.
+  const fieldsForKey = Object.keys(attributes).map((code) => ({ code, affectsAvailability: true }));
 
   const variantKey = dto.variantKey?.trim() || buildCanonicalVariantKey(product.name, attributes, fieldsForKey);
   if (!variantKey) {

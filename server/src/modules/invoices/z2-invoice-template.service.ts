@@ -369,6 +369,35 @@ async function getTemplateOrg(orgId: string): Promise<TemplateOrg> {
   return org;
 }
 
+// P0: OrderItem.color/size collapsed into attributesJson. Read them back out
+// when projecting to TemplateOrder shape.
+function readAttrStringMap(value: unknown): Record<string, string> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const out: Record<string, string> = {};
+  for (const [key, raw] of Object.entries(value as Record<string, unknown>)) {
+    if (raw === undefined || raw === null) continue;
+    const str = String(raw).trim();
+    if (str) out[key] = str;
+  }
+  return out;
+}
+
+function projectTemplateItem(item: {
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  attributesJson: unknown;
+}): TemplateOrder['items'][number] {
+  const attrs = readAttrStringMap(item.attributesJson);
+  return {
+    productName: item.productName,
+    size: attrs.size ?? '',
+    color: attrs.color ?? null,
+    quantity: item.quantity,
+    unitPrice: item.unitPrice,
+  };
+}
+
 async function getTemplateOrder(orgId: string, orderId: string): Promise<TemplateOrder> {
   const order = await prisma.order.findFirst({
     where: { id: orderId, orgId },
@@ -376,17 +405,16 @@ async function getTemplateOrder(orgId: string, orderId: string): Promise<Templat
       items: {
         select: {
           productName: true,
-          size: true,
           quantity: true,
           unitPrice: true,
-          color: true,
+          attributesJson: true,
         },
       },
     },
   });
 
   if (!order) throw new NotFoundError('Order', orderId);
-  return order;
+  return { ...order, items: order.items.map(projectTemplateItem) };
 }
 
 async function getTemplateOrders(orgId: string, orderIds: string[]): Promise<TemplateOrder[]> {
@@ -396,10 +424,9 @@ async function getTemplateOrders(orgId: string, orderIds: string[]): Promise<Tem
       items: {
         select: {
           productName: true,
-          size: true,
           quantity: true,
           unitPrice: true,
-          color: true,
+          attributesJson: true,
         },
       },
     },
@@ -407,7 +434,7 @@ async function getTemplateOrders(orgId: string, orderIds: string[]): Promise<Tem
   });
 
   if (orders.length === 0) throw new NotFoundError('Order', orderIds.join(','));
-  return orders;
+  return orders.map((o) => ({ ...o, items: o.items.map(projectTemplateItem) }));
 }
 
 function populateTemplateHeader(

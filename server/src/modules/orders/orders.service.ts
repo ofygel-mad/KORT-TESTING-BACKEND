@@ -159,11 +159,6 @@ async function buildOrderItemVariantSnapshot(
   const normalizedName = normalizeWarehouseName(item.productName);
   const product = await tx.warehouseProductCatalog.findFirst({
     where: { orgId, normalizedName },
-    include: {
-      fieldLinks: {
-        include: { definition: true },
-      },
-    },
   });
 
   const ATTR_KEY_RU: Record<string, string> = {
@@ -182,13 +177,9 @@ async function buildOrderItemVariantSnapshot(
     }).filter(([, value]) => value),
   );
 
-  // Use product field links if available; legacy fallback treats all attrs as axes.
-  const fieldsForKey = product && product.fieldLinks.length > 0
-    ? product.fieldLinks.map((link) => ({
-        code: link.definition.code,
-        affectsAvailability: link.definition.affectsAvailability,
-      }))
-    : Object.keys(rawAttributes).map((code) => ({ code, affectsAvailability: true }));
+  // P0: WarehouseFieldDefinition removed — treat every attribute as an axis.
+  // TODO(P4): derive `fieldsForKey` from OrderTemplate.sections.
+  const fieldsForKey = Object.keys(rawAttributes).map((code) => ({ code, affectsAvailability: true }));
 
   const attributesSummary = Object.entries(rawAttributes)
     .sort(([a], [b]) => a.localeCompare(b))
@@ -715,16 +706,22 @@ export async function create(orgId: string, authorId: string, authorName: string
     const orderItemCreates = await Promise.all(
       data.items.map(async (item, index) => {
         const variantSnapshot = await buildOrderItemVariantSnapshot(tx, orgId, item);
+        // P0: per-attribute columns (color/gender/length/size) collapsed into
+        // attributesJson. Fold legacy DTO fields into the JSON bag so callers
+        // that still pass them keep working until the FE migrates in P4.
+        const legacyAttrs: Record<string, string> = {};
+        if (item.color?.trim()) legacyAttrs.color = item.color.trim();
+        if (item.gender?.trim()) legacyAttrs.gender = item.gender.trim();
+        if (item.length?.trim()) legacyAttrs.length = item.length.trim();
+        if (item.size?.trim()) legacyAttrs.size = item.size.trim();
+        const snapshotAttrs = (variantSnapshot.attributesJson && typeof variantSnapshot.attributesJson === 'object' && !Array.isArray(variantSnapshot.attributesJson))
+          ? (variantSnapshot.attributesJson as Record<string, string>)
+          : {};
+        const mergedAttrs = { ...legacyAttrs, ...snapshotAttrs };
+
         return {
           position: index + 1,
           productName: item.productName,
-          color: item.color?.trim() || undefined,
-          gender: item.gender?.trim() || undefined,
-          length: item.length?.trim() || undefined,
-          // P5: size defaults to empty string for non-clothing templates that
-          // omit it — the Prisma column is `String` (non-null) so we cannot
-          // pass undefined.
-          size: item.size ?? '',
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           fulfillmentMode: 'unassigned' as const,
@@ -735,6 +732,9 @@ export async function create(orgId: string, authorId: string, authorName: string
             ? (item.attributes as Prisma.InputJsonValue)
             : undefined,
           ...variantSnapshot,
+          attributesJson: Object.keys(mergedAttrs).length > 0
+            ? (mergedAttrs as Prisma.InputJsonValue)
+            : variantSnapshot.attributesJson,
         };
       }),
     );
@@ -836,18 +836,31 @@ export async function create(orgId: string, authorId: string, authorName: string
   try {
     const { autoCreateFromOrder, reserveNewOrderItems, createOrderTransitEntries } =
       await import('../warehouse/warehouse.service.js');
-    const warehouseItems = mapped.items.map((item) => ({
-      id: item.id,
-      productName: item.productName,
-      color: item.color,
-      gender: item.gender,
-      length: item.length,
-      size: item.size,
-      quantity: item.quantity,
-      variantKey: item.variantKey,
-      attributesJson: item.attributesJson as Record<string, string> | null,
-      attributesSummary: item.attributesSummary,
-    }));
+    // P0: per-attribute columns collapsed into attributesJson. Read them out
+    // for downstream warehouse calls that still expect the legacy shape.
+    const warehouseItems = mapped.items.map((item) => {
+      const attrs = (item.attributesJson && typeof item.attributesJson === 'object' && !Array.isArray(item.attributesJson))
+        ? (item.attributesJson as Record<string, unknown>)
+        : {};
+      const readStr = (key: string): string | null => {
+        const raw = attrs[key];
+        if (raw === undefined || raw === null) return null;
+        const str = String(raw).trim();
+        return str || null;
+      };
+      return {
+        id: item.id,
+        productName: item.productName,
+        color: readStr('color'),
+        gender: readStr('gender'),
+        length: readStr('length'),
+        size: readStr('size'),
+        quantity: item.quantity,
+        variantKey: item.variantKey,
+        attributesJson: item.attributesJson as Record<string, string> | null,
+        attributesSummary: item.attributesSummary,
+      };
+    });
     await autoCreateFromOrder(orgId, warehouseItems, mapped.id, authorName || 'system');
     await reserveNewOrderItems(orgId, mapped.id, warehouseItems);
     await createOrderTransitEntries(orgId, mapped.id, warehouseItems);
@@ -924,19 +937,19 @@ async function applyItemRouting(
       });
 
       if (fulfillmentMode === 'production') {
+        // P0: ProductionTask.size column removed (attribute now lives on
+        // OrderItem.attributesJson and can be re-read via the join).
         await tx.productionTask.upsert({
           where: { orderItemId: item.id },
           create: {
             orderId: id,
             orderItemId: item.id,
             productName: item.productName,
-            size: item.size,
             quantity: item.quantity,
             status: 'queued',
           },
           update: {
             productName: item.productName,
-            size: item.size,
             quantity: item.quantity,
             status: 'queued',
             assignedTo: null,
@@ -1474,21 +1487,36 @@ export async function update(orgId: string, id: string, authorId: string, author
       await tx.orderItem.deleteMany({ where: { orderId: id } });
       for (const [index, item] of data.items.entries()) {
         const variantSnapshot = await buildOrderItemVariantSnapshot(tx, orgId, item);
+        // P0: legacy per-attribute columns (color/gender/length/size) collapsed
+        // into attributesJson. variantSnapshot already carries the canonical
+        // attributesJson/attributesSummary; we additionally fold any leftover
+        // legacy keys passed by the FE so nothing is lost.
+        const legacyAttrs: Record<string, string> = {};
+        if (item.color?.trim()) legacyAttrs.color = item.color.trim();
+        if (item.gender?.trim()) legacyAttrs.gender = item.gender.trim();
+        if (item.length?.trim()) legacyAttrs.length = item.length.trim();
+        if (item.size?.trim()) legacyAttrs.size = item.size.trim();
+        const mergedAttrs = {
+          ...legacyAttrs,
+          ...((variantSnapshot.attributesJson && typeof variantSnapshot.attributesJson === 'object' && !Array.isArray(variantSnapshot.attributesJson))
+            ? (variantSnapshot.attributesJson as Record<string, string>)
+            : {}),
+        };
+
         await tx.orderItem.create({
           data: {
             orderId: id,
             position: index + 1,
             productName: item.productName,
-            color: item.color?.trim() || null,
-            gender: item.gender?.trim() || null,
-            length: item.length?.trim() || null,
-            size: item.size,
             quantity: item.quantity,
             unitPrice: item.unitPrice,
             fulfillmentMode: 'unassigned',
             notes: item.notes,
             workshopNotes: item.workshopNotes,
             ...variantSnapshot,
+            attributesJson: Object.keys(mergedAttrs).length > 0
+              ? mergedAttrs
+              : variantSnapshot.attributesJson,
           },
         });
       }
@@ -1919,11 +1947,19 @@ export async function approveChangeRequest(
 
     const currentItems = sortOrderItemsByPosition(order.items);
 
+    // P0: OrderItem.size column collapsed into attributesJson.
+    const readSizeFromJson = (json: unknown): string => {
+      if (!json || typeof json !== 'object' || Array.isArray(json)) return '';
+      const raw = (json as Record<string, unknown>).size;
+      if (raw === undefined || raw === null) return '';
+      return String(raw).trim();
+    };
+
     function itemKey(productName: string, size: string) {
       return `${productName}|${size}`;
     }
 
-    const existingKeys = new Set(currentItems.map((i) => itemKey(i.productName, i.size)));
+    const existingKeys = new Set(currentItems.map((i) => itemKey(i.productName, readSizeFromJson(i.attributesJson))));
     let nextPosition = getNextOrderItemPosition(currentItems);
 
     const addedItems = proposedItems.filter(
@@ -1933,7 +1969,7 @@ export async function approveChangeRequest(
     // Update prices/notes on existing items (non-disruptive ? no task changes)
     for (const proposed of proposedItems) {
       const key = itemKey(proposed.productName, proposed.size);
-      const existing = currentItems.find((i) => itemKey(i.productName, i.size) === key);
+      const existing = currentItems.find((i) => itemKey(i.productName, readSizeFromJson(i.attributesJson)) === key);
       if (existing) {
         const variantSnapshot = await buildOrderItemVariantSnapshot(tx, orgId, proposed);
         await tx.orderItem.update({
@@ -1951,17 +1987,29 @@ export async function approveChangeRequest(
     // Create new items and their production tasks (queued)
     for (const item of addedItems) {
       const variantSnapshot = await buildOrderItemVariantSnapshot(tx, orgId, item);
+      // P0: per-attribute columns collapsed into attributesJson — fold proposed.size
+      // into the JSON bag and drop the legacy column writes.
+      const sizeAttr = item.size?.trim();
+      const snapshotAttrs = (variantSnapshot.attributesJson && typeof variantSnapshot.attributesJson === 'object' && !Array.isArray(variantSnapshot.attributesJson))
+        ? (variantSnapshot.attributesJson as Record<string, string>)
+        : {};
+      const mergedAttrs = sizeAttr
+        ? { size: sizeAttr, ...snapshotAttrs }
+        : snapshotAttrs;
+
       const newItem = await tx.orderItem.create({
         data: {
           orderId: order.id,
           position: nextPosition++,
           productName: item.productName,
-          size: item.size,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           fulfillmentMode: 'production',
           workshopNotes: item.workshopNotes,
           ...variantSnapshot,
+          attributesJson: Object.keys(mergedAttrs).length > 0
+            ? (mergedAttrs as Prisma.InputJsonValue)
+            : variantSnapshot.attributesJson,
         },
       });
 
@@ -1970,7 +2018,6 @@ export async function approveChangeRequest(
           orderId: order.id,
           orderItemId: newItem.id,
           productName: item.productName,
-          size: item.size,
           quantity: item.quantity,
           status: 'queued',
           notes: item.workshopNotes,
@@ -2083,13 +2130,13 @@ export async function routeSingleItem(
     await tx.orderItem.update({ where: { id: itemId }, data: { fulfillmentMode } });
 
     if (fulfillmentMode === 'production') {
+      // P0: ProductionTask.size column removed.
       await tx.productionTask.upsert({
         where: { orderItemId: itemId },
         create: {
           orderId,
           orderItemId: itemId,
           productName: item.productName,
-          size: item.size,
           quantity: item.quantity,
           status: 'queued',
           notes: item.workshopNotes,
@@ -2104,12 +2151,19 @@ export async function routeSingleItem(
       await tx.order.update({ where: { id: orderId }, data: { status: 'confirmed' } });
     }
 
+    // P0: OrderItem.size collapsed into attributesJson — derive for the log line.
+    const sizeLabel = (() => {
+      const json = item.attributesJson;
+      if (!json || typeof json !== 'object' || Array.isArray(json)) return '';
+      const raw = (json as Record<string, unknown>).size;
+      return raw === undefined || raw === null ? '' : String(raw).trim();
+    })();
     const label = fulfillmentMode === 'production' ? 'в производство' : 'на склад';
     await tx.orderActivity.create({
       data: {
         orderId,
         type: 'system',
-        content: `Позиция "${item.productName} / ${item.size}" переведена ${label} (${authorName}).`,
+        content: `Позиция "${item.productName}${sizeLabel ? ' / ' + sizeLabel : ''}" переведена ${label} (${authorName}).`,
         authorId,
         authorName,
       },

@@ -231,7 +231,7 @@ export async function confirm(
     if (!warehouseItemId && item.orderItemId) {
       const orderItem = await prisma.orderItem.findUnique({
         where: { id: item.orderItemId },
-        select: { variantKey: true, productName: true, color: true, gender: true, size: true },
+        select: { variantKey: true, productName: true, attributesJson: true },
       });
 
       if (orderItem?.variantKey) {
@@ -245,10 +245,16 @@ export async function confirm(
         if (!warehouseItem && orderItem.variantKey.includes('=') && !orderItem.variantKey.includes('|')) {
           // Old format: товар:цвет=синий:размер=44
           // Build new format: товар|цвет:синий|размер:44
+          // P0: legacy per-column attrs (color/gender/size) collapsed into attributesJson.
           const attrs: Record<string, string> = {};
-          if (orderItem.color?.trim()) attrs.color = orderItem.color.trim();
-          if (orderItem.gender?.trim()) attrs.gender = orderItem.gender.trim();
-          if (orderItem.size?.trim()) attrs.size = orderItem.size.trim();
+          const json = orderItem.attributesJson;
+          if (json && typeof json === 'object' && !Array.isArray(json)) {
+            for (const [k, v] of Object.entries(json as Record<string, unknown>)) {
+              if (v === undefined || v === null) continue;
+              const str = String(v).trim();
+              if (str) attrs[k] = str;
+            }
+          }
 
           // Reconstruct with new format
           const base = orderItem.productName.trim().toLowerCase().replace(/\s+/g, ' ');

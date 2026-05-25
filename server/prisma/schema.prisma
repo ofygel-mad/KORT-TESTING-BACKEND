@@ -241,7 +241,6 @@ model Organization {
   warehouseAlerts                 WarehouseAlert[]
   warehouseLots                   WarehouseLot[]
   warehouseLocations              WarehouseLocation[]
-  warehouseFieldDefinitions       WarehouseFieldDefinition[]
   warehouseProductCatalog         WarehouseProductCatalog[]
   warehouseSites                  WarehouseSite[]
   warehouseZones                  WarehouseZone[]
@@ -927,6 +926,10 @@ model Order {
   // them with the org's default Clothing template + empty attributes.
   templateId            String?   @map("template_id")
   extraAttributes       Json?     @map("extra_attributes")
+  // P0 multi-business: immutable snapshot of `OrderTemplate.sections` at the
+  // moment of creation/update. Read-path uses this (not the live template) so
+  // editing a template never breaks historical orders.
+  templateSnapshot      Json?     @map("template_snapshot")
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @updatedAt @map("updated_at")
 
@@ -957,7 +960,6 @@ model OrderItem {
   orderId           String  @map("order_id")
   position          Int     @map("item_position")
   productName       String  @map("product_name")
-  size              String
   quantity          Int     @default(1)
   unitPrice         Float   @map("unit_price")
   fulfillmentMode   String  @default("unassigned") @map("fulfillment_mode")
@@ -965,11 +967,8 @@ model OrderItem {
   // routing decision). Values: warehouse_pick | in_production | in_transit |
   // delivered | returned. Null = not yet committed.
   fulfillmentSubstatus String? @map("fulfillment_substatus")
-  gender            String?
-  length            String?
   notes             String?
   workshopNotes     String? @map("workshop_notes")
-  color             String?
   variantKey        String? @map("variant_key")
   attributesJson    Json?   @map("attributes_json")
   attributesSummary String? @map("attributes_summary")
@@ -993,7 +992,6 @@ model ProductionTask {
   orderId     String    @map("order_id")
   orderItemId String    @unique @map("order_item_id")
   productName String    @map("product_name")
-  size        String
   quantity    Int
   status      String    @default("pending")
   assignedTo  String?   @map("assigned_to")
@@ -1126,11 +1124,18 @@ model OrderTemplate {
   /// Full sections+fields shape per design_handoff/SCHEMA_SHAPE.md.
   sections          Json
   isSystem          Boolean  @default(false) @map("is_system")
+  /// P0 multi-business: marks the default template the org should preselect
+  /// when no explicit `templateId` is supplied (replaces /одежда/i regex).
+  isDefault         Boolean  @default(false) @map("is_default")
+  /// P0 multi-business: monotonically increments on every `sections` edit so
+  /// snapshots on Order can be compared against the live template version.
+  version           Int      @default(1)
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
 
   org    Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   orders Order[]
+  productCatalog WarehouseProductCatalog[]
 
   @@unique([orgId, name])
   @@index([orgId])
@@ -1243,9 +1248,6 @@ model ReturnItem {
   returnId        String   @map("return_id")
   orderItemId     String?  @map("order_item_id")
   productName     String   @map("product_name")
-  size            String
-  color           String?
-  gender          String?
   qty             Int      @default(1)
   unitPrice       Float    @map("unit_price")
   refundAmount    Float    @map("refund_amount")
@@ -1481,48 +1483,10 @@ model WarehouseLot {
 //  WAREHOUSE SMART CATALOG
 // ═══════════════════════════════════════════════════════════════
 
-model WarehouseFieldDefinition {
-  id                  String   @id @default(cuid())
-  orgId               String   @map("org_id")
-  code                String
-  label               String
-  entityScope         String   @default("both") @map("entity_scope") // warehouse_item | order_item | both
-  inputType           String   @map("input_type") // select | multiselect | text | number | boolean
-  isRequired          Boolean  @default(false) @map("is_required")
-  isVariantAxis       Boolean  @default(false) @map("is_variant_axis")
-  showInWarehouseForm Boolean  @default(true) @map("show_in_warehouse_form")
-  showInOrderForm     Boolean  @default(true) @map("show_in_order_form")
-  showInDocuments     Boolean  @default(true) @map("show_in_documents")
-  affectsAvailability Boolean  @default(true) @map("affects_availability")
-  sortOrder           Int      @default(0) @map("sort_order")
-  isSystem            Boolean  @default(false) @map("is_system")
-  createdAt           DateTime @default(now()) @map("created_at")
-  updatedAt           DateTime @updatedAt @map("updated_at")
-
-  org          Organization            @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  options      WarehouseFieldOption[]
-  productLinks WarehouseProductField[]
-
-  @@unique([orgId, code])
-  @@index([orgId, sortOrder])
-  @@map("warehouse_field_definitions")
-}
-
-model WarehouseFieldOption {
-  id           String  @id @default(cuid())
-  definitionId String  @map("definition_id")
-  value        String
-  label        String
-  sortOrder    Int     @default(0) @map("sort_order")
-  colorHex     String? @map("color_hex")
-  isActive     Boolean @default(true) @map("is_active")
-
-  definition WarehouseFieldDefinition @relation(fields: [definitionId], references: [id], onDelete: Cascade)
-
-  @@unique([definitionId, value])
-  @@index([definitionId, sortOrder])
-  @@map("warehouse_field_options")
-}
+// P0 multi-business: WarehouseFieldDefinition / WarehouseFieldOption /
+// WarehouseProductField were removed. Field definitions and options now live
+// inside OrderTemplate.sections.items.fields[]. Variant axes are derived from
+// `field.affectsAvailability` at runtime — no separate table is needed.
 
 model WarehouseProductCatalog {
   id             String   @id @default(cuid())
@@ -1531,17 +1495,25 @@ model WarehouseProductCatalog {
   normalizedName String   @map("normalized_name")
   isActive       Boolean  @default(true) @map("is_active")
   source         String?
+  /// P0 multi-business: catalog entry is bound to a specific OrderTemplate
+  /// (вид деятельности). Nullable for backward-compat during migration; new
+  /// rows must always set it via createProduct/POST/PUT.
+  templateId     String?  @map("template_id")
+  /// Per-product default prices, applied when a variant has no override.
+  defaultRetailPrice    Decimal? @map("default_retail_price") @db.Decimal(14, 2)
+  defaultWholesalePrice Decimal? @map("default_wholesale_price") @db.Decimal(14, 2)
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   org            Organization            @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  fieldLinks     WarehouseProductField[]
+  template       OrderTemplate?          @relation(fields: [templateId], references: [id], onDelete: SetNull)
   warehouseItems WarehouseItem[]
   variants       WarehouseVariant[]
   photos         WarehouseProductPhoto[]
 
   @@unique([orgId, normalizedName])
   @@index([orgId])
+  @@index([orgId, templateId])
   @@map("warehouse_product_catalog")
 }
 
@@ -1560,20 +1532,6 @@ model WarehouseProductPhoto {
 
   @@index([productId])
   @@map("warehouse_product_photos")
-}
-
-model WarehouseProductField {
-  id           String  @id @default(cuid())
-  productId    String  @map("product_id")
-  definitionId String  @map("definition_id")
-  isRequired   Boolean @default(false) @map("is_required")
-  sortOrder    Int     @default(0) @map("sort_order")
-
-  product    WarehouseProductCatalog  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  definition WarehouseFieldDefinition @relation(fields: [definitionId], references: [id], onDelete: Cascade)
-
-  @@unique([productId, definitionId])
-  @@map("warehouse_product_fields")
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1765,6 +1723,10 @@ model WarehouseVariant {
   attributesSummary String?  @map("attributes_summary")
   schemaVersion     Int      @default(1) @map("schema_version")
   isActive          Boolean  @default(true) @map("is_active")
+  /// P0 multi-business: per-variant price overrides. Null = fall back to the
+  /// product's `defaultRetailPrice` / `defaultWholesalePrice`.
+  retailPrice       Decimal? @map("retail_price") @db.Decimal(14, 2)
+  wholesalePrice    Decimal? @map("wholesale_price") @db.Decimal(14, 2)
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
 
@@ -1861,6 +1823,12 @@ model WarehouseStockReservation {
   tasks       WarehouseTask[]
 
   @@unique([orgId, idempotencyKey])
+  /// P0 multi-business: atomic idempotency for parallel POST /orders. Replaces
+  /// the application-level findFirst+create races at warehouse.service.ts:734-759,
+  /// 824-831, 898-901. NOTE: sourceLineId is nullable — Postgres treats NULL as
+  /// distinct, so simple-path (no line id) reservations cannot collide here;
+  /// they remain protected by the idempotencyKey unique above.
+  @@unique([orgId, sourceType, sourceId, sourceLineId], map: "warehouse_reservation_dedupe")
   @@index([orgId, warehouseSiteId, status])
   @@index([orgId, sourceType, sourceId])
   @@map("warehouse_stock_reservations")
@@ -2355,12 +2323,10 @@ model ManualInvoiceItem {
   id          String   @id @default(cuid())
   invoiceId   String   @map("invoice_id")
   productName String   @map("product_name")
-  gender      String?
-  length      String?
-  color       String?
-  size        String?
   quantity    Int      @default(1)
   unitPrice   Float    @map("unit_price")
+  /// P0 multi-business: free-form per-item attributes from the active OrderTemplate.
+  attributesJson Json?  @map("attributes_json")
   createdAt   DateTime @default(now()) @map("created_at")
 
   invoice ManualInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)

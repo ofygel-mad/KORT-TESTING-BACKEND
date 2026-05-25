@@ -58,6 +58,35 @@ async function nextInvoiceNumber(
   return getNextInvoiceNumberCandidate(tx, orgId, createdAt);
 }
 
+// P0: OrderItem.color/size/gender/length collapsed into attributesJson. Read
+// the legacy fields back out of the JSON bag for the invoice document.
+function readAttrStringMap(value: unknown): Record<string, string> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const out: Record<string, string> = {};
+  for (const [key, raw] of Object.entries(value as Record<string, unknown>)) {
+    if (raw === undefined || raw === null) continue;
+    const str = String(raw).trim();
+    if (str) out[key] = str;
+  }
+  return out;
+}
+
+function projectInvoiceOrderItem(item: {
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  attributesJson?: Prisma.JsonValue | null;
+}) {
+  const attrs = readAttrStringMap(item.attributesJson);
+  return {
+    productName: item.productName,
+    size: attrs.size ?? '',
+    color: attrs.color ?? null,
+    quantity: item.quantity,
+    unitPrice: item.unitPrice,
+  };
+}
+
 function buildFallbackDocument(invoice: {
   invoiceNumber: string;
   createdAt: Date;
@@ -67,10 +96,9 @@ function buildFallbackDocument(invoice: {
       orderNumber: string;
       items: Array<{
         productName: string;
-        size: string;
         quantity: number;
         unitPrice: number;
-        color?: string | null;
+        attributesJson?: Prisma.JsonValue | null;
       }>;
     };
   }>;
@@ -81,7 +109,7 @@ function buildFallbackDocument(invoice: {
     orders: invoice.items.map((item) => ({
       id: item.order.id,
       orderNumber: item.order.orderNumber,
-      items: item.order.items,
+      items: item.order.items.map(projectInvoiceOrderItem),
     })),
   });
 }
@@ -97,12 +125,9 @@ async function loadInvoiceSourceOrders(
       items: {
         select: {
           productName: true,
-          size: true,
           quantity: true,
           unitPrice: true,
-          color: true,
-          gender: true,
-          length: true,
+          attributesJson: true,
         },
       },
     },
@@ -167,7 +192,7 @@ export async function createInvoice(
             orders: detailedOrders.map((order) => ({
               id: order.id,
               orderNumber: order.orderNumber,
-              items: order.items,
+              items: order.items.map(projectInvoiceOrderItem),
             })),
           });
           const normalizedDocument = documentPayload
@@ -262,7 +287,7 @@ export async function previewInvoiceDocument(orgId: string, orderIds: string[]) 
     orders: detailedOrders.map((order) => ({
       id: order.id,
       orderNumber: order.orderNumber,
-      items: order.items,
+      items: order.items.map(projectInvoiceOrderItem),
     })),
   });
 }
@@ -298,7 +323,7 @@ export async function listInvoices(
                   items: {
                     select: {
                       productName: true,
-                      size: true,
+                      attributesJson: true,
                       quantity: true,
                       unitPrice: true,
                     },

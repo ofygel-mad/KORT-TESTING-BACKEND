@@ -41,10 +41,7 @@ const invoiceSelect = {
     select: {
       id: true,
       productName: true,
-      gender: true,
-      length: true,
-      color: true,
-      size: true,
+      attributesJson: true,
       quantity: true,
       unitPrice: true,
     },
@@ -60,6 +57,17 @@ export interface ManualInvoiceItemDto {
   size?: string;
   quantity: number;
   unitPrice: number;
+}
+
+// P0: per-attribute columns (gender/length/color/size) collapsed into
+// ManualInvoiceItem.attributesJson. Convert legacy DTO into the JSON bag.
+function buildItemAttributesJson(item: ManualInvoiceItemDto): Record<string, string> | undefined {
+  const attrs: Record<string, string> = {};
+  if (item.gender?.trim()) attrs.gender = item.gender.trim();
+  if (item.length?.trim()) attrs.length = item.length.trim();
+  if (item.color?.trim()) attrs.color = item.color.trim();
+  if (item.size?.trim()) attrs.size = item.size.trim();
+  return Object.keys(attrs).length > 0 ? attrs : undefined;
 }
 
 export interface CreateManualInvoiceDto {
@@ -122,10 +130,7 @@ export async function create(
       items: {
         create: dto.items.map((item) => ({
           productName: item.productName,
-          gender: item.gender,
-          length: item.length,
-          color: item.color,
-          size: item.size,
+          attributesJson: buildItemAttributesJson(item),
           quantity: item.quantity,
           unitPrice: item.unitPrice,
         })),
@@ -152,10 +157,7 @@ export async function update(
         data: dto.items.map((item) => ({
           invoiceId: id,
           productName: item.productName,
-          gender: item.gender,
-          length: item.length,
-          color: item.color,
-          size: item.size,
+          attributesJson: buildItemAttributesJson(item),
           quantity: item.quantity,
           unitPrice: item.unitPrice,
         })),
@@ -285,14 +287,22 @@ export async function generateXlsx(orgId: string, id: string) {
     cell.alignment = { horizontal: 'center' };
   });
 
+  // P0: per-attribute columns collapsed into attributesJson.
+  const readAttr = (json: unknown, key: string): string => {
+    if (!json || typeof json !== 'object' || Array.isArray(json)) return '';
+    const raw = (json as Record<string, unknown>)[key];
+    if (raw === undefined || raw === null) return '';
+    return String(raw);
+  };
+
   invoice.items.forEach((item, index) => {
     const row = worksheet.addRow([
       index + 1,
       item.productName,
-      item.gender ?? '',
-      item.length ?? '',
-      item.color ?? '',
-      item.size ?? '',
+      readAttr(item.attributesJson, 'gender'),
+      readAttr(item.attributesJson, 'length'),
+      readAttr(item.attributesJson, 'color'),
+      readAttr(item.attributesJson, 'size'),
       item.quantity,
       item.unitPrice,
       item.unitPrice * item.quantity,

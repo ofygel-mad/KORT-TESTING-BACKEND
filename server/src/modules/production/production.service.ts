@@ -6,15 +6,24 @@ import {
   normalizeProductionStatus,
 } from '../orders/workflow.js';
 
-function mapTask<T extends { status: string | null; orderItem?: { position?: number | null; color?: string | null; gender?: string | null; length?: string | null; workshopNotes?: string | null } | null }>(task: T) {
+// P0: OrderItem.color/gender/length collapsed into attributesJson.
+function readAttr(json: unknown, key: string): string | null {
+  if (!json || typeof json !== 'object' || Array.isArray(json)) return null;
+  const raw = (json as Record<string, unknown>)[key];
+  if (raw === undefined || raw === null) return null;
+  const str = String(raw).trim();
+  return str || null;
+}
+
+function mapTask<T extends { status: string | null; orderItem?: { position?: number | null; attributesJson?: unknown; workshopNotes?: string | null } | null }>(task: T) {
   const { orderItem, ...rest } = task;
   return {
     ...rest,
     status: normalizeProductionStatus(task.status),
     orderItemPosition: orderItem?.position ?? null,
-    color: orderItem?.color ?? null,
-    gender: orderItem?.gender ?? null,
-    length: orderItem?.length ?? null,
+    color: readAttr(orderItem?.attributesJson, 'color'),
+    gender: readAttr(orderItem?.attributesJson, 'gender'),
+    length: readAttr(orderItem?.attributesJson, 'length'),
     workshopNotes: orderItem?.workshopNotes ?? null,
   } as Omit<T, 'orderItem'> & { status: ReturnType<typeof normalizeProductionStatus>; orderItemPosition: number | null; color: string | null; gender: string | null; length: string | null; workshopNotes: string | null };
 }
@@ -163,9 +172,7 @@ export async function list(orgId: string, filters?: { status?: string; assignedT
       orderItem: {
         select: {
           position: true,
-          color: true,
-          gender: true,
-          length: true,
+          attributesJson: true,
           workshopNotes: true,
         },
       },
@@ -212,9 +219,7 @@ export async function listForWorkshop(orgId: string) {
       orderItem: {
         select: {
           position: true,
-          color: true,
-          gender: true,
-          length: true,
+          attributesJson: true,
           workshopNotes: true,
         },
       },
