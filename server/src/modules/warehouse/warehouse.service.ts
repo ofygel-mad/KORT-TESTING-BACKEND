@@ -43,6 +43,13 @@ export interface CreateItemDto {
   tags?: string[];
   notes?: string;
   /**
+   * P3: optional explicit catalog product binding. When supplied, the server
+   * validates that it belongs to the active org and (if known) the active
+   * template. When omitted, the server still enforces that a catalog entry
+   * with matching normalized name exists in the org — see createItem guard.
+   */
+  productCatalogId?: string;
+  /**
    * P4: generic template-driven axes used to compute variantKey. Replaces the
    * legacy {color,gender,size,length} flat fields, which are still accepted
    * for backward-compat and merged into `attributes` if both are present.
@@ -326,6 +333,61 @@ export async function getItem(orgId: string, id: string) {
 export async function createItem(orgId: string, dto: CreateItemDto, authorName: string) {
   const qrCode = `KORT-WH-${nanoid(10)}`;
 
+  // P3: catalog-is-source-of-truth guard. The warehouse cannot accept items
+  // that don't exist in the org's catalog. This prevents typos and ensures
+  // every stock position has a corresponding (templated) catalog entry.
+  //
+  // Resolution order:
+  //   1. If `productCatalogId` is passed → verify ownership + template.
+  //   2. Else fall back to name-based lookup via normalizeName() — supports
+  //      legacy clients that don't pass productCatalogId yet (bulk import,
+  //      Excel parser). The lookup itself is the guard.
+  const CATALOG_MISSING_MSG =
+    'Товар отсутствует в каталоге. Сначала добавьте его в раздел Каталог.';
+  const CATALOG_TEMPLATE_MISMATCH_MSG =
+    'Товар принадлежит другому виду деятельности. Проверьте раздел Каталог.';
+
+  // Determine the org's active (default) template id for cross-template
+  // protection. If no default template exists yet we skip the check —
+  // ensureSystemTemplatesForOrg has not yet been run for this org.
+  const activeTemplate = await prisma.orderTemplate.findFirst({
+    where: { orgId, isDefault: true },
+    select: { id: true },
+  });
+  const activeTemplateId = activeTemplate?.id ?? null;
+
+  let catalogProduct: { id: string; templateId: string | null } | null = null;
+  if (dto.productCatalogId) {
+    catalogProduct = await prisma.warehouseProductCatalog.findFirst({
+      where: { id: dto.productCatalogId, orgId, isActive: true },
+      select: { id: true, templateId: true },
+    });
+    if (!catalogProduct) {
+      throw new AppError(400, CATALOG_MISSING_MSG, 'VALIDATION');
+    }
+  } else {
+    const trimmedName = dto.name?.trim() ?? '';
+    if (!trimmedName) {
+      throw new AppError(400, CATALOG_MISSING_MSG, 'VALIDATION');
+    }
+    const normalized = normalizeWarehouseName(trimmedName);
+    catalogProduct = await prisma.warehouseProductCatalog.findFirst({
+      where: { orgId, normalizedName: normalized, isActive: true },
+      select: { id: true, templateId: true },
+    });
+    if (!catalogProduct) {
+      throw new AppError(400, CATALOG_MISSING_MSG, 'VALIDATION');
+    }
+  }
+
+  if (
+    activeTemplateId
+    && catalogProduct.templateId
+    && catalogProduct.templateId !== activeTemplateId
+  ) {
+    throw new AppError(400, CATALOG_TEMPLATE_MISMATCH_MSG, 'VALIDATION');
+  }
+
   // P4: generic attributes path with legacy-fields backward-compat merge.
   const attrs = normalizeAttributeMap(dto.attributes);
   if (!('color' in attrs) && dto.color?.trim()) attrs.color = dto.color.trim();
@@ -350,6 +412,7 @@ export async function createItem(orgId: string, dto: CreateItemDto, authorName: 
       tags: dto.tags ?? [],
       notes: dto.notes,
       qrCode,
+      productCatalogId: catalogProduct.id,
       variantKey,
       attributesJson: Object.keys(attrs).length > 0 ? attrs : undefined,
       attributesSummary,

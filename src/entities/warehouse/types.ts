@@ -1092,6 +1092,12 @@ export interface CreateItemDto {
   categoryId?: string;
   notes?: string;
   /**
+   * P3: catalog-driven warehouse — the autocomplete in AddItemDrawer must
+   * send the selected catalog product id so the server can validate that
+   * the position truly exists in the org's catalog (защита от дурака).
+   */
+  productCatalogId?: string;
+  /**
    * Legacy 4-axis attributes. Still accepted by the server's createItem in
    * P1 for backward-compat; new code should populate `attributesJson` and
    * pass the canonical keys here only as a duplicate (server reads them

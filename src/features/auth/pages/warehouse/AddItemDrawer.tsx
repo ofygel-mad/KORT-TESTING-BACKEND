@@ -1,18 +1,26 @@
-// P1 multi-business — schema-driven warehouse "add item" form.
+// P3 multi-business — Catalog-is-source-of-truth warehouse "add item" form.
 //
-// Replaces the previous clothing-hardcoded form (color/gender/length/size) with
-// a generic renderer that walks `template.sections.items.fields` and produces
-// inputs via `TemplateAttributeRenderer`. The 4 legacy axis keys, when present
-// in the active template, are mirrored into the create-item payload so the
-// server's still-legacy `createItem` (P4 target) keeps working in P1.
+// Hard rules enforced here:
+//   1. Поле «Название товара» — только Autocomplete из каталога активного
+//      шаблона. Произвольный текст не принимается (защита от дурака).
+//   2. Если каталог по активному шаблону пуст — показываем empty-state со
+//      ссылкой на /products, форма не рендерится вовсе.
+//   3. После выбора товара цены defaultRetailPrice / defaultWholesalePrice
+//      автоподставляются в «Цена» (поле остаётся редактируемым).
+//
+// P1 schema-driven attribute rendering сохранён: дополнительные параметры
+// позиции (color/size/concentration/...) подтягиваются из активного
+// OrderTemplate.sections.items.fields и проходят через TemplateAttributeRenderer.
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useCreateItem, useOrderFormCatalog } from '@/entities/warehouse/queries';
-import type { CreateItemDto } from '@/entities/warehouse/types';
+import type { CreateItemDto, OrderFormProduct } from '@/entities/warehouse/types';
 import { useActiveOrderTemplate } from '@/entities/order/templatesApi';
 import { getItemsSection, type OrderTemplateField } from '@/entities/order/templates';
 import { TemplateAttributeRenderer, type TemplateAttributeValue } from '@/shared/ui/TemplateAttributeRenderer';
+import { SearchableSelect, type SearchableSelectOption } from '@/shared/ui/SearchableSelect';
 import styles from './Warehouse.module.css';
 
 interface Props {
@@ -22,6 +30,7 @@ interface Props {
 const LEGACY_AXIS_KEYS = new Set(['color', 'gender', 'size', 'length']);
 
 interface ItemFormState {
+  productCatalogId: string;
   name: string;
   qty: number;
   qtyMin: number;
@@ -30,6 +39,7 @@ interface ItemFormState {
 }
 
 const INITIAL_FORM: ItemFormState = {
+  productCatalogId: '',
   name: '',
   qty: 0,
   qtyMin: 0,
@@ -47,7 +57,9 @@ function toStringValue(v: TemplateAttributeValue): string {
 export function AddItemDrawer({ onClose }: Props) {
   const createItem = useCreateItem();
   const { data: activeTemplate } = useActiveOrderTemplate();
-  const { data: catalog } = useOrderFormCatalog({ templateId: activeTemplate?.id ?? null });
+  const { data: catalog, isLoading: catalogLoading } = useOrderFormCatalog({
+    templateId: activeTemplate?.id ?? null,
+  });
   const [form, setForm] = useState<ItemFormState>(INITIAL_FORM);
 
   const itemsSection = useMemo(() => getItemsSection(activeTemplate), [activeTemplate]);
@@ -61,20 +73,70 @@ export function AddItemDrawer({ onClose }: Props) {
     return fields.filter((f) => !SKIP.has(f.key));
   }, [itemsSection]);
 
-  const productNames = useMemo(
-    () => catalog?.products.map((p) => p.name) ?? [],
+  const products: OrderFormProduct[] = useMemo(
+    () => catalog?.products ?? [],
     [catalog],
   );
+
+  const productOptions: SearchableSelectOption[] = useMemo(
+    () => products.map((p) => p.name),
+    [products],
+  );
+
+  const productByName = useMemo(() => {
+    const m = new Map<string, OrderFormProduct>();
+    for (const p of products) m.set(p.name, p);
+    return m;
+  }, [products]);
+
+  const templateName = activeTemplate?.name ?? null;
+  const hasAttributeFields = attributeFields.length > 0;
+  const catalogEmpty = !catalogLoading && products.length === 0;
+
+  // When the active template changes (or first load completes), reset the
+  // form so we never carry over stale selections from another вид деятельности.
+  useEffect(() => {
+    setForm(INITIAL_FORM);
+  }, [activeTemplate?.id]);
 
   const handleAttrChange = (key: string, next: TemplateAttributeValue) =>
     setForm((cur) => ({ ...cur, attributes: { ...cur.attributes, [key]: next } }));
 
-  const handleNameChange = (value: string) =>
-    setForm((cur) => ({ ...cur, name: value, attributes: {} }));
+  // Strict autocomplete commit: only accept names present in the catalog.
+  // If the user types free text and the SearchableSelect commits it onBlur,
+  // we ignore the value (leave the form name empty) and force a re-pick.
+  const handleNameChange = (value: string) => {
+    const trimmed = value.trim();
+    const product = productByName.get(trimmed);
+    if (!product) {
+      setForm((cur) => ({
+        ...cur,
+        productCatalogId: '',
+        name: '',
+        // Wipe attributes on name-clear so old axes don't leak into a new pick.
+        attributes: {},
+      }));
+      return;
+    }
+    const autoPrice =
+      product.defaultRetailPrice ?? product.defaultWholesalePrice ?? null;
+    setForm((cur) => ({
+      ...cur,
+      productCatalogId: product.id,
+      name: product.name,
+      // Only auto-fill the price if it's currently empty — never overwrite a
+      // value the user has already typed manually.
+      costPrice:
+        cur.costPrice.trim() === '' && autoPrice != null
+          ? String(autoPrice)
+          : cur.costPrice,
+      attributes: {},
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!form.name.trim()) return;
+    if (!form.productCatalogId || !form.name.trim()) return;
 
     // Build attributesJson from template fields (skip empty values).
     const attributesJson: Record<string, string> = {};
@@ -94,6 +156,7 @@ export function AddItemDrawer({ onClose }: Props) {
 
     const rawCostPrice = form.costPrice.trim();
     await createItem.mutateAsync({
+      productCatalogId: form.productCatalogId,
       name: form.name.trim(),
       unit: 'шт',
       qty: Number(form.qty ?? 0),
@@ -105,8 +168,52 @@ export function AddItemDrawer({ onClose }: Props) {
     onClose();
   };
 
-  const templateName = activeTemplate?.name ?? null;
-  const hasAttributeFields = attributeFields.length > 0;
+  // ── Empty catalog state ────────────────────────────────────────────────
+  // Hard block: if the org's catalog for the active template has zero
+  // entries, we don't even show the form — there's nothing the user could
+  // legally pick. Send them to /products to seed the catalog first.
+  if (catalogEmpty) {
+    const productsHref = activeTemplate?.id
+      ? `/products?templateId=${encodeURIComponent(activeTemplate.id)}`
+      : '/products';
+
+    return (
+      <div className={styles.drawerOverlay} onClick={onClose}>
+        <div className={styles.drawer} onClick={(e) => e.stopPropagation()}>
+          <div className={styles.drawerHeader}>
+            <span className={styles.drawerTitle}>
+              Добавить позицию
+              {templateName && (
+                <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 400, color: 'var(--text-tertiary)' }}>
+                  · {templateName}
+                </span>
+              )}
+            </span>
+            <button type="button" className={styles.drawerClose} onClick={onClose} title="Закрыть" aria-label="Закрыть">
+              <X size={14} />
+            </button>
+          </div>
+
+          <div className={styles.drawerBody}>
+            <div className={styles.empty}>
+              <div style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                Каталог по виду деятельности «{templateName ?? '—'}» пуст.
+                <br />
+                Сначала добавьте позиции в раздел Каталог.
+              </div>
+              <Link
+                to={productsHref}
+                className={styles.emptyBtn}
+                onClick={onClose}
+              >
+                Перейти в Каталог
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.drawerOverlay} onClick={onClose}>
@@ -130,30 +237,14 @@ export function AddItemDrawer({ onClose }: Props) {
             <label className={styles.label}>
               Название <span className={styles.req}>*</span>
             </label>
-            {productNames.length > 0 ? (
-              <select
-                className={styles.input}
-                value={form.name}
-                onChange={(e) => handleNameChange(e.target.value)}
-                required
-                autoFocus
-                aria-label="Название"
-              >
-                <option value="">— выбрать позицию из каталога —</option>
-                {productNames.map((n) => (
-                  <option key={n} value={n}>{n}</option>
-                ))}
-              </select>
-            ) : (
-              <input
-                className={styles.input}
-                value={form.name}
-                onChange={(e) => handleNameChange(e.target.value)}
-                placeholder="Название позиции"
-                required
-                autoFocus
-              />
-            )}
+            <SearchableSelect
+              options={productOptions}
+              value={form.name}
+              onChange={handleNameChange}
+              placeholder="— выбрать позицию из каталога —"
+              className={styles.input}
+              ariaLabel="Название"
+            />
             {!hasAttributeFields && (
               <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 4 }}>
                 В шаблоне «{templateName ?? '—'}» нет дополнительных параметров позиции.
@@ -221,7 +312,12 @@ export function AddItemDrawer({ onClose }: Props) {
             <button type="button" className={styles.cancelBtn} onClick={onClose}>
               Отмена
             </button>
-            <button type="submit" className={styles.submitBtn} disabled={createItem.isPending}>
+            <button
+              type="submit"
+              className={styles.submitBtn}
+              disabled={createItem.isPending || !form.productCatalogId}
+              title={!form.productCatalogId ? 'Сначала выберите позицию из каталога' : undefined}
+            >
               {createItem.isPending ? 'Создание...' : 'Добавить'}
             </button>
           </div>

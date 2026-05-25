@@ -96,6 +96,8 @@ export const warehouseRoutes: FastifyPluginAsync = async (app) => {
       qtyMin: body.qtyMin !== undefined ? Number(body.qtyMin) : undefined,
       qtyMax: body.qtyMax !== undefined ? Number(body.qtyMax) : undefined,
       costPrice: body.costPrice !== undefined ? Number(body.costPrice) : undefined,
+      // P3: explicit catalog binding from the AddItemDrawer autocomplete.
+      productCatalogId: body.productCatalogId,
     };
     const item = await svc.createItem(req.orgId!, dto, authorName);
     return reply.status(201).send(item);
