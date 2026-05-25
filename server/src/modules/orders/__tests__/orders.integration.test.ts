@@ -100,7 +100,7 @@ describe('Orders Service Integration Tests', () => {
       },
     });
 
-    expect(order.orderNumber).toBe('INT-001');
+    expect(order.orderNumber).toBe('ORD-001');
     expect(order.clientName).toBe('Айгүл Нұр-Сұлтан');
     expect(order.clientPhone).toBe('+7 (701)-555-44-33');
     expect(order.totalAmount).toBe(32000);

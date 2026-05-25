@@ -20,7 +20,7 @@ export async function requestsRoutes(app: FastifyInstance) {
       notes: z.string().optional(),
       items: z.array(z.object({
         productName: z.string().min(1),
-        size: z.string().optional(),
+        attributes: z.record(z.string(), z.string()).optional(),
         quantity: z.number().int().min(1),
         notes: z.string().optional(),
       })).min(1),
@@ -61,7 +61,7 @@ export async function requestsRoutes(app: FastifyInstance) {
       source: z.string().optional(),
       items: z.array(z.object({
         productName: z.string().min(1),
-        size: z.string().optional(),
+        attributes: z.record(z.string(), z.string()).optional(),
         quantity: z.number().int().min(1),
         notes: z.string().optional(),
       })).min(1),

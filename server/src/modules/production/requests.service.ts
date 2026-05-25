@@ -41,7 +41,7 @@ export async function submit(orgId: string, data: {
   source?: string;
   items: Array<{
     productName: string;
-    size?: string;
+    attributes?: Record<string, string>;
     quantity: number;
     notes?: string;
   }>;
@@ -65,7 +65,9 @@ export async function submit(orgId: string, data: {
       items: {
         create: data.items.map((item) => ({
           productName: item.productName.trim(),
-          size: item.size?.trim(),
+          attributesJson: item.attributes && Object.keys(item.attributes).length > 0
+            ? item.attributes
+            : undefined,
           quantity: Math.max(1, item.quantity),
           notes: item.notes?.trim(),
         })),
