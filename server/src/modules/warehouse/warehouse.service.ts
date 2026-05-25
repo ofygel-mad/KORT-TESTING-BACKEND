@@ -11,7 +11,7 @@
  */
 
 import { prisma } from '../../lib/prisma.js';
-import { AppError } from '../../lib/errors.js';
+import { AppError, ValidationError } from '../../lib/errors.js';
 import { nanoid } from 'nanoid';
 import { buildCanonicalVariantKey } from '../../shared/variant-key.js';
 import { normalizeName as normalizeWarehouseName } from '../../shared/normalize-name.js';
@@ -969,14 +969,24 @@ async function reserveSimpleOrderItems(
 
 /**
  * Немедленное резервирование при создании заказа (Метод накопления).
- * В отличие от reserveSimpleOrderItems, не проверяет наличие свободного остатка —
- * резерв создаётся даже если qty=0 или отрицательное.
- * Это соответствует WMS-ARCHI.md: заказ = немедленный расход (−N в формуле).
+ *
+ * P9: добавлен availability-guard. Раньше функция инкрементировала qtyReserved
+ * без проверки свободного остатка, что приводило к over-reservation когда два
+ * параллельных заказа резервировали один товар (qtyReserved могло уйти выше
+ * qty). Теперь:
+ *  - если для текущего orderId+itemId уже есть active reservation → это replay,
+ *    тихо пропускаем (идемпотентность);
+ *  - иначе проверяем `available = qty - qtyReserved`;
+ *  - если available < item.quantity → бросаем ValidationError с понятным русским
+ *    сообщением. Вызывающий код (orders.service.ts) пробрасывает её до API,
+ *    клиент получает 400.
  */
 export async function reserveNewOrderItems(
   orgId: string,
   orderId: string,
   items: Array<{
+    /** ID OrderItem (используется как sourceLineId для идемпотентности). */
+    id?: string;
     productName: string;
     /** P4: generic template-driven axes (replaces color/gender/size/length). */
     attributes: Record<string, string>;
@@ -996,15 +1006,35 @@ export async function reserveNewOrderItems(
 
     const warehouseItem = await prisma.warehouseItem.findFirst({
       where: { orgId, variantKey },
-      select: { id: true },
+      select: { id: true, qty: true, qtyReserved: true, name: true, verificationRequired: true },
     });
     if (!warehouseItem) { skipped++; continue; }
 
-    // Идемпотентность: не создавать дубль резерва для того же заказа + позиции
+    // Идемпотентность: не создавать дубль резерва для того же заказа + позиции.
+    // Это происходит при retry/replay POST /orders с тем же payload — резерв
+    // уже сделан, не считаем это ошибкой.
     const existing = await prisma.warehouseReservation.findFirst({
       where: { orgId, sourceId: orderId, itemId: warehouseItem.id, status: 'active' },
     });
     if (existing) { skipped++; continue; }
+
+    // P9: availability guard перед инкрементом qtyReserved. Без этой проверки
+    // два параллельных заказа на одну variant могли в сумме зарезервировать
+    // больше, чем есть на складе.
+    //
+    // Исключение — accumulation-skeleton (verificationRequired=true). Это
+    // позиция, авто-созданная autoCreateFromOrder с qty=0: остаток ещё
+    // неизвестен, кладовщик подтвердит после физической проверки. Для таких
+    // позиций сохраняем оригинальную семантику Метода накопления (резерв
+    // создаётся даже при qty=0, как описано в WMS-ARCHI.md).
+    if (!warehouseItem.verificationRequired) {
+      const available = warehouseItem.qty - warehouseItem.qtyReserved;
+      if (available < item.quantity) {
+        throw new ValidationError(
+          `Недостаточно товара на складе: ${warehouseItem.name} (доступно ${available}, требуется ${item.quantity})`,
+        );
+      }
+    }
 
     await prisma.$transaction(async (tx) => {
       await tx.warehouseReservation.create({

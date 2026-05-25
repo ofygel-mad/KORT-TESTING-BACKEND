@@ -874,39 +874,51 @@ export async function create(orgId: string, authorId: string, authorName: string
     timeout: 20_000,
   });
 
-  // P3: Автосоздание складских резервов при создании заказа (неблокирующий шаг).
-  // Ошибка в синхронизации склада не должна останавливать создание заказа.
+  // P3: Автосоздание складских резервов при создании заказа.
+  // P9: stock-availability ошибки (ValidationError) пробрасываются наружу —
+  // клиент получает 400 с понятным русским сообщением. Остальные ошибки
+  // (network/transient) логируются, но не блокируют создание заказа: сам
+  // заказ уже создан в транзакции выше, не имеет смысла его терять.
+  const { autoCreateFromOrder, reserveNewOrderItems, createOrderTransitEntries } =
+    await import('../warehouse/warehouse.service.js');
+  // P4: warehouse layer now consumes a generic `attributes: Record<string,string>`
+  // map directly from OrderItem.attributesJson. The previous bridge that
+  // extracted only color/gender/length/size is gone — that was the original
+  // source of the totals-summing bug for custom-axis templates.
+  const warehouseItems = mapped.items.map((item) => {
+    const attrsRaw = (item.attributesJson && typeof item.attributesJson === 'object' && !Array.isArray(item.attributesJson))
+      ? (item.attributesJson as Record<string, unknown>)
+      : {};
+    const attributes: Record<string, string> = {};
+    for (const [key, value] of Object.entries(attrsRaw)) {
+      const trimmedKey = key.trim();
+      const trimmedValue = typeof value === 'string' ? value.trim() : value == null ? '' : String(value).trim();
+      if (trimmedKey && trimmedValue) attributes[trimmedKey] = trimmedValue;
+    }
+    return {
+      id: item.id,
+      productName: item.productName,
+      attributes,
+      quantity: item.quantity,
+      variantKey: item.variantKey,
+      attributesJson: item.attributesJson as Record<string, string> | null,
+      attributesSummary: item.attributesSummary,
+    };
+  });
   try {
-    const { autoCreateFromOrder, reserveNewOrderItems, createOrderTransitEntries } =
-      await import('../warehouse/warehouse.service.js');
-    // P4: warehouse layer now consumes a generic `attributes: Record<string,string>`
-    // map directly from OrderItem.attributesJson. The previous bridge that
-    // extracted only color/gender/length/size is gone — that was the original
-    // source of the totals-summing bug for custom-axis templates.
-    const warehouseItems = mapped.items.map((item) => {
-      const attrsRaw = (item.attributesJson && typeof item.attributesJson === 'object' && !Array.isArray(item.attributesJson))
-        ? (item.attributesJson as Record<string, unknown>)
-        : {};
-      const attributes: Record<string, string> = {};
-      for (const [key, value] of Object.entries(attrsRaw)) {
-        const trimmedKey = key.trim();
-        const trimmedValue = typeof value === 'string' ? value.trim() : value == null ? '' : String(value).trim();
-        if (trimmedKey && trimmedValue) attributes[trimmedKey] = trimmedValue;
-      }
-      return {
-        id: item.id,
-        productName: item.productName,
-        attributes,
-        quantity: item.quantity,
-        variantKey: item.variantKey,
-        attributesJson: item.attributesJson as Record<string, string> | null,
-        attributesSummary: item.attributesSummary,
-      };
-    });
     await autoCreateFromOrder(orgId, warehouseItems, mapped.id, authorName || 'system');
-    await reserveNewOrderItems(orgId, mapped.id, warehouseItems);
+  } catch (error) {
+    if (error instanceof ValidationError) throw error;
+    console.error('[orders.create] autoCreateFromOrder non-fatal error:', error);
+  }
+  // reserveNewOrderItems guards availability — stock errors MUST surface to API.
+  await reserveNewOrderItems(orgId, mapped.id, warehouseItems);
+  try {
     await createOrderTransitEntries(orgId, mapped.id, warehouseItems);
-  } catch { /* non-fatal: не блокируем основной поток */ }
+  } catch (error) {
+    if (error instanceof ValidationError) throw error;
+    console.error('[orders.create] createOrderTransitEntries non-fatal error:', error);
+  }
 
   // Sprint 10: async sync to Google Sheets ? fire-and-forget, never blocks
   fireSheetSync(orgId, mapped.id);
