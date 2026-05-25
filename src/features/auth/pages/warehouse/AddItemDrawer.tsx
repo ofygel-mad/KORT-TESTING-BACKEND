@@ -1,89 +1,126 @@
-import React, { useState, useMemo } from 'react';
+// P1 multi-business — schema-driven warehouse "add item" form.
+//
+// Replaces the previous clothing-hardcoded form (color/gender/length/size) with
+// a generic renderer that walks `template.sections.items.fields` and produces
+// inputs via `TemplateAttributeRenderer`. The 4 legacy axis keys, when present
+// in the active template, are mirrored into the create-item payload so the
+// server's still-legacy `createItem` (P4 target) keeps working in P1.
+
+import React, { useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { useCreateItem, useOrderFormCatalog } from '@/entities/warehouse/queries';
 import type { CreateItemDto } from '@/entities/warehouse/types';
+import { useActiveOrderTemplate } from '@/entities/order/templatesApi';
+import { getItemsSection, type OrderTemplateField } from '@/entities/order/templates';
+import { TemplateAttributeRenderer, type TemplateAttributeValue } from '@/shared/ui/TemplateAttributeRenderer';
 import styles from './Warehouse.module.css';
 
 interface Props {
   onClose: () => void;
 }
 
-const INITIAL_FORM: CreateItemDto = {
+const LEGACY_AXIS_KEYS = new Set(['color', 'gender', 'size', 'length']);
+
+interface ItemFormState {
+  name: string;
+  qty: number;
+  qtyMin: number;
+  costPrice: string;
+  attributes: Record<string, TemplateAttributeValue>;
+}
+
+const INITIAL_FORM: ItemFormState = {
   name: '',
-  unit: 'шт',
   qty: 0,
   qtyMin: 0,
+  costPrice: '',
+  attributes: {},
 };
+
+function toStringValue(v: TemplateAttributeValue): string {
+  if (v === null || v === undefined) return '';
+  if (Array.isArray(v)) return v.join(', ');
+  if (typeof v === 'boolean') return v ? 'true' : 'false';
+  return String(v);
+}
 
 export function AddItemDrawer({ onClose }: Props) {
   const createItem = useCreateItem();
-  const { data: catalog } = useOrderFormCatalog();
-  const [form, setForm] = useState<CreateItemDto>(INITIAL_FORM);
+  const { data: activeTemplate } = useActiveOrderTemplate();
+  const { data: catalog } = useOrderFormCatalog({ templateId: activeTemplate?.id ?? null });
+  const [form, setForm] = useState<ItemFormState>(INITIAL_FORM);
+
+  const itemsSection = useMemo(() => getItemsSection(activeTemplate), [activeTemplate]);
+
+  // Template-driven attribute fields: skip identity/qty/price fields (the form
+  // owns Name/Qty/CostPrice explicitly). `product`/`name`/`qty`/`unitPrice`
+  // are conventional keys that map onto top-level columns instead of attrs.
+  const attributeFields: OrderTemplateField[] = useMemo(() => {
+    const fields = itemsSection?.fields ?? [];
+    const SKIP = new Set(['product', 'name', 'qty', 'quantity', 'unitPrice', 'unit_price', 'price']);
+    return fields.filter((f) => !SKIP.has(f.key));
+  }, [itemsSection]);
 
   const productNames = useMemo(
     () => catalog?.products.map((p) => p.name) ?? [],
     [catalog],
   );
 
-  const selectedProduct = useMemo(
-    () => catalog?.products.find((p) => p.name === form.name),
-    [catalog, form.name],
-  );
-
-  const getFieldOpts = (code: string): string[] =>
-    selectedProduct?.fields.find((f) => f.code === code)?.options.map((o) => o.value) ?? [];
-
-  const globalColors = useMemo(
-    () => [...new Set(catalog?.products.flatMap((p) =>
-      p.fields.find((f) => f.code === 'color')?.options.map((o) => o.value) ?? []) ?? [])],
-    [catalog],
-  );
-  const globalSizes = useMemo(
-    () => [...new Set(catalog?.products.flatMap((p) =>
-      p.fields.find((f) => f.code === 'size')?.options.map((o) => o.value) ?? []) ?? [])],
-    [catalog],
-  );
-  const globalLengths = useMemo(
-    () => [...new Set(catalog?.products.flatMap((p) =>
-      p.fields.find((f) => f.code === 'length')?.options.map((o) => o.value) ?? []) ?? [])],
-    [catalog],
-  );
-
-  const colorOpts = getFieldOpts('color').length > 0 ? getFieldOpts('color') : globalColors;
-  const sizeOpts = getFieldOpts('size').length > 0 ? getFieldOpts('size') : globalSizes;
-  const lengthOpts = getFieldOpts('length').length > 0 ? getFieldOpts('length') : globalLengths;
-
-  const setField = (field: keyof CreateItemDto, value: string) =>
-    setForm((cur) => ({ ...cur, [field]: value }));
+  const handleAttrChange = (key: string, next: TemplateAttributeValue) =>
+    setForm((cur) => ({ ...cur, attributes: { ...cur.attributes, [key]: next } }));
 
   const handleNameChange = (value: string) =>
-    setForm((cur) => ({ ...cur, name: value, color: '', size: '', gender: '', length: '' }));
+    setForm((cur) => ({ ...cur, name: value, attributes: {} }));
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!form.name.trim()) return;
-    const rawCostPrice = String(form.costPrice ?? '').trim();
+
+    // Build attributesJson from template fields (skip empty values).
+    const attributesJson: Record<string, string> = {};
+    for (const f of attributeFields) {
+      const str = toStringValue(form.attributes[f.key]).trim();
+      if (str) attributesJson[f.key] = str;
+    }
+
+    // Backward-compat: mirror canonical legacy keys (color/gender/size/length)
+    // onto top-level CreateItemDto fields so the still-legacy server createItem
+    // (full schema-driven write happens in P4) computes the variantKey correctly.
+    const legacyMirror: Pick<CreateItemDto, 'color' | 'gender' | 'size' | 'length'> = {};
+    for (const k of LEGACY_AXIS_KEYS) {
+      const v = attributesJson[k];
+      if (v) (legacyMirror as Record<string, string>)[k] = v;
+    }
+
+    const rawCostPrice = form.costPrice.trim();
     await createItem.mutateAsync({
-      ...form,
       name: form.name.trim(),
       unit: 'шт',
-      color: form.color?.trim() || undefined,
-      gender: form.gender?.trim() || undefined,
-      size: form.size?.trim() || undefined,
-      length: form.length?.trim() || undefined,
       qty: Number(form.qty ?? 0),
       qtyMin: Number(form.qtyMin ?? 0),
       costPrice: rawCostPrice === '' ? undefined : Number(rawCostPrice),
+      ...legacyMirror,
+      attributesJson: Object.keys(attributesJson).length > 0 ? attributesJson : undefined,
     });
     onClose();
   };
+
+  const templateName = activeTemplate?.name ?? null;
+  const hasAttributeFields = attributeFields.length > 0;
 
   return (
     <div className={styles.drawerOverlay} onClick={onClose}>
       <div className={styles.drawer} onClick={(e) => e.stopPropagation()}>
         <div className={styles.drawerHeader}>
-          <span className={styles.drawerTitle}>Добавить позицию</span>
-          <button type="button" className={styles.drawerClose} onClick={onClose}>
+          <span className={styles.drawerTitle}>
+            Добавить позицию
+            {templateName && (
+              <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 400, color: 'var(--text-tertiary)' }}>
+                · {templateName}
+              </span>
+            )}
+          </span>
+          <button type="button" className={styles.drawerClose} onClick={onClose} title="Закрыть" aria-label="Закрыть">
             <X size={14} />
           </button>
         </div>
@@ -102,7 +139,7 @@ export function AddItemDrawer({ onClose }: Props) {
                 autoFocus
                 aria-label="Название"
               >
-                <option value="">— выбрать модель —</option>
+                <option value="">— выбрать позицию из каталога —</option>
                 {productNames.map((n) => (
                   <option key={n} value={n}>{n}</option>
                 ))}
@@ -117,87 +154,26 @@ export function AddItemDrawer({ onClose }: Props) {
                 autoFocus
               />
             )}
-          </div>
-
-          <div className={styles.field}>
-            <label className={styles.label}>Размер</label>
-            {sizeOpts.length > 0 ? (
-              <select
-                className={styles.input}
-                value={form.size ?? ''}
-                onChange={(e) => setField('size', e.target.value)}
-                aria-label="Размер"
-              >
-                <option value="">— выбрать —</option>
-                {sizeOpts.map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
-            ) : (
-              <input
-                className={styles.input}
-                value={form.size ?? ''}
-                onChange={(e) => setField('size', e.target.value)}
-                placeholder="48, XL, 42–60..."
-              />
+            {!hasAttributeFields && (
+              <div style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 4 }}>
+                В шаблоне «{templateName ?? '—'}» нет дополнительных параметров позиции.
+              </div>
             )}
           </div>
 
-          {lengthOpts.length > 0 && (
-            <div className={styles.field}>
-              <label className={styles.label}>Длина изделия</label>
-              <select
-                className={styles.input}
-                value={form.length ?? ''}
-                onChange={(e) => setField('length', e.target.value)}
-                aria-label="Длина изделия"
-              >
-                <option value="">— не указана —</option>
-                {lengthOpts.map((l) => (
-                  <option key={l} value={l}>{l}</option>
-                ))}
-              </select>
+          {/* Schema-driven attribute fields from the active template. */}
+          {hasAttributeFields && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {attributeFields.map((field) => (
+                <TemplateAttributeRenderer
+                  key={field.id}
+                  field={field}
+                  value={form.attributes[field.key] ?? null}
+                  onChange={(next) => handleAttrChange(field.key, next)}
+                />
+              ))}
             </div>
           )}
-
-          <div className={styles.row2}>
-            <div className={styles.field}>
-              <label className={styles.label}>Цвет</label>
-              {colorOpts.length > 0 ? (
-                <select
-                  className={styles.input}
-                  value={form.color ?? ''}
-                  onChange={(e) => setField('color', e.target.value)}
-                  aria-label="Цвет"
-                >
-                  <option value="">— выбрать —</option>
-                  {colorOpts.map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-              ) : (
-                <input
-                  className={styles.input}
-                  value={form.color ?? ''}
-                  onChange={(e) => setField('color', e.target.value)}
-                  placeholder="Синий"
-                />
-              )}
-            </div>
-            <div className={styles.field}>
-              <label className={styles.label}>Пол</label>
-              <select
-                className={styles.input}
-                value={form.gender ?? ''}
-                onChange={(e) => setField('gender', e.target.value)}
-                aria-label="Пол"
-              >
-                <option value="">— не указан —</option>
-                <option value="муж">Мужской</option>
-                <option value="жен">Женский</option>
-              </select>
-            </div>
-          </div>
 
           <div className={styles.row2}>
             <div className={styles.field}>
@@ -206,9 +182,11 @@ export function AddItemDrawer({ onClose }: Props) {
                 className={styles.input}
                 type="number"
                 min="0"
-                value={form.qty ?? 0}
-                onChange={(e) => setField('qty', e.target.value)}
+                value={form.qty}
+                onChange={(e) => setForm((cur) => ({ ...cur, qty: Number(e.target.value) }))}
                 onFocus={(e) => e.target.select()}
+                aria-label="Остаток"
+                placeholder="0"
               />
             </div>
             <div className={styles.field}>
@@ -217,9 +195,11 @@ export function AddItemDrawer({ onClose }: Props) {
                 className={styles.input}
                 type="number"
                 min="0"
-                value={form.qtyMin ?? 0}
-                onChange={(e) => setField('qtyMin', e.target.value)}
+                value={form.qtyMin}
+                onChange={(e) => setForm((cur) => ({ ...cur, qtyMin: Number(e.target.value) }))}
                 onFocus={(e) => e.target.select()}
+                aria-label="Минимум"
+                placeholder="0"
               />
             </div>
           </div>
@@ -230,9 +210,10 @@ export function AddItemDrawer({ onClose }: Props) {
               className={styles.input}
               type="number"
               min="0"
-              value={form.costPrice ?? ''}
-              onChange={(e) => setField('costPrice', e.target.value)}
+              value={form.costPrice}
+              onChange={(e) => setForm((cur) => ({ ...cur, costPrice: e.target.value }))}
               placeholder="0"
+              aria-label="Цена"
             />
           </div>
 

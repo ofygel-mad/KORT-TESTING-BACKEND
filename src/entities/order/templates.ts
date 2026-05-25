@@ -54,6 +54,10 @@ export interface OrderTemplate {
   primaryPrecision: number;
   sections: OrderTemplateSection[];
   isSystem: boolean;
+  /** P1: marks the org's default template (preselected when no override). */
+  isDefault?: boolean;
+  /** P1: monotonically increments on every sections edit (snapshot diffing). */
+  version?: number;
   createdAt: string;
   updatedAt: string;
 }

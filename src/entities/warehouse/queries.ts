@@ -47,7 +47,11 @@ export const warehouseKeys = {
   catalog: {
     definitions: ['warehouse', 'catalog', 'definitions'] as const,
     products: ['warehouse', 'catalog', 'products'] as const,
+    productsByTemplate: (templateId?: string | null) =>
+      ['warehouse', 'catalog', 'products', { templateId: templateId ?? null }] as const,
     orderForm: ['warehouse', 'order-form', 'catalog'] as const,
+    orderFormByTemplate: (templateId?: string | null) =>
+      ['warehouse', 'order-form', 'catalog', { templateId: templateId ?? null }] as const,
   },
 };
 
@@ -679,17 +683,17 @@ export const useCatalogDefinitions = () =>
     staleTime: 5 * 60_000,
   });
 
-export const useCatalogProducts = () =>
+export const useCatalogProducts = (params?: { templateId?: string | null }) =>
   useQuery({
-    queryKey: warehouseKeys.catalog.products,
-    queryFn: () => warehouseCatalogApi.listProducts(),
+    queryKey: warehouseKeys.catalog.productsByTemplate(params?.templateId ?? null),
+    queryFn: () => warehouseCatalogApi.listProducts(params),
     staleTime: 5 * 60_000,
   });
 
-export const useOrderFormCatalog = () =>
+export const useOrderFormCatalog = (params?: { templateId?: string | null }) =>
   useQuery({
-    queryKey: warehouseKeys.catalog.orderForm,
-    queryFn: () => warehouseCatalogApi.getOrderFormCatalog(),
+    queryKey: warehouseKeys.catalog.orderFormByTemplate(params?.templateId ?? null),
+    queryFn: () => warehouseCatalogApi.getOrderFormCatalog(params),
     staleTime: 60_000,
   });
 
@@ -773,13 +777,18 @@ export const useDeleteFieldOption = () => {
 export const useUpdateProduct = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, name }: { id: string; name: string }) =>
-      warehouseCatalogApi.updateProduct(id, { name }),
+    mutationFn: ({ id, ...patch }: {
+      id: string;
+      name?: string;
+      templateId?: string | null;
+      defaultRetailPrice?: number | null;
+      defaultWholesalePrice?: number | null;
+    }) => warehouseCatalogApi.updateProduct(id, patch),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: warehouseKeys.catalog.products });
       qc.invalidateQueries({ queryKey: warehouseKeys.catalog.orderForm });
     },
-    onError: () => toast.error('Не удалось переименовать товар'),
+    onError: () => toast.error('Не удалось обновить товар'),
   });
 };
 
@@ -799,7 +808,16 @@ export const useDeleteProduct = () => {
 export const useCreateProduct = () => {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (name: string) => warehouseCatalogApi.createProduct(name),
+    mutationFn: (input: {
+      name: string;
+      templateId?: string | null;
+      defaultRetailPrice?: number | null;
+      defaultWholesalePrice?: number | null;
+      source?: string;
+    } | string) =>
+      typeof input === 'string'
+        ? warehouseCatalogApi.createProduct({ name: input })
+        : warehouseCatalogApi.createProduct(input),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: warehouseKeys.catalog.products });
       qc.invalidateQueries({ queryKey: warehouseKeys.catalog.orderForm });

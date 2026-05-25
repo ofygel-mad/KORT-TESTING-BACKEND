@@ -33,20 +33,29 @@ export async function warehouseCatalogRoutes(app: FastifyInstance) {
   // ── Product catalog ─────────────────────────────────────────────────────────
 
   app.get('/catalog/products', auth, async (req) => {
-    return svc.getProductCatalog(req.orgId);
+    const qs = z.object({ templateId: z.string().optional() }).parse(req.query);
+    return svc.getProductCatalog(req.orgId, { templateId: qs.templateId ?? null });
   });
 
   app.post('/catalog/products', auth, async (req) => {
     const body = z.object({
       name: z.string().min(1),
       source: z.string().optional(),
+      templateId: z.string().min(1).nullable().optional(),
+      defaultRetailPrice: z.number().nonnegative().nullable().optional(),
+      defaultWholesalePrice: z.number().nonnegative().nullable().optional(),
     }).parse(req.body);
     return svc.createProduct(req.orgId, body);
   });
 
   app.patch('/catalog/products/:id', auth, async (req) => {
     const { id } = z.object({ id: z.string() }).parse(req.params);
-    const body = z.object({ name: z.string().min(1) }).parse(req.body);
+    const body = z.object({
+      name: z.string().min(1).optional(),
+      templateId: z.string().min(1).nullable().optional(),
+      defaultRetailPrice: z.number().nonnegative().nullable().optional(),
+      defaultWholesalePrice: z.number().nonnegative().nullable().optional(),
+    }).parse(req.body);
     return svc.updateProduct(id, body);
   });
 
@@ -92,7 +101,8 @@ export async function warehouseCatalogRoutes(app: FastifyInstance) {
   });
 
   app.get('/order-form/catalog', auth, async (req) => {
-    return svc.getOrderFormCatalog(req.orgId);
+    const qs = z.object({ templateId: z.string().optional() }).parse(req.query);
+    return svc.getOrderFormCatalog(req.orgId, { templateId: qs.templateId ?? null });
   });
 
   app.post('/availability/check-variant', auth, async (req) => {

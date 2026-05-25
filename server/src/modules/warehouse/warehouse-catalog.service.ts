@@ -8,9 +8,16 @@ import { normalizeName } from '../../shared/normalize-name.js';
 // derived from `OrderTemplate.sections` directly; per-product field overrides
 // will be reintroduced in P4 if needed.
 
-export async function getProductCatalog(orgId: string) {
+export async function getProductCatalog(
+  orgId: string,
+  opts?: { templateId?: string | null },
+) {
   return prisma.warehouseProductCatalog.findMany({
-    where: { orgId, isActive: true },
+    where: {
+      orgId,
+      isActive: true,
+      ...(opts?.templateId ? { templateId: opts.templateId } : {}),
+    },
     orderBy: { name: 'asc' },
   });
 }
@@ -18,22 +25,51 @@ export async function getProductCatalog(orgId: string) {
 export async function createProduct(orgId: string, data: {
   name: string;
   source?: string;
+  templateId?: string | null;
+  defaultRetailPrice?: number | null;
+  defaultWholesalePrice?: number | null;
 }) {
   const name = data.name.trim();
   const normalizedName = normalizeName(name);
   return prisma.warehouseProductCatalog.upsert({
     where: { orgId_normalizedName: { orgId, normalizedName } },
-    create: { orgId, name, normalizedName, source: data.source ?? 'manual' },
-    update: { name, isActive: true },
+    create: {
+      orgId,
+      name,
+      normalizedName,
+      source: data.source ?? 'manual',
+      templateId: data.templateId ?? null,
+      defaultRetailPrice: data.defaultRetailPrice ?? null,
+      defaultWholesalePrice: data.defaultWholesalePrice ?? null,
+    },
+    update: {
+      name,
+      isActive: true,
+      ...(data.templateId !== undefined ? { templateId: data.templateId } : {}),
+      ...(data.defaultRetailPrice !== undefined ? { defaultRetailPrice: data.defaultRetailPrice } : {}),
+      ...(data.defaultWholesalePrice !== undefined ? { defaultWholesalePrice: data.defaultWholesalePrice } : {}),
+    },
   });
 }
 
-export async function updateProduct(id: string, data: { name: string }) {
-  const name = data.name.trim();
-  const normalizedName = normalizeName(name);
+export async function updateProduct(id: string, data: {
+  name?: string;
+  templateId?: string | null;
+  defaultRetailPrice?: number | null;
+  defaultWholesalePrice?: number | null;
+}) {
+  const patch: Record<string, unknown> = {};
+  if (data.name !== undefined) {
+    const trimmed = data.name.trim();
+    patch.name = trimmed;
+    patch.normalizedName = normalizeName(trimmed);
+  }
+  if (data.templateId !== undefined) patch.templateId = data.templateId;
+  if (data.defaultRetailPrice !== undefined) patch.defaultRetailPrice = data.defaultRetailPrice;
+  if (data.defaultWholesalePrice !== undefined) patch.defaultWholesalePrice = data.defaultWholesalePrice;
   return prisma.warehouseProductCatalog.update({
     where: { id },
-    data: { name, normalizedName },
+    data: patch,
   });
 }
 
@@ -47,9 +83,16 @@ export async function deleteProduct(id: string) {
 // of the removed WarehouseFieldDefinition table. For P0 we expose products
 // only — the order form will fall back to free-text attributes.
 
-export async function getOrderFormCatalog(orgId: string) {
+export async function getOrderFormCatalog(
+  orgId: string,
+  opts?: { templateId?: string | null },
+) {
   const products = await prisma.warehouseProductCatalog.findMany({
-    where: { orgId, isActive: true },
+    where: {
+      orgId,
+      isActive: true,
+      ...(opts?.templateId ? { templateId: opts.templateId } : {}),
+    },
     orderBy: { name: 'asc' },
   });
 
@@ -57,6 +100,9 @@ export async function getOrderFormCatalog(orgId: string) {
     products: products.map((p) => ({
       id: p.id,
       name: p.name,
+      templateId: p.templateId ?? null,
+      defaultRetailPrice: p.defaultRetailPrice ? Number(p.defaultRetailPrice) : null,
+      defaultWholesalePrice: p.defaultWholesalePrice ? Number(p.defaultWholesalePrice) : null,
       fields: [] as Array<{
         code: string;
         label: string;

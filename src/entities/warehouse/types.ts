@@ -1091,10 +1091,21 @@ export interface CreateItemDto {
   costPrice?: number;
   categoryId?: string;
   notes?: string;
+  /**
+   * Legacy 4-axis attributes. Still accepted by the server's createItem in
+   * P1 for backward-compat; new code should populate `attributesJson` and
+   * pass the canonical keys here only as a duplicate (server reads them
+   * directly until P4 makes attributesJson the single source).
+   */
   color?: string;
   gender?: string;
   size?: string;
   length?: string;
+  /**
+   * P1 schema-driven warehouse form: full template field key→value map.
+   * Includes ALL template fields (not just the 4 legacy axes).
+   */
+  attributesJson?: Record<string, string>;
 }
 
 export interface AddMovementDto {
@@ -1199,6 +1210,11 @@ export interface WarehouseProductCatalog {
   normalizedName: string;
   isActive: boolean;
   source?: string | null;
+  /** P1: каждая позиция каталога привязана к виду деятельности. */
+  templateId?: string | null;
+  /** P1: дефолтные цены позиции (если у конкретного variant не задана своя). */
+  defaultRetailPrice?: number | null;
+  defaultWholesalePrice?: number | null;
   fieldLinks: WarehouseProductField[];
 }
 
@@ -1227,6 +1243,9 @@ export interface OrderFormField {
 export interface OrderFormProduct {
   id: string;
   name: string;
+  templateId?: string | null;
+  defaultRetailPrice?: number | null;
+  defaultWholesalePrice?: number | null;
   fields: OrderFormField[];
 }
 

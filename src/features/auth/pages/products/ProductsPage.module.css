@@ -376,6 +376,206 @@
 }
 .photoAddBtn:disabled { opacity: 0.5; cursor: default; }
 
+/* ── Template tabs (P1) ── */
+.templateTabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 24px 0;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  flex-shrink: 0;
+}
+.templateTab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: color 130ms, border-color 130ms;
+  white-space: nowrap;
+}
+.templateTab:hover { color: var(--text-primary); }
+.templateTabActive {
+  color: var(--fill-accent);
+  border-bottom-color: var(--fill-accent);
+  font-weight: 600;
+}
+.templateTabBadge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: var(--bg-canvas);
+  color: var(--text-tertiary);
+}
+.templateTabActive .templateTabBadge {
+  background: var(--fill-accent);
+  color: #fff;
+}
+.templateSystemMark {
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 6px;
+  background: var(--fill-accent-subtle);
+  color: var(--fill-accent);
+  font-weight: 600;
+}
+
+/* ── Product row (P1, replaces cross-imported s.* classes) ── */
+.productRow {
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+.productHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 120ms;
+}
+.productHeader:hover { background: var(--bg-canvas); }
+.productChevron { flex-shrink: 0; color: var(--text-tertiary); }
+.productIcon { flex-shrink: 0; color: var(--fill-accent); }
+.productName { flex: 1; min-width: 0; font-weight: 500; color: var(--text-primary); font-size: 13px; }
+.productMeta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+.productPriceBadge {
+  font-size: 11px;
+  padding: 1px 7px;
+  border-radius: 9px;
+  background: var(--fill-accent-subtle);
+  color: var(--fill-accent);
+  font-weight: 600;
+}
+.productBody {
+  padding: 12px 14px 4px;
+  background: var(--bg-canvas);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.deleteBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 120ms, background 120ms;
+}
+.deleteBtn:hover { color: var(--fill-negative); background: var(--bg-canvas); }
+
+/* ── Inline edit (P1) ── */
+.inlineEditRow { display: inline-flex; align-items: center; gap: 6px; }
+.inlineInput {
+  flex: 1;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-canvas);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  outline: none;
+  min-width: 120px;
+}
+.inlineInput:focus { border-color: var(--fill-accent); }
+.inlineSave, .inlineCancel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+.inlineSave { background: var(--fill-accent); color: #fff; }
+.inlineSave:disabled { opacity: 0.4; cursor: not-allowed; }
+.inlineCancel { background: transparent; color: var(--text-tertiary); }
+.inlineCancel:hover { background: var(--bg-canvas); color: var(--text-primary); }
+.inlineViewRow { display: inline-flex; align-items: center; gap: 6px; }
+.inlinePencil {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 120ms, color 120ms;
+}
+.productHeader:hover .inlinePencil { opacity: 1; }
+.inlinePencil:hover { color: var(--fill-accent); }
+
+/* ── Field-option chip list (P1, generic for any select field) ── */
+.optionsBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: var(--bg-surface);
+}
+.optionsTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+.optionsGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.optionsGroupHeader {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.optionsChipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.optionChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 12px;
+  background: var(--bg-canvas);
+  color: var(--text-primary);
+  font-size: 12px;
+  border: 1px solid var(--border-subtle);
+}
+
 /* ── Lightbox ── */
 .lightboxBackdrop {
   position: fixed;

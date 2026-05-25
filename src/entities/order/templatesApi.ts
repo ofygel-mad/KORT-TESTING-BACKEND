@@ -81,7 +81,12 @@ export function useCloneOrderTemplate() {
 /**
  * Returns the template considered "active" for the current org.
  * - If `overrideId` is provided (e.g. from a picker), that template wins.
- * - Otherwise: system "Clothing" → first system → first available → null.
+ * - Otherwise: `isDefault` → system "Бланк" → first system → first available → null.
+ *
+ * P1 (multi-business): the legacy `/одежда/i` fallback was removed because
+ * non-clothing orgs (Chemicals, Services, Furniture, ...) should never be
+ * forced into the Clothing template. Default selection now relies on the
+ * explicit `isDefault` flag on OrderTemplate (set by `ensureSystemTemplatesForOrg`).
  */
 export function useActiveOrderTemplate(overrideId?: string | null) {
   const all = useOrderTemplates();
@@ -89,7 +94,8 @@ export function useActiveOrderTemplate(overrideId?: string | null) {
   const picked = overrideId ? list.find((t) => t.id === overrideId) : undefined;
   const active =
     picked
-    ?? list.find((t) => t.isSystem && /одежда/i.test(t.name))
+    ?? list.find((t) => t.isDefault)
+    ?? list.find((t) => t.isSystem && t.name === 'Бланк')
     ?? list.find((t) => t.isSystem)
     ?? list[0]
     ?? null;

@@ -271,14 +271,25 @@ export const warehouseCatalogApi = {
     api.delete(`/warehouse/catalog/definitions/${defId}/options/${optId}`),
 
   // Product catalog
-  listProducts: () =>
-    api.get<WarehouseProductCatalog[]>('/warehouse/catalog/products'),
+  listProducts: (params?: { templateId?: string | null }) => {
+    const q = params?.templateId ? `?templateId=${encodeURIComponent(params.templateId)}` : '';
+    return api.get<WarehouseProductCatalog[]>(`/warehouse/catalog/products${q}`);
+  },
 
-  createProduct: (name: string) =>
-    api.post<WarehouseProductCatalog>('/warehouse/catalog/products', { name }),
+  createProduct: (data: {
+    name: string;
+    templateId?: string | null;
+    defaultRetailPrice?: number | null;
+    defaultWholesalePrice?: number | null;
+    source?: string;
+  }) => api.post<WarehouseProductCatalog>('/warehouse/catalog/products', data),
 
-  updateProduct: (id: string, data: { name: string }) =>
-    api.patch<WarehouseProductCatalog>(`/warehouse/catalog/products/${id}`, data),
+  updateProduct: (id: string, data: {
+    name?: string;
+    templateId?: string | null;
+    defaultRetailPrice?: number | null;
+    defaultWholesalePrice?: number | null;
+  }) => api.patch<WarehouseProductCatalog>(`/warehouse/catalog/products/${id}`, data),
 
   deleteProduct: (id: string) =>
     api.delete<{ ok: boolean }>(`/warehouse/catalog/products/${id}`),
@@ -291,8 +302,10 @@ export const warehouseCatalogApi = {
     api.post<{ created: string[]; skipped: string[] }>('/warehouse/catalog/seed-defaults', {}),
 
   // Order-form live catalog
-  getOrderFormCatalog: () =>
-    api.get<OrderFormCatalog>('/warehouse/order-form/catalog'),
+  getOrderFormCatalog: (params?: { templateId?: string | null }) => {
+    const q = params?.templateId ? `?templateId=${encodeURIComponent(params.templateId)}` : '';
+    return api.get<OrderFormCatalog>(`/warehouse/order-form/catalog${q}`);
+  },
 
   // Variant availability check
   checkVariant: (productName: string, attributes: Record<string, string>) =>
