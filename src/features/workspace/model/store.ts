@@ -113,6 +113,7 @@ interface WorkspaceStore {
   setSceneMode: (mode: WorkspaceSceneMode) => void;
   setSceneTerrainMode: (mode: WorkspaceSceneTerrainMode) => void;
   setSceneBgMode: (mode: WorkspaceSceneBgMode) => void;
+  resetScenePreferences: () => void;
 }
 
 function clamp(v: number, lo: number, hi: number) {
@@ -649,6 +650,13 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
       setSceneMode: (sceneMode) => set({ sceneMode }),
       setSceneTerrainMode: (sceneTerrainMode) => set({ sceneTerrainMode }),
       setSceneBgMode: (sceneBgMode) => set({ sceneBgMode }),
+      resetScenePreferences: () => set({
+        sceneTheme: 'morning',
+        sceneThemeAuto: true,
+        sceneMode: 'surface',
+        sceneTerrainMode: 'full',
+        sceneBgMode: 'scene',
+      }),
     }),
     {
       name: 'kort-workspace',

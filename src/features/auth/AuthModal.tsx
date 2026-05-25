@@ -19,6 +19,7 @@ import {
 import { readApiErrorMessage, readApiErrorStatus } from '@/shared/api/errors';
 import { useAuthStore } from '@/shared/stores/auth';
 import { usePinStore } from '@/shared/stores/pin';
+import { useWorkspaceStore } from '@/features/workspace/model/store';
 import {
   formatKazakhPhoneInput,
   isKazakhPhoneComplete,
@@ -408,6 +409,7 @@ export function AuthModal({ open, onClose, onAuthSuccess, initialStep }: AuthMod
         return;
       }
 
+      useWorkspaceStore.getState().resetScenePreferences();
       applySession(session);
     } catch (cause) {
       setError(readAuthError(cause, 'Не удалось завершить регистрацию компании.'));

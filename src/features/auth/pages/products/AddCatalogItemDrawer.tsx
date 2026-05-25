@@ -82,7 +82,7 @@ export function AddCatalogItemDrawer({ template, onClose }: AddCatalogItemDrawer
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Напр. Худи или Ацетон"
+            placeholder=""
             aria-label="Название позиции"
             style={{
               width: '100%',
