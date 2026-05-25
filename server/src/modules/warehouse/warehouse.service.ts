@@ -212,6 +212,14 @@ function readStringMapFromJson(value?: Prisma.JsonValue | null): Record<string, 
   );
 }
 
+// P7 partial: ATTR_KEY_RU is a legacy clothing-only fallback. The full fix is
+// to read labels straight from the field definitions in
+// `order.templateSnapshot.sections.items.fields[].label`. Threading the
+// snapshot through all 5 callsites of summarizeVariantAttributes is out of
+// scope for this phase; for now any caller that has a snapshot in reach can
+// pass a `keyLabels` override and we fall back to the legacy map otherwise.
+// TODO(P8): replace ATTR_KEY_RU with template field labels when snapshot
+// context is available at every callsite.
 const ATTR_KEY_RU: Record<string, string> = {
   color: 'Цвет', gender: 'Пол', size: 'Размер', length: 'Длина',
 };
@@ -219,10 +227,16 @@ const ATTR_VAL_RU: Record<string, string> = {
   female: 'Женский', male: 'Мужской',
 };
 
-function summarizeVariantAttributes(attributes: Record<string, string>) {
+function summarizeVariantAttributes(
+  attributes: Record<string, string>,
+  keyLabels?: Record<string, string>,
+) {
   return Object.entries(attributes)
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([key, value]) => `${ATTR_KEY_RU[key] ?? key}: ${ATTR_VAL_RU[value] ?? value}`)
+    .map(([key, value]) => {
+      const label = keyLabels?.[key] ?? ATTR_KEY_RU[key] ?? key;
+      return `${label}: ${ATTR_VAL_RU[value] ?? value}`;
+    })
     .join(', ');
 }
 

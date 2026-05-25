@@ -109,9 +109,16 @@ export async function orderTemplatesRoutes(app: FastifyInstance) {
    * GET /api/v1/order-templates
    * List all OrderTemplates available to the current org. Lazily seeds the
    * system templates on first access so the list is never empty.
+   *
+   * P7: pass `?refreshSystemTemplates=true` to force re-seed of the system
+   * templates' `sections` payload (bumps `version`). Without the flag,
+   * existing system templates are NOT touched — silent schema drift is gone.
    */
-  app.get('/', async (request) => {
-    await ensureSystemTemplatesForOrg(request.orgId);
+  app.get<{ Querystring: { refreshSystemTemplates?: string } }>('/', async (request) => {
+    const refresh = request.query?.refreshSystemTemplates === 'true';
+    await ensureSystemTemplatesForOrg(request.orgId, prisma, {
+      refreshSystemTemplates: refresh,
+    });
     const templates = await prisma.orderTemplate.findMany({
       where: { orgId: request.orgId },
       orderBy: [{ isSystem: 'desc' }, { name: 'asc' }],
@@ -185,8 +192,9 @@ export async function orderTemplatesRoutes(app: FastifyInstance) {
 
   /**
    * DELETE /api/v1/order-templates/:id
-   * Delete a non-system template. Orders that still reference it via
-   * `templateId` keep their custom attributes (the FK is nullable).
+   * Delete a non-system template. Blocks deletion if the template is still
+   * referenced by any Order in this org (returns 409 Conflict). Admin must
+   * reassign or cancel those orders first.
    */
   app.delete<{ Params: { id: string } }>('/:id', async (request, reply) => {
     const existing = await prisma.orderTemplate.findFirst({
@@ -195,6 +203,20 @@ export async function orderTemplatesRoutes(app: FastifyInstance) {
     if (!existing) throw new NotFoundError('OrderTemplate', request.params.id);
     if (existing.isSystem) {
       throw new ValidationError('Системные шаблоны нельзя удалить.');
+    }
+    // P7: refuse to delete a template that is in use. Orders carry an
+    // immutable templateSnapshot (P6) so detaching the row would be safe for
+    // reads — but the FK link is meaningful audit data and the manager
+    // should make an explicit decision (reassign / cancel) before deletion.
+    const count = await prisma.order.count({
+      where: { templateId: existing.id, orgId: request.orgId },
+    });
+    if (count > 0) {
+      return reply.status(409).send({
+        error: 'TEMPLATE_IN_USE',
+        count,
+        message: `Вид деятельности используется в ${count} заказах. Удаление невозможно.`,
+      });
     }
     await prisma.orderTemplate.delete({ where: { id: existing.id } });
     return reply.status(204).send();

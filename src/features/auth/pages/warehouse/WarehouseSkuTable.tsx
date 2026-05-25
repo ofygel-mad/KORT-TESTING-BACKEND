@@ -1,7 +1,21 @@
+// P7: schema-driven column rendering.
+//
+// Headings are derived from the active OrderTemplate's items-section fields
+// that are flagged `affectsAvailability` — so a Chemicals org sees
+// «Концентрация / Упаковка» columns and a Furniture org sees «Ширина /
+// Высота / Глубина / Материал». Falls back to the legacy clothing-quartet
+// (Цвет / Пол / Размер / Длина) only when the org has no template yet.
+//
+// Gender label normalisation is keyed off the field key — so it kicks in
+// only when an actual `gender` field is present, not for any select with
+// muж/жен strings inside.
+
 import React, { useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useWarehouseItems } from '@/entities/warehouse/queries';
 import { getQtyAvailable, type WarehouseItem } from '@/entities/warehouse/types';
+import { useActiveOrderTemplate } from '@/entities/order/templatesApi';
+import { getItemsSection, type OrderTemplateField } from '@/entities/order/templates';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { Skeleton } from '@/shared/ui/Skeleton';
 import { StatusChip, type ChipStatus } from '@/shared/ui/StatusChip';
@@ -23,33 +37,44 @@ interface SkuStatusPresentation {
 }
 
 const ITEMS_PER_PAGE = 25;
-const EM_DASH = '\u2014';
-const LABEL_RESERVE = '\u0420\u0435\u0437\u0435\u0440\u0432';
-const LABEL_EMPTY = '\u041d\u0435\u0442';
-const LABEL_IN_STOCK = '\u0412 \u043d\u0430\u043b\u0438\u0447\u0438\u0438';
-const EMPTY_TITLE = '\u041d\u0435\u0442 \u0442\u043e\u0432\u0430\u0440\u043e\u0432';
-const EMPTY_DESCRIPTION = '\u041f\u043e\u043f\u0440\u043e\u0431\u0443\u0439\u0442\u0435 \u0438\u0437\u043c\u0435\u043d\u0438\u0442\u044c \u0444\u0438\u043b\u044c\u0442\u0440\u044b \u0438\u043b\u0438 \u0432\u044b\u043f\u043e\u043b\u043d\u0438\u0442\u044c \u043f\u043e\u0438\u0441\u043a.';
-const HEADING_PRODUCT = '\u0422\u043e\u0432\u0430\u0440';
-const HEADING_COLOR = '\u0426\u0432\u0435\u0442';
-const HEADING_GENDER = '\u041f\u043e\u043b';
-const HEADING_SIZE = '\u0420\u0430\u0437\u043c\u0435\u0440';
-const HEADING_LENGTH = '\u0414\u043b\u0438\u043d\u0430';
-const GENDER_LABEL_MALE = '\u041c\u0443\u0436\u0441\u043a\u043e\u0439';
-const GENDER_LABEL_FEMALE = '\u0416\u0435\u043d\u0441\u043a\u0438\u0439';
-const HEADING_ON_HAND = '\u0412 \u043d\u0430\u043b\u0438\u0447\u0438\u0438';
-const HEADING_RESERVED = '\u0420\u0435\u0437\u0435\u0440\u0432';
-const HEADING_AVAILABLE = '\u0414\u043e\u0441\u0442\u0443\u043f\u043d\u043e';
-const HEADING_STATUS = '\u0421\u0442\u0430\u0442\u0443\u0441';
-const PAGINATION_PREV = '\u041f\u0440\u0435\u0434.';
-const PAGINATION_NEXT = '\u0421\u043b\u0435\u0434.';
-const PAGINATION_PAGE = '\u0421\u0442\u0440.';
-const PAGINATION_OF = '\u0438\u0437';
+const EM_DASH = '—';
+const LABEL_RESERVE = 'Резерв';
+const LABEL_EMPTY = 'Нет';
+const LABEL_IN_STOCK = 'В наличии';
+const EMPTY_TITLE = 'Нет товаров';
+const EMPTY_DESCRIPTION = 'Попробуйте изменить фильтры или выполнить поиск.';
+const HEADING_PRODUCT = 'Товар';
+const HEADING_ON_HAND = 'В наличии';
+const HEADING_RESERVED = 'Резерв';
+const HEADING_AVAILABLE = 'Доступно';
+const HEADING_STATUS = 'Статус';
+const GENDER_LABEL_MALE = 'Мужской';
+const GENDER_LABEL_FEMALE = 'Женский';
+const PAGINATION_PREV = 'Пред.';
+const PAGINATION_NEXT = 'След.';
+const PAGINATION_PAGE = 'Стр.';
+const PAGINATION_OF = 'из';
+
+// Legacy fallback used only when the org has no active OrderTemplate (e.g.
+// freshly provisioned org during first GET). Once any template is in place,
+// columns are 100% schema-driven.
+const LEGACY_AXIS_COLUMNS: Array<{ key: string; label: string }> = [
+  { key: 'color',  label: 'Цвет' },
+  { key: 'gender', label: 'Пол' },
+  { key: 'size',   label: 'Размер' },
+  { key: 'length', label: 'Длина' },
+];
 
 const collator = new Intl.Collator('ru', { numeric: true, sensitivity: 'base' });
 
-const getAttributeValue = (item: WarehouseItem, key: 'color' | 'size' | 'length' | 'gender'): string =>
+const getAttributeValue = (item: WarehouseItem, key: string): string =>
   item.attributesJson?.[key]?.trim() || EM_DASH;
 
+/**
+ * P7: applies only to the conventional `gender` field key — so a Chemicals
+ * select with values 'I'/'II' is left untouched. Generic fields render their
+ * raw value as-is (no special-casing).
+ */
 const formatGenderLabel = (raw: string): string => {
   const value = raw.trim().toLowerCase();
   if (value === 'male' || value === 'муж' || value === 'мужской') return GENDER_LABEL_MALE;
@@ -71,22 +96,15 @@ const getSkuStatusPresentation = (item: WarehouseItem): SkuStatusPresentation =>
   return { status: 'ok', label: LABEL_IN_STOCK };
 };
 
-const sortSkuItems = (items: WarehouseItem[]) =>
+const sortSkuItems = (items: WarehouseItem[], axisKeys: string[]) =>
   [...items].sort((left, right) => {
     const nameCompare = collator.compare(left.name, right.name);
     if (nameCompare !== 0) return nameCompare;
 
-    const colorCompare = collator.compare(getAttributeValue(left, 'color'), getAttributeValue(right, 'color'));
-    if (colorCompare !== 0) return colorCompare;
-
-    const genderCompare = collator.compare(getAttributeValue(left, 'gender'), getAttributeValue(right, 'gender'));
-    if (genderCompare !== 0) return genderCompare;
-
-    const sizeCompare = collator.compare(getAttributeValue(left, 'size'), getAttributeValue(right, 'size'));
-    if (sizeCompare !== 0) return sizeCompare;
-
-    const lengthCompare = collator.compare(getAttributeValue(left, 'length'), getAttributeValue(right, 'length'));
-    if (lengthCompare !== 0) return lengthCompare;
+    for (const key of axisKeys) {
+      const cmp = collator.compare(getAttributeValue(left, key), getAttributeValue(right, key));
+      if (cmp !== 0) return cmp;
+    }
 
     return collator.compare(left.id, right.id);
   });
@@ -101,13 +119,32 @@ export const WarehouseSkuTable: React.FC<WarehouseSkuTableProps> = ({
     search: search || undefined,
     verificationRequired,
   });
+  // P7: column definitions are derived from the active OrderTemplate. We
+  // can't pick a per-row template because the warehouse view is org-wide;
+  // taking the default template is good enough for header labels — values
+  // still render straight from `attributesJson[key]` so other-template rows
+  // simply show «—» under foreign columns.
+  const { data: activeTemplate } = useActiveOrderTemplate();
+
+  const axisColumns = useMemo<Array<{ key: string; label: string }>>(() => {
+    const itemsSection = getItemsSection(activeTemplate);
+    const fields = (itemsSection?.fields ?? []).filter(
+      (f: OrderTemplateField) => f.affectsAvailability === true,
+    );
+    if (fields.length === 0) {
+      return LEGACY_AXIS_COLUMNS;
+    }
+    return fields.map((f) => ({ key: f.key, label: f.label }));
+  }, [activeTemplate]);
+
+  const axisKeys = useMemo(() => axisColumns.map((c) => c.key), [axisColumns]);
 
   const [page, setPage] = useState(0);
 
   const filtered = useMemo(() => {
     const itemsArray = items?.results || [];
-    return sortSkuItems(filterItemsByStatus(itemsArray, statusFilter));
-  }, [items, statusFilter]);
+    return sortSkuItems(filterItemsByStatus(itemsArray, statusFilter), axisKeys);
+  }, [items, statusFilter, axisKeys]);
 
   useEffect(() => {
     setPage(0);
@@ -156,10 +193,9 @@ export const WarehouseSkuTable: React.FC<WarehouseSkuTableProps> = ({
           <thead className={styles.thead}>
             <tr>
               <th className={styles.thCol}>{HEADING_PRODUCT}</th>
-              <th className={styles.thCol}>{HEADING_COLOR}</th>
-              <th className={styles.thCol}>{HEADING_GENDER}</th>
-              <th className={styles.thCol}>{HEADING_SIZE}</th>
-              <th className={styles.thCol}>{HEADING_LENGTH}</th>
+              {axisColumns.map((col) => (
+                <th key={col.key} className={styles.thCol}>{col.label}</th>
+              ))}
               <th className={`${styles.thCol} ${styles.thNumeric}`}>{HEADING_ON_HAND}</th>
               <th className={`${styles.thCol} ${styles.thNumeric}`}>{HEADING_RESERVED}</th>
               <th className={`${styles.thCol} ${styles.thNumeric}`}>{HEADING_AVAILABLE}</th>
@@ -168,11 +204,6 @@ export const WarehouseSkuTable: React.FC<WarehouseSkuTableProps> = ({
           </thead>
           <tbody>
             {paginatedItems.map((item) => {
-              const color = getAttributeValue(item, 'color');
-              const genderRaw = getAttributeValue(item, 'gender');
-              const gender = genderRaw === EM_DASH ? EM_DASH : formatGenderLabel(genderRaw);
-              const size = getAttributeValue(item, 'size');
-              const length = getAttributeValue(item, 'length');
               const available = getQtyAvailable(item);
               const chip = getSkuStatusPresentation(item);
 
@@ -190,10 +221,15 @@ export const WarehouseSkuTable: React.FC<WarehouseSkuTableProps> = ({
                   tabIndex={0}
                 >
                   <td className={`${styles.col} ${styles.nameCol}`}>{item.name}</td>
-                  <td className={styles.col}>{color}</td>
-                  <td className={styles.col}>{gender}</td>
-                  <td className={styles.col}>{size}</td>
-                  <td className={`${styles.col} ${styles.dimCol}`}>{length}</td>
+                  {axisColumns.map((col) => {
+                    const raw = getAttributeValue(item, col.key);
+                    const display = col.key === 'gender' && raw !== EM_DASH
+                      ? formatGenderLabel(raw)
+                      : raw;
+                    return (
+                      <td key={col.key} className={styles.col}>{display}</td>
+                    );
+                  })}
                   <td className={`${styles.col} ${styles.numeric}`}>{item.qty}</td>
                   <td className={`${styles.col} ${styles.numeric}`}>{item.qtyReserved}</td>
                   <td className={`${styles.col} ${styles.numeric}`}>{available}</td>

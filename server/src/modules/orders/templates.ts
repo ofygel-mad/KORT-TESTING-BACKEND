@@ -341,35 +341,57 @@ export const SYSTEM_TEMPLATES: OrderTemplateSeed[] = [
 
 /**
  * Ensures the org has its system templates. Idempotent — re-running is
- * safe; updates the sections payload to the latest shipped version. Returns
- * the org's default (Clothing) template id, which orders backfill into
- * Order.templateId.
+ * safe. Returns the org's default (Clothing) template id, which orders
+ * backfill into Order.templateId.
+ *
+ * P7: this used to upsert sections on every call, which silently replaced
+ * the live `sections` of every system template on every GET /templates.
+ * Existing orders are already shielded by `Order.templateSnapshot` (P6),
+ * but the silent schema drift broke admin expectations and the Field
+ * Designer's diff view. We now only CREATE missing templates; an explicit
+ * re-seed flag is reserved for a future admin tool.
  */
 export async function ensureSystemTemplatesForOrg(
   orgId: string,
   db: Db = prisma,
+  options: { refreshSystemTemplates?: boolean } = {},
 ): Promise<string> {
+  const refresh = options.refreshSystemTemplates === true;
   let defaultId: string | null = null;
   for (const seed of SYSTEM_TEMPLATES) {
-    const row = await db.orderTemplate.upsert({
-      where: { orgId_name: { orgId, name: seed.name } },
-      create: {
-        orgId,
-        name: seed.name,
-        itemNoun: seed.itemNoun,
-        primaryUnit: seed.primaryUnit,
-        primaryPrecision: seed.primaryPrecision,
-        sections: seed.sections as unknown as object,
-        isSystem: true,
-      },
-      update: {
-        itemNoun: seed.itemNoun,
-        primaryUnit: seed.primaryUnit,
-        primaryPrecision: seed.primaryPrecision,
-        sections: seed.sections as unknown as object,
-        isSystem: true,
-      },
+    const existing = await db.orderTemplate.findFirst({
+      where: { orgId, name: seed.name },
     });
+    let row;
+    if (!existing) {
+      row = await db.orderTemplate.create({
+        data: {
+          orgId,
+          name: seed.name,
+          itemNoun: seed.itemNoun,
+          primaryUnit: seed.primaryUnit,
+          primaryPrecision: seed.primaryPrecision,
+          sections: seed.sections as unknown as object,
+          isSystem: true,
+        },
+      });
+    } else if (refresh) {
+      // Explicit re-seed path (admin requested). Bumps `version` so the
+      // Field Designer can report "N orders still use prior version".
+      row = await db.orderTemplate.update({
+        where: { id: existing.id },
+        data: {
+          itemNoun: seed.itemNoun,
+          primaryUnit: seed.primaryUnit,
+          primaryPrecision: seed.primaryPrecision,
+          sections: seed.sections as unknown as object,
+          isSystem: true,
+          version: { increment: 1 },
+        },
+      });
+    } else {
+      row = existing;
+    }
     if (seed === CLOTHING_TEMPLATE) {
       defaultId = row.id;
     }
