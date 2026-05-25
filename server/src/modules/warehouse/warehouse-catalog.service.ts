@@ -1,11 +1,6 @@
 import { prisma } from '../../lib/prisma.js';
 import { buildCanonicalVariantKey } from '../../shared/variant-key.js';
-
-// ── Helpers ────────────────────────────────────────────────────────────────────
-
-function normalizeName(value: string): string {
-  return value.trim().toLowerCase().replace(/\s+/g, ' ');
-}
+import { normalizeName } from '../../shared/normalize-name.js';
 
 // ── Product Catalog ────────────────────────────────────────────────────────────
 // NOTE: P0 — WarehouseFieldDefinition/Option/ProductField were removed in favour

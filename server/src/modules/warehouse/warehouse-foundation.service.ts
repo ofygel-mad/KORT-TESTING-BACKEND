@@ -40,7 +40,11 @@ function normalizeCode(value: string, label: string) {
   return normalized;
 }
 
-function normalizeName(value: string, label: string) {
+// P0.5: distinct from `normalizeName` in `shared/normalize-name.ts`. This is a
+// validator that trims-and-asserts-non-empty and throws AppError; the canonical
+// shared helper produces a case-folded lookup key and has different semantics.
+// Renamed to `requireDisplayName` to remove the false sense of duplication.
+function requireDisplayName(value: string, label: string) {
   const normalized = value.trim();
   if (!normalized) {
     throw new AppError(400, `${label} обязательно`, 'VALIDATION');
@@ -129,7 +133,7 @@ export async function listSites(orgId: string) {
 
 export async function createSite(orgId: string, dto: CreateWarehouseSiteDto, actorName?: string | null) {
   const code = normalizeCode(dto.code, 'Код склада');
-  const name = normalizeName(dto.name, 'Название склада');
+  const name = requireDisplayName(dto.name, 'Название склада');
   const timezone = dto.timezone?.trim() || 'UTC';
   const status = dto.status?.trim() || 'active';
 
@@ -199,7 +203,7 @@ export async function createSite(orgId: string, dto: CreateWarehouseSiteDto, act
 
 export async function createZone(orgId: string, siteId: string, dto: CreateWarehouseZoneDto) {
   const code = normalizeCode(dto.code, 'Код зоны');
-  const name = normalizeName(dto.name, 'Название зоны');
+  const name = requireDisplayName(dto.name, 'Название зоны');
   const zoneType = dto.zoneType?.trim() || 'storage';
   const status = dto.status?.trim() || 'active';
 

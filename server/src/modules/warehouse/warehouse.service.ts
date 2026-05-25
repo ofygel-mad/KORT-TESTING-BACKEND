@@ -14,6 +14,7 @@ import { prisma } from '../../lib/prisma.js';
 import { AppError } from '../../lib/errors.js';
 import { nanoid } from 'nanoid';
 import { buildCanonicalVariantKey } from '../../shared/variant-key.js';
+import { normalizeName as normalizeWarehouseName } from '../../shared/normalize-name.js';
 import { Prisma } from '@prisma/client';
 import {
   createStockReservation as createCanonicalStockReservation,
@@ -141,16 +142,13 @@ export interface WarehouseOrderConsumptionSummary {
   }>;
 }
 
-function normalizeWarehouseName(value: string): string {
-  return value.trim().toLowerCase().replace(/\s+/g, ' ');
-}
-
-// Thin shim over the canonical variant-key builder for legacy call-sites that
-// have already pre-filtered attributes by affectsAvailability before reaching us.
-// New code paths should call buildCanonicalVariantKey directly with field defs.
-function buildWarehouseVariantKey(productName: string, attributes: Record<string, string>) {
-  const fields = Object.keys(attributes).map((code) => ({ code, affectsAvailability: true }));
-  return buildCanonicalVariantKey(productName, attributes, fields);
+// P0.5: every attribute that survives pre-filtering is an availability axis at
+// this call-site. The canonical builder expects an explicit field-def list so
+// it can ignore non-axis attributes; here we synthesise a permissive list.
+// TODO(P4): pass real fields from OrderTemplate.sections so non-axis attrs are
+// excluded at the source instead of via this synthetic mapping.
+function fieldsFromAttrs(attributes: Record<string, string>) {
+  return Object.keys(attributes).map((code) => ({ code, affectsAvailability: true }));
 }
 
 function readStringMapFromJson(value?: Prisma.JsonValue | null): Record<string, string> {
@@ -292,7 +290,7 @@ export async function createItem(orgId: string, dto: CreateItemDto, authorName: 
   if (dto.gender?.trim()) attrs.gender = dto.gender.trim();
   if (dto.size?.trim()) attrs.size = dto.size.trim();
   if (dto.length?.trim()) attrs.length = dto.length.trim();
-  const variantKey = buildWarehouseVariantKey(dto.name, attrs);
+  const variantKey = buildCanonicalVariantKey(dto.name, attrs, fieldsFromAttrs(attrs));
   const attributesSummary = summarizeVariantAttributes(attrs) || null;
 
   const item = await prisma.warehouseItem.create({
@@ -386,7 +384,7 @@ export async function bulkImportOpeningBalance(
       if (row.size?.trim()) attrs.size = row.size.trim();
       if (row.length?.trim()) attrs.length = row.length.trim();
 
-      const variantKey = buildWarehouseVariantKey(name, attrs);
+      const variantKey = buildCanonicalVariantKey(name, attrs, fieldsFromAttrs(attrs));
       const attributesSummary = summarizeVariantAttributes(attrs) || null;
 
       const existing = await prisma.warehouseItem.findFirst({ where: { orgId, variantKey } });
@@ -706,7 +704,7 @@ async function findOrCreateCanonicalVariantForOrderItem(
 
   const variantKey =
     orderItem.variantKey?.trim() ||
-    buildWarehouseVariantKey(product.name ?? orderItem.productName, attributesForKey);
+    buildCanonicalVariantKey(product.name ?? orderItem.productName, attributesForKey, fieldsFromAttrs(attributesForKey));
 
   if (!variantKey) {
     return { reason: 'variant_key_missing' };
@@ -794,7 +792,7 @@ async function reserveSimpleOrderItems(
     if (orderItem.gender?.trim()) attrs.gender = orderItem.gender.trim();
     if (orderItem.size?.trim()) attrs.size = orderItem.size.trim();
     if (orderItem.length?.trim()) attrs.length = orderItem.length.trim();
-    const variantKey = buildWarehouseVariantKey(name, attrs);
+    const variantKey = buildCanonicalVariantKey(name, attrs, fieldsFromAttrs(attrs));
 
     const warehouseItem = await prisma.warehouseItem.findFirst({
       where: { orgId, variantKey },
@@ -876,7 +874,7 @@ export async function reserveNewOrderItems(
     if (item.gender?.trim()) attrs.gender = item.gender.trim();
     if (item.size?.trim())   attrs.size   = item.size.trim();
     if (item.length?.trim()) attrs.length = item.length.trim();
-    const variantKey = item.variantKey ?? buildWarehouseVariantKey(name, attrs);
+    const variantKey = item.variantKey ?? buildCanonicalVariantKey(name, attrs, fieldsFromAttrs(attrs));
 
     const warehouseItem = await prisma.warehouseItem.findFirst({
       where: { orgId, variantKey },
@@ -1350,7 +1348,7 @@ export async function consumeSimpleOrderReservations(
       // OrderItem.attributesJson. Read the JSON bag directly.
       const attrs = readStringMapFromJson(orderItem.attributesJson);
 
-      const variantKey = buildWarehouseVariantKey(name, attrs);
+      const variantKey = buildCanonicalVariantKey(name, attrs, fieldsFromAttrs(attrs));
       const warehouseItem = await tx.warehouseItem.findFirst({
         where: { orgId, variantKey },
         select: { id: true, qty: true, qtyReserved: true },
@@ -1978,7 +1976,7 @@ export async function autoCreateFromOrder(
     if (orderItem.size?.trim()) attrs.size = orderItem.size.trim();
     if (orderItem.length?.trim()) attrs.length = orderItem.length.trim();
 
-    const variantKey = orderItem.variantKey?.trim() || buildWarehouseVariantKey(name, attrs);
+    const variantKey = orderItem.variantKey?.trim() || buildCanonicalVariantKey(name, attrs, fieldsFromAttrs(attrs));
     const attributesSummary = orderItem.attributesSummary?.trim() || summarizeVariantAttributes(attrs) || null;
 
     const existing = await prisma.warehouseItem.findFirst({
@@ -2118,7 +2116,7 @@ export async function createOrderTransitEntries(
     if (item.gender?.trim()) attrs.gender = item.gender.trim();
     if (item.size?.trim())   attrs.size   = item.size.trim();
     if (item.length?.trim()) attrs.length = item.length.trim();
-    const variantKey = item.variantKey ?? buildWarehouseVariantKey(name, attrs);
+    const variantKey = item.variantKey ?? buildCanonicalVariantKey(name, attrs, fieldsFromAttrs(attrs));
 
     const warehouseItem = await prisma.warehouseItem.findFirst({
       where: { orgId, variantKey },
