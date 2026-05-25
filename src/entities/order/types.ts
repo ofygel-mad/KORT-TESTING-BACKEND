@@ -2,6 +2,7 @@
 // Backend model: Order, OrderItem, ProductionTask, Payment, OrderActivity
 
 import type { InvoiceStatus } from './invoice.types';
+import type { OrderTemplateSection } from './templates';
 
 export type OrderStatus =
   | 'new' | 'confirmed' | 'in_production' | 'ready'
@@ -61,6 +62,12 @@ export interface Order {
   templateId?: string | null;
   // P3: free-form bag of template-defined client/order custom attributes.
   extraAttributes?: Record<string, unknown> | null;
+  // P6: immutable snapshot of the template's `sections` taken at create-time
+  // (and re-frozen on explicit templateId change). Read-priority source for
+  // schema-driven rendering — protects historical orders from later
+  // Field-Designer edits. Falls back to the live template when null
+  // (legacy orders predating the snapshot column).
+  templateSnapshot?: OrderTemplateSection[] | null;
   // P2: lifecycle stage (draft|committed|fulfilling|completed|cancelled).
   lifecycleStage?: string | null;
   // P2: frozen manager attribution at completion.
@@ -360,6 +367,9 @@ export interface UpdateOrderDto {
   expectedPaymentMethod?: string;
   paymentBreakdown?: Record<string, number>;
   items?: CreateOrderItemDto[];
+  // P6: explicit template switch from the manager. Re-freezes the order's
+  // templateSnapshot server-side when different from the current templateId.
+  templateId?: string;
 }
 
 export interface AddPaymentDto {

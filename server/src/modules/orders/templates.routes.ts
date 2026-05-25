@@ -167,6 +167,9 @@ export async function orderTemplatesRoutes(app: FastifyInstance) {
       throw new ValidationError('Системные шаблоны нельзя редактировать. Сначала клонируйте.');
     }
     const body = validateTemplateBody(request.body);
+    // P6: bump `version` on every edit so existing orders' templateSnapshot can
+    // later be diffed against the live template ("эта правка не повлияет на N
+    // существующих заказов — они используют версию X").
     return prisma.orderTemplate.update({
       where: { id: existing.id },
       data: {
@@ -175,6 +178,7 @@ export async function orderTemplatesRoutes(app: FastifyInstance) {
         primaryUnit: body.primaryUnit,
         primaryPrecision: body.primaryPrecision,
         sections: body.sections as unknown as object,
+        version: { increment: 1 },
       },
     });
   });

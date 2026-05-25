@@ -57,11 +57,15 @@ export async function ordersRoutes(app: FastifyInstance) {
     color: z.string().optional(),
     gender: z.string().optional(),
     length: z.string().optional(),
-    size: z.string(),
+    // P6: non-clothing templates (chemicals, services, ...) have no `size`
+    // field at all — keep optional so the generic payload passes validation.
+    size: z.string().optional().default(''),
     quantity: z.number().int().min(1),
     unitPrice: z.number().min(0),
     notes: z.string().optional(),
     workshopNotes: z.string().optional(),
+    // P6: schema-driven per-item custom fields (attributesJson on server).
+    attributes: z.record(z.string(), z.unknown()).optional(),
   });
 
   // GET /api/v1/orders
@@ -156,6 +160,11 @@ export async function ordersRoutes(app: FastifyInstance) {
       managerNote: z.string().optional(),
       sourceRequestId: z.string().optional(),
       customerType: z.enum(['retail', 'wholesale']).optional(),
+      // P6: explicit OrderTemplate the manager picked for this order. When
+      // omitted, the service falls back to the org's default template.
+      templateId: z.string().optional(),
+      // P6: schema-driven client/order-level custom fields → Order.extraAttributes.
+      extraAttributes: z.record(z.string(), z.unknown()).optional(),
     }).refine(
       (d) => !!(d.clientPhone?.trim()) || !!(d.clientPhoneForeign?.trim()),
       { message: 'Укажите казахстанский или иностранный номер телефона', path: ['clientPhone'] },
@@ -211,6 +220,10 @@ export async function ordersRoutes(app: FastifyInstance) {
       paymentMethod: z.string().optional(),
       expectedPaymentMethod: z.string().optional(),
       paymentBreakdown: z.record(z.string(), z.number().min(0)).optional(),
+      // P6: explicit template switch from the manager. When supplied AND
+      // different from the order's current templateId, the order's
+      // templateSnapshot is re-frozen server-side.
+      templateId: z.string().optional(),
       items: z.array(orderItemSchema).optional(),
     }).parse(request.body);
 

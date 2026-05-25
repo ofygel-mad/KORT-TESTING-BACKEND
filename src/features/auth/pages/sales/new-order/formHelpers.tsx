@@ -36,10 +36,12 @@ export function buildPayloadItems(items: FormData['items']) {
       ? Number((finalLineTotal / quantity).toFixed(4))
       : 0;
 
-    // P5: build the schema-driven `attributes` bag. Dual-write strategy —
-    // legacy fields (color/gender/length/size) ALSO flow into the bag so
-    // OrderDetailPage and analytics can read them through one consistent
-    // shape. Custom template fields are merged on top.
+    // P6: schema-driven payload. `attributes` is the ONLY source of truth for
+    // per-item axes — legacy 4-axis columns (color/gender/length/size) were
+    // dropped from the DB in P0 and are now folded into the attributes bag
+    // on the server. We still send legacy keys at the top level for the
+    // current zod schema, but the server collapses them into attributesJson;
+    // any non-clothing template's custom fields ride on `attributes`.
     const customFields = (item as { customFields?: Record<string, unknown> }).customFields ?? {};
     const attributes: Record<string, unknown> = {};
     if (item.color?.trim()) attributes.color = item.color.trim();
@@ -53,6 +55,9 @@ export function buildPayloadItems(items: FormData['items']) {
 
     return {
       productName: item.productName,
+      // P6: keep top-level legacy keys until the route schema drops them in P7
+      // (server already folds them into attributesJson — no dual-write to
+      // physical columns happens).
       color: item.color?.trim() || undefined,
       gender: item.gender?.trim() || undefined,
       length: item.length?.trim() || undefined,

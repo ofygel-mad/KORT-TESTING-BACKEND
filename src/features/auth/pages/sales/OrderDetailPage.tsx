@@ -20,6 +20,8 @@ import { buildItemLine } from '@/shared/utils/itemLine';
 import { calculateOrderFinancials, getOrderBalance } from '@/shared/lib/orderFinancials';
 import { formatOrderItemNumber } from '@/shared/utils/orderItemNumber';
 import { useBusinessProfile } from '@/entities/tenant/businessProfile';
+import { useActiveOrderTemplate } from '@/entities/order/templatesApi';
+import type { OrderTemplate, OrderTemplateSection } from '@/entities/order/templates';
 import styles from './OrderDetailPage.module.css';
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
@@ -134,6 +136,33 @@ function formatAttributeValue(value: unknown): string {
   return String(value);
 }
 
+// P6: read-priority sections resolver. The order's frozen `templateSnapshot`
+// wins when present (protects historical orders from later Field-Designer
+// edits); otherwise we fall back to the live template loaded via hook.
+function resolveOrderSections(
+  templateSnapshot: OrderTemplateSection[] | null | undefined,
+  liveTemplate: OrderTemplate | null | undefined,
+): OrderTemplateSection[] {
+  if (Array.isArray(templateSnapshot) && templateSnapshot.length > 0) {
+    return templateSnapshot;
+  }
+  return liveTemplate?.sections ?? [];
+}
+
+// P6: turns an attribute key into the human label declared by the template.
+function resolveAttributeLabel(
+  sections: OrderTemplateSection[],
+  sectionKind: 'items' | 'client',
+  key: string,
+): string {
+  for (const section of sections) {
+    if (section.kind !== sectionKind) continue;
+    const field = section.fields.find((f) => f.key === key);
+    if (field?.label) return field.label;
+  }
+  return key;
+}
+
 function resolveItemFulfillmentMode(order: { status: OrderStatus; productionTasks?: Array<{ orderItemId: string }> }, item: OrderItem): OrderItemFulfillmentMode {
   if (item.fulfillmentMode === 'warehouse' || item.fulfillmentMode === 'production') return item.fulfillmentMode;
   const hasTask = (order.productionTasks ?? []).some((task) => task.orderItemId === item.id);
@@ -231,6 +260,16 @@ export default function OrderDetailPage() {
 
   const { canReassignManager } = useOperationsAccess();
   const { data: orgManagers } = useOrgManagers();
+
+  // P6: read-priority template resolution. The order's frozen
+  // `templateSnapshot` is the canonical source for labels/field-shapes;
+  // the live template is only used as a fallback for legacy orders that
+  // predate the snapshot column.
+  const { data: liveTemplate } = useActiveOrderTemplate(order?.templateId ?? null);
+  const orderSections = resolveOrderSections(
+    order?.templateSnapshot ?? null,
+    liveTemplate,
+  );
 
   const pendingInvoice = order?.status === 'ready'
     ? order.invoiceOrders?.find((io) => io.invoice.status === 'pending_confirmation')?.invoice
@@ -988,7 +1027,9 @@ export default function OrderDetailPage() {
             </div>
           )}
 
-          {/* P6: schema-driven custom attributes — only render if non-empty. */}
+          {/* P6: schema-driven custom attributes — only render if non-empty.
+              Labels are resolved through `orderSections` which prefers the
+              order's frozen templateSnapshot over the live template. */}
           {(() => {
             const extras = (order.extraAttributes ?? {}) as Record<string, unknown>;
             const itemAttrs = orderItems
@@ -1003,7 +1044,9 @@ export default function OrderDetailPage() {
                   <div className={`${styles.extrasGrid}${itemAttrs.length > 0 ? ` ${styles.extrasGridSpaced}` : ''}`}>
                     {Object.entries(extras).map(([key, value]) => (
                       <div key={key}>
-                        <div className={styles.extrasLabel}>{key}</div>
+                        <div className={styles.extrasLabel}>
+                          {resolveAttributeLabel(orderSections, 'client', key)}
+                        </div>
                         <div className={styles.extrasValue}>{formatAttributeValue(value)}</div>
                       </div>
                     ))}
@@ -1017,7 +1060,7 @@ export default function OrderDetailPage() {
                         <div className={styles.itemAttrsChips}>
                           {Object.entries(attrs).map(([key, value]) => (
                             <span key={key} className={styles.itemAttrsChip}>
-                              <strong>{key}:</strong>{' '}{formatAttributeValue(value)}
+                              <strong>{resolveAttributeLabel(orderSections, 'items', key)}:</strong>{' '}{formatAttributeValue(value)}
                             </span>
                           ))}
                         </div>

@@ -787,6 +787,14 @@ export async function create(orgId: string, authorId: string, authorName: string
         lifecycleStage: 'draft',
         // P5: associate every new order with the chosen template id.
         templateId: chosenTemplateId,
+        // P6: freeze the template's `sections` onto the Order as an immutable
+        // snapshot. The read-path reads from here (NOT the live template) so
+        // later Field-Designer edits never break historical orders. When the
+        // template lookup returned nothing (no template at all), leave the
+        // column null — legacy fallback path on the FE still works.
+        templateSnapshot: chosenTemplateSnapshot
+          ? (chosenTemplateSnapshot as Prisma.InputJsonValue)
+          : undefined,
         // P5: schema-driven client-section custom fields → Order.extraAttributes.
         extraAttributes: data.extraAttributes && Object.keys(data.extraAttributes).length > 0
           ? (data.extraAttributes as Prisma.InputJsonValue)
@@ -1419,6 +1427,10 @@ type UpdateOrderInput = {
   paymentMethod?: string;
   expectedPaymentMethod?: string;
   paymentBreakdown?: Record<string, number>;
+  // P6: explicit manager-driven template switch. When supplied AND different
+  // from the order's current templateId, the order's templateSnapshot is
+  // re-frozen from the new template's sections.
+  templateId?: string;
   items?: Array<{
     productName: string;
     color?: string;
@@ -1429,6 +1441,8 @@ type UpdateOrderInput = {
     unitPrice: number;
     notes?: string;
     workshopNotes?: string;
+    // P6: schema-driven custom fields (mirrors CreateOrderInput shape).
+    attributes?: Record<string, unknown>;
   }>;
 };
 
@@ -1499,6 +1513,35 @@ export async function update(orgId: string, id: string, authorId: string, author
         : null;
     }
 
+    // P6: explicit manager-driven template switch. When the supplied
+    // templateId differs from the order's current one, re-freeze
+    // templateSnapshot from the new template's sections — this is an explicit
+    // intent to switch the view of the order. Variant-key recomputation on
+    // existing items happens below in the items branch (manager typically
+    // resubmits items together with a template switch).
+    let effectiveTemplateSnapshot: Prisma.JsonValue | null = (order.templateSnapshot as Prisma.JsonValue | null) ?? null;
+    if (data.templateId !== undefined && data.templateId && data.templateId !== order.templateId) {
+      const nextTemplate = await tx.orderTemplate.findFirst({
+        where: { id: data.templateId, orgId },
+        select: { id: true, sections: true },
+      });
+      if (!nextTemplate) {
+        throw new ValidationError('Указанный вид деятельности не найден');
+      }
+      updateData.templateId = nextTemplate.id;
+      updateData.templateSnapshot = (nextTemplate.sections as Prisma.JsonValue | undefined) ?? null;
+      effectiveTemplateSnapshot = (nextTemplate.sections as Prisma.JsonValue | undefined) ?? null;
+      await tx.orderActivity.create({
+        data: {
+          orderId: id,
+          type: 'edit',
+          content: `Вид деятельности заказа изменён`,
+          authorId,
+          authorName,
+        },
+      });
+    }
+
     if (data.items) {
       const totalAmount = data.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
       const dueAmount = calculateOrderDueAmount({
@@ -1520,7 +1563,9 @@ export async function update(orgId: string, id: string, authorId: string, author
 
       await tx.orderItem.deleteMany({ where: { orderId: id } });
       for (const [index, item] of data.items.entries()) {
-        const variantSnapshot = await buildOrderItemVariantSnapshot(tx, orgId, item);
+        // P6: pass the effective templateSnapshot so variant-key honours
+        // affectsAvailability of the active (possibly just-switched) template.
+        const variantSnapshot = await buildOrderItemVariantSnapshot(tx, orgId, item, effectiveTemplateSnapshot);
         // P0: legacy per-attribute columns (color/gender/length/size) collapsed
         // into attributesJson. variantSnapshot already carries the canonical
         // attributesJson/attributesSummary; we additionally fold any leftover
@@ -1547,6 +1592,10 @@ export async function update(orgId: string, id: string, authorId: string, author
             fulfillmentMode: 'unassigned',
             notes: item.notes,
             workshopNotes: item.workshopNotes,
+            // P6: schema-driven per-item custom fields → OrderItem.attributes.
+            attributes: item.attributes && Object.keys(item.attributes).length > 0
+              ? (item.attributes as Prisma.InputJsonValue)
+              : undefined,
             ...variantSnapshot,
             attributesJson: Object.keys(mergedAttrs).length > 0
               ? mergedAttrs
