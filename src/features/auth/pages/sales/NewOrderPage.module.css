@@ -1247,6 +1247,14 @@
   border: 1px solid var(--border-default, rgba(255, 255, 255, 0.08));
 }
 
+/* P5: inline-warning над секцией Позиции — каталог по виду деятельности пуст. */
+.catalogEmptyNotice {
+  margin-bottom: 12px;
+}
+.catalogEmptyNoticeIcon {
+  margin-right: 8px;
+}
+
 .variantStockIn {
   display: flex;
   align-items: center;

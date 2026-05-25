@@ -3,7 +3,7 @@
 // the exact same hooks/effects/derivations in the same order and returns them
 // for the page shell + the block components (via NewOrderFormContext).
 
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useForm, useFieldArray } from 'react-hook-form';
@@ -11,9 +11,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useCreateOrder, useOperationsCatalogs, useOperationsSettings, useUpdateBankCommission } from '@/entities/order/queries';
 import { useAuthStore } from '@/shared/stores/auth';
 import { useProductsAvailability, useVariantAvailability, useOrderFormCatalog, useCatalogDefinitions } from '@/entities/warehouse/queries';
-import type { OrderFormField } from '@/entities/warehouse/types';
+import type { OrderFormField, OrderFormProduct } from '@/entities/warehouse/types';
 import { attachmentsApi } from '@/entities/order/api';
 import type { Urgency } from '@/entities/order/types';
+import { useActiveOrderTemplate } from '@/entities/order/templatesApi';
+import { getItemsSection } from '@/entities/order/templates';
 import {
   buildDeliveryOptions,
   buildMixedBreakdownRows,
@@ -71,7 +73,7 @@ export function useNewOrderFormState() {
     defaultValues: savedDraft.current ?? createEmptyFormDefaults(),
   });
 
-  const { fields, append, remove } = useFieldArray({ control, name: 'items' });
+  const { fields, append, remove, replace } = useFieldArray({ control, name: 'items' });
 
   // Draft autosave — дебаунс 800 мс, не сохраняем пустой стартовый стейт
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -138,7 +140,33 @@ export function useNewOrderFormState() {
   const items            = watch('items');
   const urgency          = watch('urgency');
   const isDemandingClient = watch('isDemandingClient');
-  const { data: orderFormCatalog } = useOrderFormCatalog();
+  // P5: active OrderTemplate drives both the items-section fields rendered in
+  // LineItemsBlock and the catalog scope (only positions tagged with this
+  // template show up in the autocomplete).
+  const { data: activeTemplate } = useActiveOrderTemplate(selectedTemplateId);
+  const itemsSection = useMemo(() => getItemsSection(activeTemplate), [activeTemplate]);
+  const itemsTemplateFields = useMemo(
+    () => itemsSection?.fields ?? [],
+    [itemsSection],
+  );
+  // Field keys handled by dedicated columns in the legacy LineItemsBlock UI.
+  // Anything else lives in customFields and renders through TemplateAttributeRenderer.
+  const LEGACY_ITEM_KEYS = useMemo(
+    () => new Set(['gender', 'color', 'length', 'size', 'product', 'productName']),
+    [],
+  );
+  const customItemFields = useMemo(
+    () => itemsTemplateFields.filter((f) => !LEGACY_ITEM_KEYS.has(f.key)),
+    [itemsTemplateFields, LEGACY_ITEM_KEYS],
+  );
+  const customItemFieldKeys = useMemo(
+    () => new Set(customItemFields.map((f) => f.key)),
+    [customItemFields],
+  );
+
+  const { data: orderFormCatalog } = useOrderFormCatalog({
+    templateId: activeTemplate?.id ?? null,
+  });
   const { data: fieldDefinitions } = useCatalogDefinitions();
   const warehouseProductMap = useMemo<Record<string, OrderFormField[]>>(() => {
     const map: Record<string, OrderFormField[]> = {};
@@ -147,16 +175,77 @@ export function useNewOrderFormState() {
     }
     return map;
   }, [orderFormCatalog]);
+  // P5: lookup of catalog product by name — used by LineItemsBlock to
+  // auto-fill unitPrice on selection (defaultRetailPrice/defaultWholesalePrice).
+  const catalogProductByName = useMemo<Record<string, OrderFormProduct>>(() => {
+    const map: Record<string, OrderFormProduct> = {};
+    for (const product of orderFormCatalog?.products ?? []) {
+      map[product.name] = product;
+    }
+    return map;
+  }, [orderFormCatalog]);
+
   const deferredProductNames = useDeferredValue(
     items.map((i) => i.productName).filter(Boolean),
   );
-  const availabilityVariants = items
-    .map((item) => buildVariantAvailabilityInput(
-      item.productName?.trim() ?? '',
-      item,
-      getEffectiveFields(item.productName?.trim() ?? ''),
-    ))
-    .filter((variant): variant is VariantAvailabilityInput => Boolean(variant));
+
+  // P5: helper to mirror customFields onto the item record so legacy axis
+  // pickers (color/gender/size/length on item.*) AND new template axes
+  // (item.customFields.<key>) both feed the variant lookup.
+  const mergeItemAttrs = useCallback(
+    (item: FormData['items'][number] | undefined) => {
+      if (!item) return {};
+      const customFields = (item as { customFields?: Record<string, unknown> }).customFields ?? {};
+      return { ...item, ...customFields } as Record<string, unknown>;
+    },
+    [],
+  );
+
+  // Function declarations need to come before they're used by hooks below.
+  // We define getEffectiveFields and related helpers further down, but use them
+  // here — these are stable closures that re-derive on each render, so it's
+  // safe to reference them via the function-hoisting semantics of JS.
+  const getEffectiveFields = useCallback(
+    (productName: string) => {
+      const trimmed = productName?.trim() ?? '';
+      const fromCatalog = warehouseProductMap[trimmed];
+      if (fromCatalog && fromCatalog.length > 0) return fromCatalog;
+      // P5: when the catalog has no per-product fields config, fall back to
+      // the active OrderTemplate's items-section field list (already in
+      // OrderFormField shape via this conversion). This keeps live availability
+      // working for templates whose products inherit schema implicitly.
+      if (itemsTemplateFields.length > 0) {
+        return itemsTemplateFields.map((f) => ({
+          code: f.key,
+          label: f.label,
+          inputType: (f.type === 'multiselect' ? 'multiselect' : 'text') as OrderFormField['inputType'],
+          isRequired: !!f.required,
+          affectsAvailability: !!f.affectsAvailability,
+          options: (f.options ?? []).map((label) => ({ value: label, label })),
+        }));
+      }
+      return fieldDefinitions?.map((def) => ({
+        code: def.code,
+        label: def.label,
+        inputType: def.inputType,
+        isRequired: false as const,
+        affectsAvailability: def.affectsAvailability,
+        options: [] as Array<{ value: string; label: string }>,
+      }));
+    },
+    [warehouseProductMap, itemsTemplateFields, fieldDefinitions],
+  );
+
+  const availabilityVariants = useMemo(
+    () => items
+      .map((item) => buildVariantAvailabilityInput(
+        item.productName?.trim() ?? '',
+        mergeItemAttrs(item),
+        getEffectiveFields(item.productName?.trim() ?? ''),
+      ))
+      .filter((variant): variant is VariantAvailabilityInput => Boolean(variant)),
+    [items, mergeItemAttrs, getEffectiveFields],
+  );
   const { data: stockMap } = useProductsAvailability(deferredProductNames);
   const { data: variantMap } = useVariantAvailability(availabilityVariants);
 
@@ -166,18 +255,19 @@ export function useNewOrderFormState() {
   const hasIncompleteVariantLines = useMemo(() => {
     for (const item of items) {
       if (!item?.productName?.trim()) continue;
-      const fields = warehouseProductMap[item.productName.trim()];
+      const fields = getEffectiveFields(item.productName.trim());
       if (!fields) continue;
       const required = fields.filter((f) => f.affectsAvailability);
       if (required.length === 0) continue;
+      const merged = mergeItemAttrs(item);
       const incomplete = required.some((f) => {
-        const value = (item as Record<string, unknown>)[f.code];
+        const value = merged[f.code];
         return !value || (typeof value === 'string' && !value.trim());
       });
       if (incomplete) return true;
     }
     return false;
-  }, [items, warehouseProductMap]);
+  }, [items, getEffectiveFields, mergeItemAttrs]);
   const paymentMethod    = watch('paymentMethod');
   const orderDiscountRaw = watch('orderDiscount');
   const prepaymentRaw    = watch('prepayment');
@@ -270,24 +360,31 @@ export function useNewOrderFormState() {
   }
 
   async function onSubmit(data: FormData) {
-    // Block creation only when a CATALOG-REGISTERED variant-bearing line has incomplete axes.
-    // Free-text product names are not validated here — warehouse has no SKU to match against.
+    // Block creation only when a variant-bearing line has incomplete axes.
+    // Catalog products are checked against their stored fields; products only
+    // present in the active template fall back to the template's items section.
+    // Free-text products with no template entry skip validation.
     const incompleteLines: number[] = [];
+    const missingFieldLabels = new Set<string>();
     for (let i = 0; i < data.items.length; i += 1) {
       const item = data.items[i];
       if (!item?.productName?.trim()) continue;
-      const fields = warehouseProductMap[item.productName.trim()];
-      if (!fields) continue;
+      const fields = getEffectiveFields(item.productName.trim()) ?? [];
       const required = fields.filter((f) => f.affectsAvailability);
       if (required.length === 0) continue;
+      const merged = mergeItemAttrs(item);
       const missing = required.filter((f) => {
-        const value = (item as Record<string, unknown>)[f.code];
+        const value = merged[f.code];
         return !value || (typeof value === 'string' && !value.trim());
       });
-      if (missing.length > 0) incompleteLines.push(i + 1);
+      if (missing.length > 0) {
+        incompleteLines.push(i + 1);
+        for (const f of missing) missingFieldLabels.add(f.label.toLowerCase());
+      }
     }
     if (incompleteLines.length > 0) {
-      toast.error(`Заполните параметры (цвет, размер, длина, пол) для позиций: ${incompleteLines.join(', ')}`);
+      const labels = [...missingFieldLabels].join(', ') || 'обязательные параметры';
+      toast.error(`Заполните параметры: ${labels} для позиций: ${incompleteLines.join(', ')}`);
       return;
     }
 
@@ -369,58 +466,93 @@ export function useNewOrderFormState() {
   }, [paymentMethod, paymentBreakdownWatch?.kaspi_qr, setValue]);
 
   const warehouseProductNames = Object.keys(warehouseProductMap);
-  // Merged product list: sales catalog + warehouse catalog (deduped)
-  const allProductNames = [...new Set([...products, ...warehouseProductNames])];
-  const enrichedProductOptions: SearchableSelectOption[] = allProductNames.map(name => ({ value: name }));
+  // P5: when a template scope is active, restrict the autocomplete to its
+  // catalog. Free-text legacy `products` (operations catalog) only show up
+  // when there is no template scope — otherwise они смешивают чужие виды
+  // деятельности и ломают autocomplete.
+  const allProductNames = activeTemplate?.id
+    ? warehouseProductNames
+    : [...new Set([...products, ...warehouseProductNames])];
+  const enrichedProductOptions: SearchableSelectOption[] = useMemo(
+    () => allProductNames.map((name) => ({ value: name })),
+    [allProductNames],
+  );
 
   // Global color options from warehouse field definitions (fallback when product has no linked color field)
   const globalWarehouseColors = fieldDefinitions?.find(d => d.code === 'color')?.options.map(o => o.label) ?? [];
   // Global length options from warehouse field definitions (single source of truth)
   const globalWarehouseLengths = fieldDefinitions?.find(d => d.code === 'length')?.options.map(o => o.label) ?? [];
 
-  // When a product has no per-product order form config, fall back to global field definitions
-  // so that non-axis fields like gender are correctly excluded from the variant lookup key.
-  function getEffectiveFields(productName: string) {
-    return warehouseProductMap[productName?.trim() ?? '']
-      ?? fieldDefinitions?.map(def => ({
-          code: def.code,
-          label: def.label,
-          inputType: def.inputType,
-          isRequired: false as const,
-          affectsAvailability: def.affectsAvailability,
-          options: [] as Array<{ value: string; label: string }>,
-        }));
-  }
+  const getAvailabilityInput = useCallback(
+    (item?: FormData['items'][number]) => {
+      if (!item?.productName?.trim()) return null;
+      return buildVariantAvailabilityInput(
+        item.productName.trim(),
+        mergeItemAttrs(item),
+        getEffectiveFields(item.productName.trim()),
+      );
+    },
+    [getEffectiveFields, mergeItemAttrs],
+  );
 
-  function getAvailabilityInput(item?: FormData['items'][number]) {
-    if (!item?.productName?.trim()) return null;
-    return buildVariantAvailabilityInput(
-      item.productName.trim(),
-      item,
-      getEffectiveFields(item.productName.trim()),
+  const getMissingAxes = useCallback(
+    (item?: FormData['items'][number]): OrderFormField[] => {
+      if (!item?.productName?.trim()) return [];
+      // Submit-gate uses the same effective-fields resolution as the live
+      // indicator — catalog-bound first, then template fallback. Free-text
+      // product names with no template either return [] (no required axes).
+      const fields = getEffectiveFields(item.productName.trim()) ?? [];
+      const required = fields.filter((f) => f.affectsAvailability);
+      if (required.length === 0) return [];
+      const merged = mergeItemAttrs(item);
+      return required.filter((f) => {
+        const value = merged[f.code];
+        return !value || (typeof value === 'string' && !value.trim());
+      });
+    },
+    [getEffectiveFields, mergeItemAttrs],
+  );
+
+  // Helper: get catalog options for a field code given current productName.
+  // P5: falls back to template field options so non-clothing templates with
+  // an enum-shaped axis (e.g. concentration) get a dropdown in legacy slots.
+  const getCatalogOptions = useCallback(
+    (productName: string, code: string): string[] => {
+      const fields = warehouseProductMap[productName];
+      const fromCatalog = fields?.find((f) => f.code === code)?.options.map((o) => o.label);
+      if (fromCatalog && fromCatalog.length > 0) return fromCatalog;
+      const tplField = itemsTemplateFields.find((f) => f.key === code);
+      return tplField?.options ?? [];
+    },
+    [warehouseProductMap, itemsTemplateFields],
+  );
+
+  // P5: When the active template changes, drop customFields keys that belong
+  // to the previous template — they would otherwise leak into the payload and
+  // confuse the warehouse (extra unknown axes). Legacy four-axis columns are
+  // not stripped — they remain on item.* for the legacy clothing flow.
+  const lastTemplateIdRef = useRef<string | null>(activeTemplate?.id ?? null);
+  useEffect(() => {
+    const currentId = activeTemplate?.id ?? null;
+    if (lastTemplateIdRef.current === currentId) return;
+    const previousId = lastTemplateIdRef.current;
+    lastTemplateIdRef.current = currentId;
+    if (previousId === null) return; // first load — nothing to strip
+    const allowed = customItemFieldKeys;
+    replace(
+      items.map((item) => {
+        const customFields = (item as { customFields?: Record<string, unknown> }).customFields ?? {};
+        const filtered: Record<string, unknown> = {};
+        for (const [key, value] of Object.entries(customFields)) {
+          if (allowed.has(key)) filtered[key] = value;
+        }
+        return { ...item, customFields: filtered } as FormData['items'][number];
+      }),
     );
-  }
-
-  function getMissingAxes(item?: FormData['items'][number]): OrderFormField[] {
-    if (!item?.productName?.trim()) return [];
-    // Submit-gate only applies to products registered in the warehouse catalog.
-    // Free-text product names (not in warehouseProductMap) skip variant validation —
-    // there's nothing to look up against, so the manager owns the choice.
-    const fields = warehouseProductMap[item.productName.trim()];
-    if (!fields) return [];
-    const required = fields.filter((f) => f.affectsAvailability);
-    return required.filter((f) => {
-      const value = (item as Record<string, unknown>)[f.code];
-      return !value || (typeof value === 'string' && !value.trim());
-    });
-  }
-  // Helper: get catalog options for a field code given current productName
-  function getCatalogOptions(productName: string, code: string): string[] {
-    const fields = warehouseProductMap[productName];
-    if (!fields) return [];
-    const field = fields.find((f) => f.code === code);
-    return field?.options.map((o) => o.label) ?? [];
-  }
+    // Intentionally exclude `items`/`replace`/`customItemFieldKeys` from deps —
+    // we only run this on template id change, not on every keystroke that
+    // mutates items. eslint's exhaustive-deps already accepts this shape.
+  }, [activeTemplate?.id]);
 
   return {
     // form core
@@ -448,6 +580,10 @@ export function useNewOrderFormState() {
     updateBankCommission,
     // P5/Stage1: template picker state
     selectedTemplateId, setSelectedTemplateId,
+    // P5: active template (preselection-aware) + items-section field list +
+    // catalog lookup map (used by LineItemsBlock for auto price-fill + empty
+    // catalog detection + dynamic column generation).
+    activeTemplate, itemsTemplateFields, customItemFields, catalogProductByName,
   };
 }
 
