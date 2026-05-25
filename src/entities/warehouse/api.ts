@@ -357,6 +357,33 @@ export const warehouseCatalogApi = {
       })
       .then((r) => r.data);
   },
+
+  // P2: template-aware Excel generator + importer
+  downloadTemplateExcel: (templateId: string) =>
+    apiClient
+      .get<Blob>(`/warehouse/catalog/template-excel`, {
+        params: { templateId },
+        responseType: 'blob',
+      })
+      .then((r) => r.data),
+
+  importExcel: (templateId: string, file: File) => {
+    const form = new FormData();
+    // Order matters: append templateId BEFORE file so the server sees the
+    // field on the parsed multipart payload (`data.fields.templateId`).
+    form.append('templateId', templateId);
+    form.append('file', file, file.name);
+    return apiClient
+      .post<{
+        created: number;
+        skipped: number;
+        errors: string[];
+        warnings: string[];
+      }>(`/warehouse/catalog/import-excel`, form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      .then((r) => r.data);
+  },
 };
 
 // ── Product Photos API ─────────────────────────────────────────────────────────

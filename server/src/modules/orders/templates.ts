@@ -59,6 +59,19 @@ export interface OrderTemplateSeed {
 }
 
 /**
+ * Minimal runtime shape used by services that consume templates (Excel
+ * generator/parser, etc.). Compatible both with seeds and with hydrated
+ * Prisma rows once their `sections` Json is parsed to the typed shape.
+ */
+export interface OrderTemplate {
+  name: string;
+  itemNoun?: string;
+  primaryUnit?: string;
+  primaryPrecision?: number;
+  sections: OrderTemplateSection[];
+}
+
+/**
  * "Чистый шаблон" — minimal items section with only product/qty/price. Used
  * as a starting point for orgs that want to build a form from scratch.
  */

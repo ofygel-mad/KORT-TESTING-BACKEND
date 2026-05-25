@@ -22,6 +22,8 @@ import {
   CheckCircle2, Plus, Trash2, ChevronDown, ChevronRight,
   Pencil, Check, X, Package, Image as ImageIcon, Boxes, Download,
 } from 'lucide-react';
+import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   useCatalogProducts,
   useDeleteProduct,
@@ -29,8 +31,9 @@ import {
   useProductPhotos,
   useUploadProductPhoto,
   useDeleteProductPhoto,
+  warehouseKeys,
 } from '@/entities/warehouse/queries';
-import { productPhotosApi } from '@/entities/warehouse/api';
+import { productPhotosApi, warehouseCatalogApi } from '@/entities/warehouse/api';
 import type { WarehouseProductCatalog } from '@/entities/warehouse/types';
 import { useOrderTemplates, useActiveOrderTemplate } from '@/entities/order/templatesApi';
 import type { OrderTemplate, OrderTemplateField } from '@/entities/order/templates';
@@ -38,6 +41,8 @@ import { getItemsSection } from '@/entities/order/templates';
 import { SearchInput } from '@/shared/ui/SearchInput';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { Button } from '@/shared/ui/Button';
+import { Drawer } from '@/shared/ui/Drawer';
+import { readApiErrorStatus, readApiErrorPayload, readApiErrorMessage } from '@/shared/api/errors';
 import { AddCatalogItemDrawer } from './AddCatalogItemDrawer';
 import styles from './ProductsPage.module.css';
 import { useRef } from 'react';
@@ -243,10 +248,31 @@ function FieldOptionsBlock({ template }: { template: OrderTemplate }) {
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 
+interface TemplateMismatchInfo {
+  templateName: string;
+  missingHeaders: string[];
+  foundHeaders: string[];
+}
+
+function pluralizePositions(n: number): string {
+  const abs = Math.abs(n);
+  const mod10 = abs % 10;
+  const mod100 = abs % 100;
+  if (mod100 >= 11 && mod100 <= 14) return 'позиций';
+  if (mod10 === 1) return 'позицию';
+  if (mod10 >= 2 && mod10 <= 4) return 'позиции';
+  return 'позиций';
+}
+
 export default function ProductsPage() {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [addOpen, setAddOpen] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [mismatch, setMismatch] = useState<TemplateMismatchInfo | null>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
 
   const { data: templatesData, isLoading: templatesLoading } = useOrderTemplates();
   const templates: OrderTemplate[] = templatesData?.results ?? [];
@@ -254,6 +280,68 @@ export default function ProductsPage() {
   // Default: org's isDefault template (or first system) when no manual pick.
   const { data: activeTemplate } = useActiveOrderTemplate(selectedTemplateId);
   const effectiveTemplateId = activeTemplate?.id ?? null;
+
+  // ── Download .xlsx template for the active вид деятельности ──────────────
+  const handleDownloadTemplate = async () => {
+    if (!activeTemplate || downloading) return;
+    setDownloading(true);
+    try {
+      const blob = await warehouseCatalogApi.downloadTemplateExcel(activeTemplate.id);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `catalog-${activeTemplate.name}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      // Defer revoke so the browser has time to start the download.
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+    } catch (err) {
+      toast.error(readApiErrorMessage(err, 'Не удалось скачать шаблон Excel'));
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  // ── Import an .xlsx file against the active вид деятельности ─────────────
+  const handleImportFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    // Reset the input synchronously so picking the same file twice works.
+    event.target.value = '';
+    if (!file || !activeTemplate || importing) return;
+
+    setImporting(true);
+    try {
+      const result = await warehouseCatalogApi.importExcel(activeTemplate.id, file);
+      toast.success(
+        `Импортировано ${result.created} ${pluralizePositions(result.created)}` +
+          (result.skipped > 0 ? ` · пропущено ${result.skipped}` : ''),
+      );
+      if (result.errors.length > 0) {
+        toast.warning(`Ошибок при импорте: ${result.errors.length}`);
+      }
+      queryClient.invalidateQueries({ queryKey: warehouseKeys.catalog.products });
+      queryClient.invalidateQueries({ queryKey: warehouseKeys.catalog.orderForm });
+    } catch (err) {
+      const status = readApiErrorStatus(err);
+      const payload = readApiErrorPayload(err) as
+        | (TemplateMismatchInfo & { error?: string })
+        | undefined;
+      if (status === 422 && payload?.error === 'TEMPLATE_MISMATCH') {
+        setMismatch({
+          templateName: payload.templateName ?? activeTemplate.name,
+          missingHeaders: payload.missingHeaders ?? [],
+          foundHeaders: payload.foundHeaders ?? [],
+        });
+      } else {
+        toast.error(readApiErrorMessage(err, 'Не удалось импортировать файл'));
+      }
+    } finally {
+      setImporting(false);
+    }
+  };
 
   const { data: products = [], isLoading: productsLoading } =
     useCatalogProducts({ templateId: effectiveTemplateId });
@@ -317,22 +405,40 @@ export default function ProductsPage() {
         <button
           type="button"
           className={styles.uploadBtn}
-          disabled
-          title="Будет в P2"
+          disabled={!activeTemplate || downloading}
+          onClick={handleDownloadTemplate}
+          title={
+            activeTemplate
+              ? `Скачать Excel-шаблон для «${activeTemplate.name}»`
+              : 'Сначала выберите вид деятельности'
+          }
         >
           <Download size={13} />
-          Скачать шаблон Excel
+          {downloading ? 'Готовим файл…' : 'Скачать шаблон Excel'}
         </button>
 
         <button
           type="button"
           className={styles.uploadBtn}
-          disabled
-          title="Будет в P2"
+          disabled={!activeTemplate || importing}
+          onClick={() => importInputRef.current?.click()}
+          title={
+            activeTemplate
+              ? `Импортировать Excel в каталог «${activeTemplate.name}»`
+              : 'Сначала выберите вид деятельности'
+          }
         >
           <Download size={13} style={{ transform: 'rotate(180deg)' }} />
-          Импорт Excel
+          {importing ? 'Импортируем…' : 'Импорт Excel'}
         </button>
+        <input
+          ref={importInputRef}
+          type="file"
+          accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          className={styles.hidden}
+          aria-label="Выбрать Excel-файл для импорта каталога"
+          onChange={handleImportFileChange}
+        />
 
         <div className={styles.toolbarSpacer} />
 
@@ -402,6 +508,33 @@ export default function ProductsPage() {
           onClose={() => setAddOpen(false)}
         />
       )}
+
+      {/* ── Template-mismatch modal (P2 import) ── */}
+      <Drawer
+        open={mismatch !== null}
+        onClose={() => setMismatch(null)}
+        title="Файл не соответствует виду деятельности"
+        size="sm"
+        footer={
+          <Button variant="primary" size="sm" onClick={() => setMismatch(null)}>
+            Понятно
+          </Button>
+        }
+      >
+        {mismatch && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13, lineHeight: 1.5 }}>
+            <div>
+              Загруженный файл не соответствует виду деятельности «{mismatch.templateName}».
+            </div>
+            {mismatch.missingHeaders.length > 0 && (
+              <div>
+                В файле отсутствуют колонки: <b>{mismatch.missingHeaders.join(', ')}</b>.
+              </div>
+            )}
+            <div>Скачайте корректный шаблон по кнопке «Скачать шаблон Excel».</div>
+          </div>
+        )}
+      </Drawer>
     </div>
   );
 }

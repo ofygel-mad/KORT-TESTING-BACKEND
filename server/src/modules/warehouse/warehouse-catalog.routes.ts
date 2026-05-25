@@ -1,8 +1,17 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import ExcelJS from 'exceljs';
+import { prisma } from '../../lib/prisma.js';
 import * as svc from './warehouse-catalog.service.js';
 import * as photosSvc from './warehouse-catalog-photos.service.js';
+import {
+  generateCatalogTemplate,
+  parseCatalogImport,
+} from './warehouse-catalog-excel.service.js';
+import type {
+  OrderTemplate,
+  OrderTemplateSection,
+} from '../orders/templates.js';
 
 async function loadRows(buffer: Uint8Array): Promise<string[]> {
   const wb = new ExcelJS.Workbook();
@@ -125,5 +134,136 @@ export async function warehouseCatalogRoutes(app: FastifyInstance) {
     if (!data) throw app.httpErrors.badRequest('Файл не найден');
     const rows = await loadRows(await data.toBuffer());
     return svc.importProductsFromRows(req.orgId, rows);
+  });
+
+  // ── P2: Template-aware Excel generator + importer ──────────────────────────
+
+  /**
+   * GET /catalog/template-excel?templateId=...
+   * Streams an .xlsx whose columns are derived from the OrderTemplate's
+   * items-section fields. Used by the «Скачать шаблон Excel» button.
+   */
+  app.get('/catalog/template-excel', auth, async (req, reply) => {
+    const qs = z.object({ templateId: z.string().min(1) }).parse(req.query);
+    const row = await prisma.orderTemplate.findFirst({
+      where: { id: qs.templateId, orgId: req.orgId },
+    });
+    if (!row) {
+      return reply
+        .status(404)
+        .send({ code: 'TEMPLATE_NOT_FOUND', message: 'Шаблон не найден' });
+    }
+
+    const tpl: OrderTemplate = {
+      name: row.name,
+      itemNoun: row.itemNoun,
+      primaryUnit: row.primaryUnit,
+      primaryPrecision: row.primaryPrecision,
+      sections: (row.sections as unknown as OrderTemplateSection[]) ?? [],
+    };
+
+    const buffer = await generateCatalogTemplate(tpl);
+    reply.header(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    reply.header(
+      'Content-Disposition',
+      `attachment; filename="catalog-${encodeURIComponent(tpl.name)}.xlsx"`,
+    );
+    return reply.send(buffer);
+  });
+
+  /**
+   * POST /catalog/import-excel
+   * Multipart upload (file) + templateId form-field. Validates that the
+   * uploaded workbook's headers match the template; on mismatch returns 422
+   * with the missing/found header lists for a clear UI message.
+   */
+  app.post('/catalog/import-excel', auth, async (req, reply) => {
+    const data = await req.file();
+    if (!data) {
+      return reply
+        .status(400)
+        .send({ code: 'NO_FILE', message: 'Файл не прикреплён' });
+    }
+
+    // @fastify/multipart surfaces non-file fields as `data.fields`. Each
+    // entry holds `.value` for plain text. The frontend appends `templateId`
+    // *before* the file so it's reliably present here.
+    const fieldsRecord = (data.fields ?? {}) as Record<
+      string,
+      { value?: unknown } | Array<{ value?: unknown }> | undefined
+    >;
+    const rawTemplateField = fieldsRecord.templateId;
+    const rawTemplateValue = Array.isArray(rawTemplateField)
+      ? rawTemplateField[0]?.value
+      : rawTemplateField?.value;
+    const templateId =
+      typeof rawTemplateValue === 'string' ? rawTemplateValue.trim() : '';
+
+    if (!templateId) {
+      return reply.status(400).send({
+        code: 'TEMPLATE_REQUIRED',
+        message: 'Не указан вид деятельности (templateId)',
+      });
+    }
+
+    const row = await prisma.orderTemplate.findFirst({
+      where: { id: templateId, orgId: req.orgId },
+    });
+    if (!row) {
+      return reply
+        .status(404)
+        .send({ code: 'TEMPLATE_NOT_FOUND', message: 'Шаблон не найден' });
+    }
+
+    const tpl: OrderTemplate = {
+      name: row.name,
+      itemNoun: row.itemNoun,
+      primaryUnit: row.primaryUnit,
+      primaryPrecision: row.primaryPrecision,
+      sections: (row.sections as unknown as OrderTemplateSection[]) ?? [],
+    };
+
+    const buffer = await data.toBuffer();
+    const parsed = await parseCatalogImport(buffer, tpl);
+
+    if (!parsed.ok) {
+      return reply.status(422).send({
+        error: 'TEMPLATE_MISMATCH',
+        missingHeaders: parsed.missingHeaders,
+        foundHeaders: parsed.foundHeaders,
+        templateName: tpl.name,
+      });
+    }
+
+    let created = 0;
+    let skipped = 0;
+    const errors: string[] = [];
+
+    for (const r of parsed.rows) {
+      try {
+        await svc.createProduct(req.orgId, {
+          name: r.name,
+          source: 'excel_import',
+          templateId: tpl ? row.id : null,
+          defaultRetailPrice: r.defaultRetailPrice ?? null,
+          defaultWholesalePrice: r.defaultWholesalePrice ?? null,
+        });
+        created++;
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        errors.push(`"${r.name}": ${msg}`);
+        skipped++;
+      }
+    }
+
+    return reply.send({
+      created,
+      skipped,
+      errors,
+      warnings: parsed.warnings,
+    });
   });
 }
