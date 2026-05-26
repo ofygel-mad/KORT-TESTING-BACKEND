@@ -1,6 +1,63 @@
+import type { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
 import { AppError, NotFoundError } from '../../lib/errors.js';
 import { addMovement } from '../warehouse/warehouse.service.js';
+
+// ── attributesJson helpers (P0 multi-business cleanup) ────────────────────────
+// ReturnItem no longer has per-attribute columns (size/color/gender). The
+// canonical source for those values is the linked OrderItem.attributesJson.
+// Frontend callers still expect `size`, `color`, `gender` on ReturnItem rows,
+// so we hydrate them on the way out by batch-fetching the relevant OrderItems.
+
+function readAttrFromJson(value: Prisma.JsonValue | null | undefined, key: string): string | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const raw = (value as Record<string, unknown>)[key];
+  if (raw === undefined || raw === null) return null;
+  const str = String(raw).trim();
+  return str ? str : null;
+}
+
+async function loadAttributesByOrderItemId(
+  orderItemIds: Array<string | null | undefined>,
+): Promise<Map<string, Prisma.JsonValue | null>> {
+  const ids = Array.from(new Set(orderItemIds.filter((id): id is string => typeof id === 'string' && id.length > 0)));
+  if (ids.length === 0) return new Map();
+  const rows = await prisma.orderItem.findMany({
+    where: { id: { in: ids } },
+    select: { id: true, attributesJson: true },
+  });
+  return new Map(rows.map((row) => [row.id, row.attributesJson ?? null]));
+}
+
+type HydratableItem = { orderItemId: string | null };
+
+function hydrateItem<T extends HydratableItem>(
+  item: T,
+  attrsById: Map<string, Prisma.JsonValue | null>,
+): T & { size: string; color: string | null; gender: string | null } {
+  const attrs = item.orderItemId ? attrsById.get(item.orderItemId) ?? null : null;
+  return {
+    ...item,
+    size: readAttrFromJson(attrs, 'size') ?? '',
+    color: readAttrFromJson(attrs, 'color'),
+    gender: readAttrFromJson(attrs, 'gender'),
+  };
+}
+
+async function hydrateReturn<R extends { items: HydratableItem[] }>(ret: R) {
+  const attrsById = await loadAttributesByOrderItemId(ret.items.map((i) => i.orderItemId));
+  return { ...ret, items: ret.items.map((item) => hydrateItem(item, attrsById)) };
+}
+
+async function hydrateReturns<R extends { items: HydratableItem[] }>(rets: R[]) {
+  const attrsById = await loadAttributesByOrderItemId(
+    rets.flatMap((r) => r.items.map((i) => i.orderItemId)),
+  );
+  return rets.map((ret) => ({
+    ...ret,
+    items: ret.items.map((item) => hydrateItem(item, attrsById)),
+  }));
+}
 
 // ── Return number generation ──────────────────────────────────────────────────
 
@@ -51,9 +108,6 @@ const returnWithItems = {
       returnId: true,
       orderItemId: true,
       productName: true,
-      size: true,
-      color: true,
-      gender: true,
       qty: true,
       unitPrice: true,
       refundAmount: true,
@@ -70,7 +124,10 @@ const returnWithItems = {
 export interface CreateReturnItemDto {
   orderItemId?: string;
   productName: string;
-  size: string;
+  // P0: ReturnItem dropped size/color/gender columns. The wire-format DTO
+  // still accepts them for backward-compat with the frontend, but the values
+  // live on the linked OrderItem.attributesJson and are ignored here.
+  size?: string;
   color?: string;
   gender?: string;
   qty: number;
@@ -94,7 +151,7 @@ export async function list(
   orgId: string,
   filters: { orderId?: string; status?: string } = {},
 ) {
-  return prisma.return.findMany({
+  const rows = await prisma.return.findMany({
     where: {
       orgId,
       ...(filters.orderId ? { orderId: filters.orderId } : {}),
@@ -103,6 +160,7 @@ export async function list(
     select: returnWithItems,
     orderBy: { createdAt: 'desc' },
   });
+  return hydrateReturns(rows);
 }
 
 export async function getById(orgId: string, id: string) {
@@ -111,7 +169,7 @@ export async function getById(orgId: string, id: string) {
     select: returnWithItems,
   });
   if (!ret) throw new NotFoundError('Акт возврата не найден');
-  return ret;
+  return hydrateReturn(ret);
 }
 
 export async function create(
@@ -141,7 +199,7 @@ export async function create(
   const totalRefundAmount = dto.items.reduce((sum, i) => sum + i.refundAmount, 0);
   const returnNumber = await nextReturnNumber(orgId);
 
-  return prisma.return.create({
+  const created = await prisma.return.create({
     data: {
       orgId,
       returnNumber,
@@ -154,12 +212,12 @@ export async function create(
       totalRefundAmount,
       refundMethod: dto.refundMethod,
       items: {
+        // P0: per-attribute columns (size/color/gender) dropped from
+        // ReturnItem. Attribute values flow through the linked
+        // OrderItem.attributesJson; we don't persist them on the return row.
         create: dto.items.map((item) => ({
           orderItemId: item.orderItemId,
           productName: item.productName,
-          size: item.size,
-          color: item.color,
-          gender: item.gender,
           qty: item.qty,
           unitPrice: item.unitPrice,
           refundAmount: item.refundAmount,
@@ -170,6 +228,7 @@ export async function create(
     },
     select: returnWithItems,
   });
+  return await hydrateReturn(created);
 }
 
 export async function confirm(
@@ -306,8 +365,9 @@ export async function confirm(
   }
 
   // Return with warnings if there were warehouse errors
+  const hydratedUpdated = await hydrateReturn(updated);
   return {
-    ...updated,
+    ...hydratedUpdated,
     warnings: warehouseErrors.length > 0 ? {
       warehouseMovementsFailed: true,
       failedItems: warehouseErrors,
