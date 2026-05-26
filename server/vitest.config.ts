@@ -6,8 +6,11 @@ import { defineConfig } from 'vitest/config';
 // vitest.integration.config.ts. For the full union run `test:run`.
 export default defineConfig({
   test: {
-    globalSetup: ['./vitest.global-setup.ts'],
-    // Environment
+    // globalSetup intentionally NOT included — vitest.global-setup.ts runs
+    // `prisma migrate deploy`, which requires a live DATABASE_URL. Unit
+    // tests don't need a DB; loading global-setup here would break the
+    // Railway build container (no Postgres at build time). The integration
+    // config (vitest.integration.config.ts) loads it instead.
     environment: 'node',
     globals: true,
 
