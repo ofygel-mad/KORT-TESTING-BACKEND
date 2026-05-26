@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "prisma generate && npm run composition:manifest && node --max-old-space-size=4096 ./node_modules/typescript/bin/tsc",
+    "build": "prisma generate && npm run composition:manifest && npm run test:unit && node --max-old-space-size=4096 ./node_modules/typescript/bin/tsc",
     "composition:manifest": "tsx scripts/export-manifest.ts",
     "start": "prisma migrate deploy && node dist/index.js",
     "start:docker": "node scripts/start-docker.mjs",
@@ -19,7 +19,9 @@
     "db:status": "prisma migrate status",
     "db:report": "tsx scripts/db-report.ts",
     "test": "vitest",
-    "test:run": "vitest run",
+    "test:run": "vitest run --config vitest.config.ts && vitest run --config vitest.integration.config.ts",
+    "test:unit": "vitest run --config vitest.config.ts",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest watch"

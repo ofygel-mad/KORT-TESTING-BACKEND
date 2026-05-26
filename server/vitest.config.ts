@@ -1,5 +1,9 @@
 import { defineConfig } from 'vitest/config';
 
+// Default vitest config — unit-only. *.integration.test.ts files are
+// excluded here so the suite runs cleanly in CI/Railway build where no
+// test Postgres is available. For the integration-only suite see
+// vitest.integration.config.ts. For the full union run `test:run`.
 export default defineConfig({
   test: {
     globalSetup: ['./vitest.global-setup.ts'],
@@ -34,7 +38,16 @@ export default defineConfig({
 
     // Include/exclude patterns
     include: ['src/**/*.test.ts', 'src/**/*.spec.ts'],
-    exclude: ['node_modules', 'dist', '.idea', '.git', '.cache'],
+    exclude: [
+      'node_modules',
+      'dist',
+      '.idea',
+      '.git',
+      '.cache',
+      // Integration tests need a live Postgres reachable via DATABASE_URL.
+      // Run them via `npm run test:integration` (vitest.integration.config.ts).
+      '**/*.integration.test.ts',
+    ],
 
     // Timeout and concurrency
     testTimeout: 10000,
