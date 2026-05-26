@@ -1,0 +1,117 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel older runs on the same branch when a new push lands.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ───────────────────────────────────────────────────────────────
+  # Frontend — unit tests + typecheck + bundle smoke. No DB needed.
+  # Same gate Railway already enforces (npm run build), kept here as a
+  # cheap PR-time check so reviewers see green before merge.
+  # ───────────────────────────────────────────────────────────────
+  frontend:
+    name: Frontend (unit + tsc + build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies (root)
+        run: pnpm install --frozen-lockfile
+
+      - name: Build (tsc → npm test → vite build)
+        run: pnpm run build
+
+  # ───────────────────────────────────────────────────────────────
+  # Backend — unit + integration. Spins up Postgres 16 as a service
+  # so .integration.test.ts files can hit a real DB. This is exactly
+  # the set Railway build can't run (no Postgres in build container).
+  # ───────────────────────────────────────────────────────────────
+  backend:
+    name: Backend (unit + integration)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: server
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: kort
+          POSTGRES_PASSWORD: kort_secret
+          POSTGRES_DB: kort_db_test
+        ports:
+          - 5432:5432
+        # Wait until the container can accept connections before the job
+        # proceeds. Without this the migrate step races and fails.
+        options: >-
+          --health-cmd "pg_isready -U kort -d kort_db_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+    env:
+      # Mirrors server/.env.test so prisma + tests see the CI Postgres.
+      DATABASE_URL: postgresql://kort:kort_secret@localhost:5432/kort_db_test
+      NODE_ENV: test
+      JWT_ACCESS_SECRET: test-secret-access-32-chars-minimum
+      JWT_REFRESH_SECRET: test-secret-refresh-32-chars-minimum
+      JWT_ACCESS_TTL: 15m
+      JWT_REFRESH_TTL: 7d
+      CONSOLE_SERVICE_PASSWORD: test1234
+      HOST: 0.0.0.0
+      PORT: 8000
+      CORS_ORIGIN: http://localhost:5173
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: server/pnpm-lock.yaml
+
+      - name: Install dependencies (server)
+        run: pnpm install --frozen-lockfile
+
+      - name: Prisma client
+        run: pnpm exec prisma generate
+
+      - name: Apply migrations to CI Postgres
+        run: pnpm exec prisma migrate deploy
+
+      - name: Unit tests (gates Railway build too)
+        run: pnpm run test:unit
+
+      - name: Integration tests (real Postgres)
+        run: pnpm run test:integration
+
+      - name: Typecheck
+        run: pnpm exec tsc --noEmit
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192
