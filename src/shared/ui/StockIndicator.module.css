@@ -1,0 +1,49 @@
+/* ── StockIndicator ───────────────────────────────────────────────────── */
+.root {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 72px;
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.qty {
+  font-weight: 700;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.qty[data-tone="ok"]   { color: var(--ok, #138A5C); }
+.qty[data-tone="low"]  { color: var(--warn, #B7791F); }
+.qty[data-tone="zero"] { color: var(--bad, #C53030); }
+
+.reserved {
+  font-size: 11.5px;
+  color: var(--ink-3, var(--text-tertiary));
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Progress bar ── */
+.bar {
+  height: 3px;
+  border-radius: 99px;
+  background: var(--line-1, rgba(15,23,42,0.06));
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 320ms ease;
+}
+
+.fill[data-tone="ok"]   { background: var(--ok, #138A5C); }
+.fill[data-tone="low"]  { background: var(--warn, #B7791F); }
+.fill[data-tone="zero"] { background: var(--bad, #C53030); width: 100% !important; opacity: 0.3; }

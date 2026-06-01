@@ -13,12 +13,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useWarehouseItems } from '@/entities/warehouse/queries';
-import { getQtyAvailable, type WarehouseItem } from '@/entities/warehouse/types';
+import type { WarehouseItem } from '@/entities/warehouse/types';
 import { useActiveOrderTemplate } from '@/entities/order/templatesApi';
 import { getItemsSection, type OrderTemplateField } from '@/entities/order/templates';
 import { EmptyState } from '@/shared/ui/EmptyState';
 import { Skeleton } from '@/shared/ui/Skeleton';
-import { StatusChip, type ChipStatus } from '@/shared/ui/StatusChip';
+import { StockIndicator } from '@/shared/ui/StockIndicator';
 import { filterItemsByStatus } from './warehouseGrouping';
 import styles from './WarehouseSkuTable.module.css';
 
@@ -31,23 +31,13 @@ interface WarehouseSkuTableProps {
   verificationRequired?: boolean;
 }
 
-interface SkuStatusPresentation {
-  status: ChipStatus;
-  label: string;
-}
 
 const ITEMS_PER_PAGE = 25;
 const EM_DASH = '—';
-const LABEL_RESERVE = 'Резерв';
-const LABEL_EMPTY = 'Нет';
-const LABEL_IN_STOCK = 'В наличии';
 const EMPTY_TITLE = 'Нет товаров';
 const EMPTY_DESCRIPTION = 'Попробуйте изменить фильтры или выполнить поиск.';
 const HEADING_PRODUCT = 'Товар';
-const HEADING_ON_HAND = 'В наличии';
-const HEADING_RESERVED = 'Резерв';
-const HEADING_AVAILABLE = 'Доступно';
-const HEADING_STATUS = 'Статус';
+const HEADING_STOCK = 'На складе';
 const GENDER_LABEL_MALE = 'Мужской';
 const GENDER_LABEL_FEMALE = 'Женский';
 const PAGINATION_PREV = 'Пред.';
@@ -80,20 +70,6 @@ const formatGenderLabel = (raw: string): string => {
   if (value === 'male' || value === 'муж' || value === 'мужской') return GENDER_LABEL_MALE;
   if (value === 'female' || value === 'жен' || value === 'женский') return GENDER_LABEL_FEMALE;
   return raw || EM_DASH;
-};
-
-const getSkuStatusPresentation = (item: WarehouseItem): SkuStatusPresentation => {
-  const available = getQtyAvailable(item);
-
-  if (available === 0 && item.qtyReserved > 0) {
-    return { status: 'warn', label: LABEL_RESERVE };
-  }
-
-  if (available === 0) {
-    return { status: 'err', label: LABEL_EMPTY };
-  }
-
-  return { status: 'ok', label: LABEL_IN_STOCK };
 };
 
 const sortSkuItems = (items: WarehouseItem[], axisKeys: string[]) =>
@@ -196,49 +172,38 @@ export const WarehouseSkuTable: React.FC<WarehouseSkuTableProps> = ({
               {axisColumns.map((col) => (
                 <th key={col.key} className={styles.thCol}>{col.label}</th>
               ))}
-              <th className={`${styles.thCol} ${styles.thNumeric}`}>{HEADING_ON_HAND}</th>
-              <th className={`${styles.thCol} ${styles.thNumeric}`}>{HEADING_RESERVED}</th>
-              <th className={`${styles.thCol} ${styles.thNumeric}`}>{HEADING_AVAILABLE}</th>
-              <th className={styles.thCol}>{HEADING_STATUS}</th>
+              <th className={styles.thCol}>{HEADING_STOCK}</th>
             </tr>
           </thead>
           <tbody>
-            {paginatedItems.map((item) => {
-              const available = getQtyAvailable(item);
-              const chip = getSkuStatusPresentation(item);
-
-              return (
-                <tr
-                  key={item.id}
-                  className={styles.row}
-                  onClick={() => onSelectItem(item.id)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault();
-                      onSelectItem(item.id);
-                    }
-                  }}
-                  tabIndex={0}
-                >
-                  <td className={`${styles.col} ${styles.nameCol}`}>{item.name}</td>
-                  {axisColumns.map((col) => {
-                    const raw = getAttributeValue(item, col.key);
-                    const display = col.key === 'gender' && raw !== EM_DASH
-                      ? formatGenderLabel(raw)
-                      : raw;
-                    return (
-                      <td key={col.key} className={styles.col}>{display}</td>
-                    );
-                  })}
-                  <td className={`${styles.col} ${styles.numeric}`}>{item.qty}</td>
-                  <td className={`${styles.col} ${styles.numeric}`}>{item.qtyReserved}</td>
-                  <td className={`${styles.col} ${styles.numeric}`}>{available}</td>
-                  <td className={styles.col}>
-                    <StatusChip status={chip.status} label={chip.label} size="sm" />
-                  </td>
-                </tr>
-              );
-            })}
+            {paginatedItems.map((item) => (
+              <tr
+                key={item.id}
+                className={styles.row}
+                onClick={() => onSelectItem(item.id)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    onSelectItem(item.id);
+                  }
+                }}
+                tabIndex={0}
+              >
+                <td className={`${styles.col} ${styles.nameCol}`}>{item.name}</td>
+                {axisColumns.map((col) => {
+                  const raw = getAttributeValue(item, col.key);
+                  const display = col.key === 'gender' && raw !== EM_DASH
+                    ? formatGenderLabel(raw)
+                    : raw;
+                  return (
+                    <td key={col.key} className={styles.col}>{display}</td>
+                  );
+                })}
+                <td className={styles.col}>
+                  <StockIndicator qty={item.qty} reserved={item.qtyReserved} />
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

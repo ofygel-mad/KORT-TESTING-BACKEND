@@ -6,7 +6,6 @@
 import { useNewOrderFormState } from './new-order/useNewOrderFormState';
 import { NewOrderFormProvider } from './new-order/NewOrderFormContext';
 import { NEW_ORDER_BLOCKS } from './new-order/registry';
-import { TemplatePicker } from './new-order/TemplatePicker';
 import { applyNewOrderConfig } from '@/shared/composition/applyNewOrderConfig';
 import { useTenantConfig } from '@/shared/composition/useTenantConfig';
 import styles from './NewOrderPage.module.css';
@@ -30,12 +29,7 @@ export default function NewOrderPage() {
     <div className={styles.root}>
       <div className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>{isWholesale ? 'Новый оптовый заказ' : 'Новый заказ'}</h1>
-        <div className={styles.pageHeaderRight}>
-          <TemplatePicker
-            selectedTemplateId={selectedTemplateId}
-            onSelect={setSelectedTemplateId}
-          />
-        </div>
+        <div className={styles.pageHeaderRight} />
       </div>
 
       {draftRestored && (

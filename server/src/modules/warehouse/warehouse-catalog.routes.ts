@@ -73,11 +73,57 @@ export async function warehouseCatalogRoutes(app: FastifyInstance) {
     return svc.deleteProduct(id);
   });
 
-  // NOTE: P0 removed WarehouseFieldDefinition/Option/ProductField CRUD endpoints.
-  // Field metadata now lives on OrderTemplate.sections and will get its own
-  // endpoints in P4. The legacy routes (/catalog/definitions/*, /catalog/products/:id/fields,
-  // /catalog/seed-defaults, /catalog/import/field-options/:code, /catalog/smart-import/colors)
-  // were removed to keep the surface area honest.
+  // ── P4: Catalog Field Definitions (virtual layer over OrderTemplate.sections) ─
+
+  app.get('/catalog/definitions', auth, async (req) => {
+    return svc.listFieldDefinitions(req.orgId);
+  });
+
+  app.post('/catalog/definitions', auth, async (req, reply) => {
+    const body = z.object({
+      code: z.string().min(1),
+      label: z.string().min(1),
+      inputType: z.string().default('text'),
+      isVariantAxis: z.boolean().optional(),
+      affectsAvailability: z.boolean().optional(),
+      showInWarehouseForm: z.boolean().optional(),
+      showInOrderForm: z.boolean().optional(),
+      sortOrder: z.number().int().optional(),
+    }).parse(req.body);
+    const def = await svc.createFieldDefinition(req.orgId, body);
+    return reply.status(201).send(def);
+  });
+
+  app.patch('/catalog/definitions/:id', auth, async (req) => {
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    const body = z.object({
+      label: z.string().min(1).optional(),
+      affectsAvailability: z.boolean().optional(),
+      isVariantAxis: z.boolean().optional(),
+      inputType: z.string().optional(),
+    }).parse(req.body);
+    return svc.updateFieldDefinition(req.orgId, id, body);
+  });
+
+  app.delete('/catalog/definitions/:id', auth, async (req) => {
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    return svc.deleteFieldDefinition(req.orgId, id);
+  });
+
+  app.post('/catalog/definitions/:defId/options', auth, async (req, reply) => {
+    const { defId } = z.object({ defId: z.string() }).parse(req.params);
+    const body = z.object({
+      value: z.string().min(1),
+      label: z.string().optional(),
+    }).parse(req.body);
+    const opt = await svc.addFieldOption(req.orgId, defId, body.value, body.label ?? body.value);
+    return reply.status(201).send(opt);
+  });
+
+  app.delete('/catalog/definitions/:defId/options/:optId', auth, async (req) => {
+    const { defId, optId } = z.object({ defId: z.string(), optId: z.string() }).parse(req.params);
+    return svc.deleteFieldOption(req.orgId, defId, optId);
+  });
 
   app.get('/catalog/products/:productId/photos', auth, async (req) => {
     const { productId } = z.object({ productId: z.string() }).parse(req.params);

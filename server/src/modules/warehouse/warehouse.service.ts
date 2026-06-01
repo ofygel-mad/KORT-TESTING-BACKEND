@@ -1828,17 +1828,28 @@ export async function checkVariantAvailability(
       });
 
       if (catalogVariants.length > 0) {
-        const balance = await prisma.warehouseStockBalance.aggregate({
-          where: {
-            orgId,
-            variantId: { in: catalogVariants.map((cv) => cv.id) },
-            stockStatus: 'available',
-          },
-          _sum: { qtyAvailable: true },
-        });
+        const [balance, legacyItem] = await Promise.all([
+          prisma.warehouseStockBalance.aggregate({
+            where: {
+              orgId,
+              variantId: { in: catalogVariants.map((cv) => cv.id) },
+              stockStatus: 'available',
+            },
+            _sum: { qtyAvailable: true },
+          }),
+          // Check the legacy WarehouseItem for qtyMin threshold (low-stock indicator)
+          prisma.warehouseItem.findFirst({
+            where: { orgId, variantKey },
+            select: { qtyMin: true },
+          }),
+        ]);
 
         const totalAvailable = balance._sum.qtyAvailable ?? 0;
-        const status: VariantAvailabilityStatus = totalAvailable === 0 ? 'none' : 'ok';
+        const qtyMin = legacyItem?.qtyMin ?? 0;
+        const status: VariantAvailabilityStatus =
+          totalAvailable === 0 ? 'none'
+          : qtyMin > 0 && totalAvailable <= qtyMin ? 'low'
+          : 'ok';
 
         result[variantKey] = {
           qty: totalAvailable,

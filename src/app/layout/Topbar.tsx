@@ -190,6 +190,13 @@ function useDynamicCrumb(enabled: boolean): { parent: string; parentPath: string
   return null;
 }
 
+const ROLE_LABELS: Record<string, string> = {
+  owner:   'Владелец',
+  admin:   'Администратор',
+  manager: 'Менеджер',
+  viewer:  'Наблюдатель',
+};
+
 const BREADCRUMBS: Record<string, string> = {
   '/': 'Главная',
   // CRM
@@ -265,7 +272,8 @@ export function Topbar({ chromeTone = 'dark' }: { chromeTone?: 'canvas' | 'dark'
   const navigate = useNavigate();
   const { toggle } = useCommandPalette();
   const user = useAuthStore((state) => state.user);
-  const hasCompanyAccess = useAuthStore((state) => state.membership.status === 'active');
+  const membership = useAuthStore((state) => state.membership);
+  const hasCompanyAccess = membership.status === 'active';
   const isMobile = useIsMobile();
   const { locale, setLocale } = useT();
   const dynamic = useDynamicCrumb(hasCompanyAccess);
@@ -309,6 +317,12 @@ export function Topbar({ chromeTone = 'dark' }: { chromeTone?: 'canvas' | 'dark'
     .join('')
     .toUpperCase();
 
+  const nameParts = (user?.full_name ?? '').split(' ').filter(Boolean);
+  const shortName = nameParts.length >= 2
+    ? `${nameParts[0]} ${nameParts[1][0]}.`
+    : (nameParts[0] ?? '');
+  const roleLabel = ROLE_LABELS[membership.role ?? ''] ?? '';
+
   const computedStatus = getComputedOnlineStatus(lastActivityAt, onlineStatus);
   const currentStatus = ONLINE_STATUSES.find((s) => s.key === computedStatus);
 
@@ -349,13 +363,15 @@ export function Topbar({ chromeTone = 'dark' }: { chromeTone?: 'canvas' | 'dark'
         )}
       </div>
 
-      <div className={styles.right}>
-        <button className={styles.searchBtn} onClick={toggle} aria-label="Поиск">
-          <Search size={14} />
-          {!isMobile && <span>Поиск</span>}
+      <div className={styles.center}>
+        <button className={styles.centerSearch} onClick={toggle} aria-label="Поиск (⌘K)">
+          <Search size={14} className={styles.centerSearchIcon} />
+          {!isMobile && <span className={styles.centerSearchPlaceholder}>Поиск по системе…</span>}
           {!isMobile && <kbd className={styles.searchKbd}>⌘K</kbd>}
         </button>
+      </div>
 
+      <div className={styles.right}>
         <NotificationBell enabled={hasCompanyAccess} />
 
         <ThemeSwitcher />
@@ -383,11 +399,17 @@ export function Topbar({ chromeTone = 'dark' }: { chromeTone?: 'canvas' | 'dark'
           onMouseLeave={handleProfileMouseLeave}
         >
           <button
-            className={styles.avatarBtn}
+            className={styles.userChip}
             onClick={() => navigate('/settings/profile')}
             aria-label="Профиль"
           >
-            {initials}
+            {!isMobile && shortName && (
+              <span className={styles.userChipInfo}>
+                <span className={styles.userChipName}>{shortName}</span>
+                {roleLabel && <span className={styles.userChipRole}>{roleLabel}</span>}
+              </span>
+            )}
+            <span className={styles.avatarCircle}>{initials}</span>
           </button>
 
           <AnimatePresence>

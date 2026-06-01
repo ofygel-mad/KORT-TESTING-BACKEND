@@ -1,6 +1,8 @@
 import { memo, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Archive as ArchiveIcon, AlertTriangle, Bell, Check, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, FlaskConical, LayoutGrid, Layers, List, Package, Plus, Search, SlidersHorizontal, Star, Store, Trash2, User, X, XCircle } from 'lucide-react';
+import { OrderPipeline } from '@/shared/ui/OrderPipeline';
+import { PayProgress } from '@/shared/ui/PayProgress';
 import { useCreateOrder, useOrders, useOrderWarehouseStates, useOrgManagers } from '@/entities/order/queries';
 import { toast } from 'sonner';
 import type { Order, OrderStatus, OrderWarehouseState } from '@/entities/order/types';
@@ -542,21 +544,7 @@ const setViewMode = (mode: ViewMode) => {
             className={styles.alertsBtn}
             onClick={() => setShowAlertsPanel(!showAlertsPanel)}
             title={alerts.length > 0 ? `${alerts.length} неоплаченных заказов` : 'Нет активных алертов'}
-            style={{
-              position: 'relative',
-              padding: '6px 10px',
-              borderRadius: '8px',
-              background: alerts.length > 0 ? 'rgba(217, 79, 79, 0.1)' : 'transparent',
-              border: alerts.length > 0 ? '1px solid rgba(217, 79, 79, 0.25)' : '1px solid transparent',
-              color: alerts.length > 0 ? '#D94F4F' : 'var(--text-secondary)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontSize: '12px',
-              fontWeight: 500,
-              transition: 'all 140ms',
-            }}
+            data-active={alerts.length > 0 || undefined}
           >
             <Bell size={13} />
             {alerts.length > 0 && <span>{alerts.length}</span>}
@@ -1160,6 +1148,13 @@ const OrderRow = memo(function OrderRow({ order, onSelectOrder, hasAlert, stockM
   const isUrgent = (order.urgency ?? order.priority) === 'urgent';
   const isDemanding = order.isDemandingClient ?? (order.priority === 'vip');
   const warehouseBadge = getWarehouseBadge(warehouseState);
+  const financials = calculateOrderFinancials({
+    itemsSubtotal: order.totalAmount,
+    orderDiscount: order.orderDiscount,
+    deliveryFee: order.deliveryFee,
+    bankCommissionPercent: order.bankCommissionPercent,
+    bankCommissionAmount: order.bankCommissionAmount,
+  });
 
   return (
     <div
@@ -1188,14 +1183,16 @@ const OrderRow = memo(function OrderRow({ order, onSelectOrder, hasAlert, stockM
         )}
       </div>
       <div className={styles.rowNum}>
-        <span className={styles.rowOrderNum}>#{order.orderNumber}</span>
-        <span className={styles.statusBadge}>{STATUS_LABEL[order.status]}</span>
-        {isUrgent && (
-          <span className={`${styles.priorityBadge} ${styles.urgent}`}><AlertTriangle size={9} /> {URGENCY_LABEL['urgent']}</span>
-        )}
-        {isDemanding && (
-          <span className={`${styles.priorityBadge} ${styles.vip}`}><Star size={9} /> {DEMANDING_LABEL}</span>
-        )}
+        <div className={styles.rowNumTop}>
+          <span className={styles.rowOrderNum}>#{order.orderNumber}</span>
+          {isUrgent && (
+            <span className={`${styles.priorityBadge} ${styles.urgent}`}><AlertTriangle size={9} /> {URGENCY_LABEL['urgent']}</span>
+          )}
+          {isDemanding && (
+            <span className={`${styles.priorityBadge} ${styles.vip}`}><Star size={9} /> {DEMANDING_LABEL}</span>
+          )}
+        </div>
+        <OrderPipeline status={order.status} className={styles.rowPipeline} />
         {stockInfo !== undefined && (
           <span className={stockInfo.status === 'none' ? styles.stockPillOut : styles.stockPillIn}>
             {stockInfo.status === 'none' ? 'нет на складе' : `склад: ${stockInfo.available} шт.`}
@@ -1215,16 +1212,8 @@ const OrderRow = memo(function OrderRow({ order, onSelectOrder, hasAlert, stockM
         )}
       </div>
       <div className={styles.rowFin}>
-        <span className={styles.cardAmount}>{fmt(calculateOrderFinancials({
-          itemsSubtotal: order.totalAmount,
-          orderDiscount: order.orderDiscount,
-          deliveryFee: order.deliveryFee,
-          bankCommissionPercent: order.bankCommissionPercent,
-          bankCommissionAmount: order.bankCommissionAmount,
-        }).totalDue)}</span>
-        <span className={styles.cardPay} style={{ color: PAY_COLOR[order.paymentStatus] }}>
-          {PAY_LABEL[order.paymentStatus]}
-        </span>
+        <span className={styles.cardAmount}>{fmt(financials.totalDue)}</span>
+        <PayProgress paid={order.paidAmount} total={financials.totalDue} />
       </div>
       <div className={styles.rowDate}>
         <div className={styles.rowDateInner}>

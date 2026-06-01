@@ -1,0 +1,41 @@
+/* ── PayProgress ─────────────────────────────────────────────────────── */
+.root {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 80px;
+}
+
+.bar {
+  height: 3px;
+  border-radius: 99px;
+  background: var(--line-1, rgba(15,23,42,0.06));
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 320ms ease;
+}
+
+.fill[data-tone="ok"]   { background: var(--ok, #138A5C); }
+.fill[data-tone="warn"] { background: var(--warn, #B7791F); }
+.fill[data-tone="bad"]  { background: var(--bad, #C53030); width: 4px !important; }
+
+.label {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.label[data-tone="ok"]   { color: var(--ok, #138A5C); }
+.label[data-tone="warn"] { color: var(--warn, #B7791F); }
+.label[data-tone="bad"]  { color: var(--bad, #C53030); }
+
+.sub {
+  font-size: 10.5px;
+  color: var(--ink-3, var(--text-tertiary));
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

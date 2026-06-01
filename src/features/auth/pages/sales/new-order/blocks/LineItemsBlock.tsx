@@ -26,6 +26,7 @@ import { AlertCircle, Calculator, ImagePlus, Plus, Trash2, X } from 'lucide-reac
 import { SearchableSelect } from '@/shared/ui/SearchableSelect';
 import { buildVariantLookupKey } from '@/shared/utils/variantAvailability';
 import { TemplateAttributeRenderer } from '@/shared/ui/TemplateAttributeRenderer';
+import { LiveStockPill } from '@/shared/ui/LiveStockPill';
 import { useNewOrderForm } from '../NewOrderFormContext';
 import { createEmptyItem } from '../formModel';
 import { parseOptionalAmount, parseOptionalInteger } from '../formHelpers';
@@ -543,31 +544,22 @@ export function LineItemsBlock() {
                 </div>
 
                 {_item?.productName?.trim() && (
-                  isCommodity ? (
-                    productStock ? (
-                      productStock.available ? (
-                        <div className={styles.variantStockIn}>Остаток: {productStock.qty} шт.</div>
-                      ) : (
-                        <div className={styles.variantStockOut}>Нет на складе</div>
-                      )
-                    ) : stockMap !== undefined ? (
-                      <div className={styles.variantStockHint}>Нет данных по складу</div>
-                    ) : null
-                  ) : !allAxesFilled ? (
-                    <div className={styles.variantStockHint}>
-                      Заполните параметры ({missingAxes.map(f => f.label.toLowerCase()).join(', ')}) для проверки остатка
-                    </div>
-                  ) : variantStock ? (
-                    variantStock.available > 0 ? (
-                      <div className={variantStock.status === 'low' ? styles.variantStockLow : styles.variantStockIn}>
-                        Остаток: {variantStock.available} шт.{variantStock.status === 'low' ? ' — мало' : ''}
-                      </div>
-                    ) : (
-                      <div className={styles.variantStockOut}>Нет на складе</div>
-                    )
-                  ) : variantMap !== undefined ? (
-                    <div className={styles.variantStockHint}>Нет данных по складу</div>
-                  ) : null
+                  <LiveStockPill
+                    product={catalogProductByName[_item.productName.trim()] ?? null}
+                    attrs={availabilityInput?.attributes ?? {}}
+                    availability={
+                      variantStock
+                        ? variantStock
+                        : isCommodity && productStock
+                          ? {
+                              qty: productStock.qty,
+                              available: productStock.qty,
+                              status: productStock.available ? (productStock.qty <= 2 ? 'low' : 'ok') : 'none',
+                              itemName: productStock.itemName,
+                            }
+                          : null
+                    }
+                  />
                 )}
 
                 {linePrice > 0 && (

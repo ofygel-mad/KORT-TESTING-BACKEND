@@ -362,3 +362,71 @@
     18px 0 60px -18px rgba(16,24,40,0.10),
     0 0 0 1px color-mix(in srgb, var(--fill-accent) 6%, transparent);
 }
+
+/* ── Dark chrome (default) ───────────────────────────────────────── */
+.sidebar[data-chrome="dark"] {
+  background: #0E1320;
+  border-right-color: rgba(255,255,255,0.06);
+}
+
+.sidebar[data-chrome="dark"]::before {
+  background: none;
+}
+
+.sidebar[data-chrome="dark"]:hover {
+  box-shadow: 18px 0 60px -18px rgba(0,0,0,0.4);
+}
+
+.sidebar[data-chrome="dark"] .logo {
+  border-bottom-color: rgba(255,255,255,0.06);
+}
+
+.sidebar[data-chrome="dark"] .navGroupLabel {
+  color: rgba(154,167,191,0.72);
+}
+
+.sidebar[data-chrome="dark"] .navItem,
+.sidebar[data-chrome="dark"] .logoutBtn {
+  color: rgba(186,196,217,0.88);
+}
+
+.sidebar[data-chrome="dark"] .navIcon,
+.sidebar[data-chrome="dark"] .logoutBtn .navIcon {
+  color: rgba(154,167,191,0.72);
+}
+
+.sidebar[data-chrome="dark"] .navItem:hover,
+.sidebar[data-chrome="dark"] .logoutBtn:hover {
+  background: rgba(255,255,255,0.05);
+  color: #ffffff;
+}
+
+.sidebar[data-chrome="dark"] .navItem:hover .navIcon {
+  color: #ffffff;
+}
+
+.sidebar[data-chrome="dark"] .navItemActive {
+  background: rgba(47,111,229,0.18);
+  color: #ffffff;
+  border-left: 2px solid var(--accent, #2F6FE5);
+  padding-left: 12px;
+  box-shadow: none;
+}
+
+.sidebar[data-chrome="dark"] .navItemActive .navIcon {
+  color: #ffffff;
+  opacity: 1;
+}
+
+.sidebar[data-chrome="dark"] .navDivider {
+  background: rgba(255,255,255,0.06);
+}
+
+.sidebar[data-chrome="dark"] .bottom {
+  border-top-color: rgba(255,255,255,0.06);
+}
+
+.sidebar[data-chrome="dark"] .logoutBtn:hover {
+  background: rgba(239,68,68,0.12);
+  color: rgba(255,200,200,0.96);
+}

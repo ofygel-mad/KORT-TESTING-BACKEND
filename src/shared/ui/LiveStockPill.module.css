@@ -1,0 +1,45 @@
+/* ── LiveStockPill ───────────────────────────────────────────────────── */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.pill[data-tone="grey"] {
+  background: var(--line-1, rgba(15,23,42,0.06));
+  color: var(--ink-3, var(--text-tertiary));
+}
+
+.pill[data-tone="ok"] {
+  background: color-mix(in srgb, var(--ok, #138A5C) 10%, transparent);
+  color: var(--ok, #138A5C);
+}
+
+.pill[data-tone="low"] {
+  background: color-mix(in srgb, var(--warn, #B7791F) 10%, transparent);
+  color: var(--warn, #B7791F);
+}
+
+.pill[data-tone="zero"] {
+  background: color-mix(in srgb, var(--bad, #C53030) 10%, transparent);
+  color: var(--bad, #C53030);
+}
+
+.dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dot[data-tone="ok"]   { background: var(--ok, #138A5C); }
+.dot[data-tone="low"]  { background: var(--warn, #B7791F); }
+.dot[data-tone="zero"] { background: var(--bad, #C53030); }

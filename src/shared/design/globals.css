@@ -70,12 +70,12 @@
   --text-placeholder: #98A2B3;
   --text-inverse:     #FFFFFF;
   --text-on-accent:   #FFFFFF;
-  --text-accent:      #4A8BD4;
+  --text-accent:      #2F6FE5;
 
   --border-subtle:  #D0D5DD;
   --border-default: #B8C2D1;
   --border-strong:  #98A2B3;
-  --border-focus:   #4A8BD4;
+  --border-focus:   #2F6FE5;
 
   /* --ch-* legacy aliases used by OrdersPage / OrderDetailPage / Kaspi
      pages / TemplatePicker. These tokens were previously undeclared, so
@@ -102,11 +102,11 @@
   --bg-tint-subtle:  var(--bg-surface-inset);
   --text-tint:       var(--fill-accent, #4A8BD4);
 
-  /* Light theme: KORT blue accent */
-  --fill-accent:          #4A8BD4;
-  --fill-accent-soft:     rgba(74,139,212,0.14);
-  --fill-accent-subtle:   rgba(74,139,212,0.08);
-  --fill-accent-gradient: linear-gradient(135deg, #5B9BD5 0%, #4A8BD4 55%, #2E6AB5 100%);
+  /* Light theme: KORT blue accent (v2: #2F6FE5) */
+  --fill-accent:          #2F6FE5;
+  --fill-accent-soft:     rgba(47,111,229,0.14);
+  --fill-accent-subtle:   rgba(47,111,229,0.08);
+  --fill-accent-gradient: linear-gradient(135deg, #4F8AED 0%, #2F6FE5 55%, #245CC4 100%);
 
   --fill-positive:      var(--p-success-500);
   --fill-positive-soft: rgba(16,185,129,0.16);
@@ -130,8 +130,8 @@
   --shadow-md:     0 8px 20px -8px rgba(16,24,40,0.18);
   --shadow-lg:     0 18px 40px -16px rgba(16,24,40,0.22);
   --shadow-xl:     0 28px 54px -20px rgba(16,24,40,0.24);
-  --shadow-focus:  0 0 0 3px rgba(74,139,212,0.18);
-  --shadow-accent: 0 8px 22px rgba(74,139,212,0.22);
+  --shadow-focus:  0 0 0 3px rgba(47,111,229,0.18);
+  --shadow-accent: 0 8px 22px rgba(47,111,229,0.22);
   --space-page-x: 28px;
   --space-page-y: 24px;
   --space-page-max: 1160px;
@@ -229,6 +229,36 @@
   /* visualViewport-aware fallbacks (synced from useViewportProfile) */
   --vvh: 100vh;
   --vk-bottom: 0px;
+
+  /* ── v2 handoff aliases ── map new names to existing semantic tokens */
+  --bg-app:    var(--bg-canvas);
+  --bg-sunken: var(--bg-surface-inset);
+  --ink-1: var(--text-primary);
+  --ink-2: var(--text-secondary);
+  --ink-3: var(--text-tertiary);
+  --ink-4: var(--text-placeholder);
+  --ink-on-accent: var(--text-on-accent);
+  --line-1: rgba(15,23,42,0.06);
+  --line-2: rgba(15,23,42,0.10);
+  --line-3: rgba(15,23,42,0.16);
+  --accent:     var(--fill-accent);
+  --accent-600: #245CC4;
+  --accent-50:  #EEF3FE;
+  --accent-100: #DCE6FC;
+  --ok:         #138A5C;
+  --ok-soft:    #E5F4ED;
+  --warn:       #B7791F;
+  --warn-soft:  #FBF1DE;
+  --bad:        #C53030;
+  --bad-soft:   #FBE9E9;
+  --shadow-1: 0 1px 2px rgba(15,23,42,0.04);
+  --shadow-2: 0 4px 16px -8px rgba(15,23,42,0.10), 0 1px 2px rgba(15,23,42,0.04);
+  --shadow-3: 0 16px 40px -16px rgba(15,23,42,0.18), 0 2px 6px rgba(15,23,42,0.06);
+  --r-xs: 4px; --r-sm: 6px; --r-md: 8px;
+  --r-lg: 12px; --r-xl: 16px; --r-pill: 999px;
+  --rail-w: 56px; --rail-w-open: 232px; --topbar-h: 56px;
+  --t-11: 11px; --t-12: 12px; --t-13: 13px; --t-14: 14px;
+  --t-15: 15px; --t-17: 17px; --t-20: 20px; --t-24: 24px;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════

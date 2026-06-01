@@ -576,6 +576,544 @@
   border: 1px solid var(--border-subtle);
 }
 
+/* ── Page head (new, v2) ── */
+.pageHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--line-2, var(--border-subtle));
+  background: var(--bg-surface);
+  flex-shrink: 0;
+}
+
+.pageHeadLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.pageHeadIcon {
+  color: var(--fill-accent);
+  flex-shrink: 0;
+}
+
+.pageHeadTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.pageHeadActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+/* ── Segmented control ── */
+.segControl {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--bg-surface-inset);
+  border: 1px solid var(--line-2, var(--border-subtle));
+}
+
+.segBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 120ms, color 120ms;
+  white-space: nowrap;
+}
+
+.segBtn:hover {
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--bg-hover) 60%, transparent);
+}
+
+.segBtnActive {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-xs, 0 1px 3px rgba(15,23,42,0.08));
+}
+
+/* ── Cat layout (products mode) ── */
+.catLayout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 272px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.catMain {
+  overflow-y: auto;
+  padding: 20px 24px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-right: 1px solid var(--line-2, var(--border-subtle));
+}
+
+/* ── Catalog side panel ── */
+.sidePanel {
+  width: 272px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: var(--bg-surface);
+}
+
+.sidePanelEmpty {
+  padding: 24px 0;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  text-align: center;
+}
+
+.sidePanelSection {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line-1, var(--border-subtle));
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidePanelSection:last-of-type {
+  border-bottom: none;
+}
+
+.sidePanelLabel {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: 4px;
+}
+
+.sidePanelTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.sidePanelDesc {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  line-height: 1.5;
+}
+
+.sidePanelFieldList {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.sidePanelField {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  background: var(--bg-surface-inset);
+}
+
+.sidePanelFieldName {
+  font-size: 12px;
+  color: var(--text-primary);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidePanelFieldAxis {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--fill-accent) 10%, transparent);
+  color: var(--fill-accent);
+  flex-shrink: 0;
+}
+
+.sidePanelFieldType {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 6px;
+  background: var(--bg-canvas);
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.sidePanelFooter {
+  margin-top: auto;
+  padding-top: 12px;
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+/* ── Toolbar v2 (search only) ── */
+.toolbarCount {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+/* ── CatalogTemplateSettings ── */
+.tplSettings {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.tplList {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--line-2, var(--border-subtle));
+  overflow: hidden;
+}
+
+.tplListHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
+
+.tplListCount {
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: var(--bg-canvas);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-tertiary);
+}
+
+.tplListItems {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tplListItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: left;
+  transition: background 120ms, color 120ms;
+  width: 100%;
+}
+
+.tplListItem:hover {
+  background: var(--bg-canvas);
+  color: var(--text-primary);
+}
+
+.tplListItemActive {
+  background: color-mix(in srgb, var(--fill-accent) 8%, var(--bg-surface));
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.tplListItemLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tplListItemAxis {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--fill-accent) 10%, transparent);
+  color: var(--fill-accent);
+  flex-shrink: 0;
+}
+
+.tplAddRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 8px 10px;
+  border-top: 1px solid var(--line-1, var(--border-subtle));
+  flex-shrink: 0;
+}
+
+.tplInput {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border-radius: 7px;
+  border: 1px solid var(--line-2, var(--border-subtle));
+  background: var(--bg-surface-inset);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 12px;
+  outline: none;
+  transition: border-color 120ms;
+}
+
+.tplInput:focus {
+  border-color: var(--fill-accent);
+}
+
+.tplInputMono {
+  font-family: var(--font-mono);
+}
+
+.mismatchBody {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.tplAddBtn {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 7px;
+  border: none;
+  background: var(--fill-accent);
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 120ms;
+}
+
+.tplAddBtn:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+.tplAddBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.tplEditor {
+  overflow-y: auto;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tplEditorHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.tplEditorTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.tplEditorCode {
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+
+.tplDeleteBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 120ms, background 120ms;
+  flex-shrink: 0;
+}
+
+.tplDeleteBtn:hover {
+  color: var(--fill-negative);
+  background: color-mix(in srgb, var(--fill-negative) 8%, transparent);
+}
+
+.tplEditorRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--bg-surface-inset);
+  border: 1px solid var(--line-2, var(--border-subtle));
+}
+
+.tplToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: color 120ms;
+}
+
+.tplToggle:hover {
+  color: var(--text-primary);
+}
+
+.tplToggleOn {
+  color: var(--fill-accent);
+}
+
+.tplToggleHint {
+  font-size: 11.5px;
+  color: var(--text-tertiary);
+  line-height: 1.4;
+}
+
+.tplOptionsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tplOptionsSectionHead {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.tplOptionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tplOptionItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: var(--bg-surface-inset);
+  border: 1px solid var(--line-1, transparent);
+}
+
+.tplOptionLabel {
+  font-size: 13px;
+  color: var(--text-primary);
+  flex: 1;
+  min-width: 0;
+}
+
+.tplOptionDelete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  border-radius: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 100ms, background 100ms;
+}
+
+.tplOptionDelete:hover {
+  color: var(--fill-negative);
+  background: color-mix(in srgb, var(--fill-negative) 8%, transparent);
+}
+
+.tplAddOptionRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tplEditorEmpty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--text-tertiary);
+  font-size: 13px;
+}
+
+.tplEditorEmptyIcon {
+  opacity: 0.2;
+}
+
 /* ── Lightbox ── */
 .lightboxBackdrop {
   position: fixed;

@@ -1,31 +1,19 @@
-// P1 multi-business — Каталог (Products) is now template-aware.
-//
-// Changes vs the old clothing-hardcoded page:
-//   - Header tabs let the manager switch вид деятельности (OrderTemplate).
-//   - Catalog rows are filtered server-side by the active templateId.
-//   - The legacy «Таблица цветов» section is gone; instead we render a generic
-//     «Опции полей» block walking `template.sections.items.fields` looking for
-//     select-typed fields with options.
-//   - Cross-imported CSS (../warehouse/WarehouseCatalog.module.css) is gone;
-//     all classes now live in ProductsPage.module.css.
-//   - Manual add opens a schema-driven drawer (AddCatalogItemDrawer) that
-//     attaches the active templateId + default retail/wholesale prices.
-//   - The legacy «Поля товара» tab and seeded color/size/etc. import were
-//     removed (the underlying server tables were dropped in P0).
-//
-// What stays in P2:
-//   - «Скачать шаблон Excel» button is rendered but disabled with a tooltip
-//     («Будет в P2») — wired up once the per-template template generator ships.
-
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   CheckCircle2, Plus, Trash2, ChevronDown, ChevronRight,
   Pencil, Check, X, Package, Image as ImageIcon, Boxes, Download,
+  LayoutGrid, Layers, Settings2, Tag, ToggleLeft, ToggleRight,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   useCatalogProducts,
+  useCatalogDefinitions,
+  useCreateDefinition,
+  useUpdateDefinition,
+  useDeleteDefinition,
+  useAddFieldOption,
+  useDeleteFieldOption,
   useDeleteProduct,
   useUpdateProduct,
   useProductPhotos,
@@ -34,7 +22,10 @@ import {
   warehouseKeys,
 } from '@/entities/warehouse/queries';
 import { productPhotosApi, warehouseCatalogApi } from '@/entities/warehouse/api';
-import type { WarehouseProductCatalog } from '@/entities/warehouse/types';
+import type {
+  WarehouseProductCatalog,
+  WarehouseFieldDefinition,
+} from '@/entities/warehouse/types';
 import { useOrderTemplates, useActiveOrderTemplate } from '@/entities/order/templatesApi';
 import type { OrderTemplate, OrderTemplateField } from '@/entities/order/templates';
 import { getItemsSection } from '@/entities/order/templates';
@@ -45,7 +36,6 @@ import { Drawer } from '@/shared/ui/Drawer';
 import { readApiErrorStatus, readApiErrorPayload, readApiErrorMessage } from '@/shared/api/errors';
 import { AddCatalogItemDrawer } from './AddCatalogItemDrawer';
 import styles from './ProductsPage.module.css';
-import { useRef } from 'react';
 
 // ── InlineEdit ─────────────────────────────────────────────────────────────────
 
@@ -209,44 +199,255 @@ function ProductRow({ product }: { product: WarehouseProductCatalog }) {
   );
 }
 
-// ── FieldOptionsBlock (generic: replaces hardcoded «Таблица цветов») ──────────
+// ── CatalogSidePanel ───────────────────────────────────────────────────────────
 
-function FieldOptionsBlock({ template }: { template: OrderTemplate }) {
-  const items = getItemsSection(template);
-  const selectFields = useMemo<OrderTemplateField[]>(
-    () => (items?.fields ?? []).filter((f) => f.type === 'select' && (f.options?.length ?? 0) > 0),
-    [items],
-  );
+function CatalogSidePanel({ template }: { template: OrderTemplate | undefined }) {
+  const items = template ? getItemsSection(template) : null;
+  const fields: OrderTemplateField[] = items?.fields ?? [];
+  const axisFields = fields.filter((f) => f.affectsAvailability);
+  const extraFields = fields.filter((f) => !f.affectsAvailability);
 
-  if (selectFields.length === 0) return null;
+  if (!template) {
+    return (
+      <aside className={styles.sidePanel}>
+        <div className={styles.sidePanelEmpty}>Выберите вид деятельности</div>
+      </aside>
+    );
+  }
 
   return (
-    <div className={styles.optionsBlock}>
-      <div className={styles.optionsTitle}>
-        Опции полей шаблона «{template.name}»
+    <aside className={styles.sidePanel}>
+      <div className={styles.sidePanelSection}>
+        <div className={styles.sidePanelLabel}>Вид деятельности</div>
+        <div className={styles.sidePanelTitle}>{template.name}</div>
       </div>
-      {selectFields.map((f) => (
-        <div key={f.id} className={styles.optionsGroup}>
-          <div className={styles.optionsGroupHeader}>
-            {f.label}
-            {f.affectsAvailability && (
-              <span style={{ marginLeft: 6, fontSize: 10, color: 'var(--fill-accent)' }} title="Влияет на остатки">
-                · ось остатка
-              </span>
-            )}
+
+      {axisFields.length > 0 && (
+        <div className={styles.sidePanelSection}>
+          <div className={styles.sidePanelLabel}>
+            <Tag size={10} /> Оси остатка ({axisFields.length})
           </div>
-          <div className={styles.optionsChipRow}>
-            {(f.options ?? []).map((opt) => (
-              <span key={opt} className={styles.optionChip}>{opt}</span>
+          <div className={styles.sidePanelFieldList}>
+            {axisFields.map((f) => (
+              <div key={f.id} className={styles.sidePanelField}>
+                <span className={styles.sidePanelFieldName}>{f.label}</span>
+                <span className={styles.sidePanelFieldAxis}>ось</span>
+              </div>
             ))}
           </div>
         </div>
-      ))}
+      )}
+
+      {extraFields.length > 0 && (
+        <div className={styles.sidePanelSection}>
+          <div className={styles.sidePanelLabel}>
+            <Layers size={10} /> Доп. поля ({extraFields.length})
+          </div>
+          <div className={styles.sidePanelFieldList}>
+            {extraFields.map((f) => (
+              <div key={f.id} className={styles.sidePanelField}>
+                <span className={styles.sidePanelFieldName}>{f.label}</span>
+                <span className={styles.sidePanelFieldType}>{f.type}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className={styles.sidePanelFooter}>
+        <span>{fields.length} полей · {axisFields.length} осей</span>
+      </div>
+    </aside>
+  );
+}
+
+// ── CatalogTemplateSettings ────────────────────────────────────────────────────
+
+function CatalogTemplateSettings() {
+  const { data: defs = [], isLoading } = useCatalogDefinitions();
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const createDef = useCreateDefinition();
+  const updateDef = useUpdateDefinition();
+  const deleteDef = useDeleteDefinition();
+  const addOption = useAddFieldOption();
+  const deleteOption = useDeleteFieldOption();
+  const [newLabel, setNewLabel] = useState('');
+  const [newCode, setNewCode] = useState('');
+  const [newOptionValue, setNewOptionValue] = useState('');
+
+  const selected = defs.find((d) => d.id === selectedId) ?? defs[0] ?? null;
+
+  const handleCreate = async () => {
+    if (!newLabel.trim() || !newCode.trim()) return;
+    const def = await createDef.mutateAsync({
+      label: newLabel.trim(),
+      code: newCode.trim().toLowerCase().replace(/\s+/g, '_'),
+      inputType: 'select',
+      isVariantAxis: false,
+      showInWarehouseForm: true,
+      showInOrderForm: true,
+      affectsAvailability: false,
+      sortOrder: defs.length,
+    });
+    setSelectedId(def.id);
+    setNewLabel('');
+    setNewCode('');
+  };
+
+  const handleToggleAxis = (def: WarehouseFieldDefinition) => {
+    updateDef.mutate({ id: def.id, data: { affectsAvailability: !def.affectsAvailability } });
+  };
+
+  const handleAddOption = async () => {
+    if (!selected || !newOptionValue.trim()) return;
+    await addOption.mutateAsync({ defId: selected.id, value: newOptionValue.trim(), label: newOptionValue.trim() });
+    setNewOptionValue('');
+  };
+
+  if (isLoading) {
+    return <div className={styles.empty}>Загрузка полей…</div>;
+  }
+
+  return (
+    <div className={styles.tplSettings}>
+      {/* Left: field list */}
+      <div className={styles.tplList}>
+        <div className={styles.tplListHead}>
+          <span>Поля каталога</span>
+          <span className={styles.tplListCount}>{defs.length}</span>
+        </div>
+        <div className={styles.tplListItems}>
+          {defs.map((def) => (
+            <button
+              key={def.id}
+              type="button"
+              className={[styles.tplListItem, def.id === (selected?.id) ? styles.tplListItemActive : ''].join(' ')}
+              onClick={() => setSelectedId(def.id)}
+            >
+              <span className={styles.tplListItemLabel}>{def.label}</span>
+              {def.affectsAvailability && (
+                <span className={styles.tplListItemAxis}>ось</span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        <div className={styles.tplAddRow}>
+          <input
+            className={styles.tplInput}
+            placeholder="Название поля"
+            value={newLabel}
+            onChange={(e) => { setNewLabel(e.target.value); if (!newCode) setNewCode(e.target.value.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')); }}
+            aria-label="Название нового поля"
+          />
+          <input
+            className={`${styles.tplInput} ${styles.tplInputMono}`}
+            placeholder="код_поля"
+            value={newCode}
+            onChange={(e) => setNewCode(e.target.value)}
+            aria-label="Код нового поля"
+          />
+          <button
+            type="button"
+            className={styles.tplAddBtn}
+            onClick={handleCreate}
+            disabled={!newLabel.trim() || !newCode.trim() || createDef.isPending}
+            aria-label="Создать поле"
+            title="Создать поле"
+          >
+            <Plus size={13} />
+          </button>
+        </div>
+      </div>
+
+      {/* Right: field editor */}
+      {selected ? (
+        <div className={styles.tplEditor}>
+          <div className={styles.tplEditorHead}>
+            <div>
+              <div className={styles.tplEditorTitle}>{selected.label}</div>
+              <div className={styles.tplEditorCode}>{selected.code}</div>
+            </div>
+            <button
+              type="button"
+              className={styles.tplDeleteBtn}
+              onClick={() => { if (confirm(`Удалить поле «${selected.label}»?`)) deleteDef.mutate(selected.id); }}
+              title="Удалить поле"
+            >
+              <Trash2 size={13} />
+            </button>
+          </div>
+
+          <div className={styles.tplEditorRow}>
+            <button
+              type="button"
+              className={[styles.tplToggle, selected.affectsAvailability ? styles.tplToggleOn : ''].join(' ')}
+              onClick={() => handleToggleAxis(selected)}
+              title={selected.affectsAvailability ? 'Снять признак «Ось остатка»' : 'Назначить как «Ось остатка»'}
+            >
+              {selected.affectsAvailability ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
+              Ось остатка
+            </button>
+            <span className={styles.tplToggleHint}>
+              Влияет на складской учёт — каждое значение порождает отдельный вариант
+            </span>
+          </div>
+
+          {selected.inputType === 'select' && (
+            <div className={styles.tplOptionsSection}>
+              <div className={styles.tplOptionsSectionHead}>
+                <Settings2 size={12} />
+                Варианты значений ({selected.options.length})
+              </div>
+              <div className={styles.tplOptionsList}>
+                {selected.options.map((opt) => (
+                  <div key={opt.id} className={styles.tplOptionItem}>
+                    <span className={styles.tplOptionLabel}>{opt.label}</span>
+                    <button
+                      type="button"
+                      className={styles.tplOptionDelete}
+                      onClick={() => deleteOption.mutate({ defId: selected.id, optId: opt.id })}
+                      aria-label={`Удалить вариант ${opt.label}`}
+                    >
+                      <X size={11} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div className={styles.tplAddOptionRow}>
+                <input
+                  className={styles.tplInput}
+                  placeholder="Добавить значение…"
+                  value={newOptionValue}
+                  onChange={(e) => setNewOptionValue(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleAddOption(); }}
+                  aria-label="Новое значение варианта"
+                />
+                <button
+                  type="button"
+                  className={styles.tplAddBtn}
+                  onClick={handleAddOption}
+                  disabled={!newOptionValue.trim() || addOption.isPending}
+                  aria-label="Добавить значение"
+                  title="Добавить значение"
+                >
+                  <Plus size={13} />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className={styles.tplEditorEmpty}>
+          <Layers size={32} className={styles.tplEditorEmptyIcon} />
+          <span>Выберите поле для редактирования</span>
+        </div>
+      )}
     </div>
   );
 }
 
-// ── Page ───────────────────────────────────────────────────────────────────────
+// ── Helpers ────────────────────────────────────────────────────────────────────
 
 interface TemplateMismatchInfo {
   templateName: string;
@@ -264,7 +465,10 @@ function pluralizePositions(n: number): string {
   return 'позиций';
 }
 
+// ── Page ───────────────────────────────────────────────────────────────────────
+
 export default function ProductsPage() {
+  const [pageMode, setPageMode] = useState<'products' | 'templates'>('products');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [addOpen, setAddOpen] = useState(false);
@@ -276,12 +480,9 @@ export default function ProductsPage() {
 
   const { data: templatesData, isLoading: templatesLoading } = useOrderTemplates();
   const templates: OrderTemplate[] = templatesData?.results ?? [];
-
-  // Default: org's isDefault template (or first system) when no manual pick.
   const { data: activeTemplate } = useActiveOrderTemplate(selectedTemplateId);
   const effectiveTemplateId = activeTemplate?.id ?? null;
 
-  // ── Download .xlsx template for the active вид деятельности ──────────────
   const handleDownloadTemplate = async () => {
     if (!activeTemplate || downloading) return;
     setDownloading(true);
@@ -294,7 +495,6 @@ export default function ProductsPage() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      // Defer revoke so the browser has time to start the download.
       setTimeout(() => URL.revokeObjectURL(url), 4000);
     } catch (err) {
       toast.error(readApiErrorMessage(err, 'Не удалось скачать шаблон Excel'));
@@ -303,12 +503,8 @@ export default function ProductsPage() {
     }
   };
 
-  // ── Import an .xlsx file against the active вид деятельности ─────────────
-  const handleImportFileChange = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleImportFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    // Reset the input synchronously so picking the same file twice works.
     event.target.value = '';
     if (!file || !activeTemplate || importing) return;
 
@@ -355,19 +551,79 @@ export default function ProductsPage() {
 
   return (
     <div className={styles.root}>
-      {/* ── Page header ── */}
-      <div className={styles.header}>
-        <div className={styles.headerTitle}>
-          <Boxes size={18} />
-          <span>Каталог</span>
+      {/* ── Page head ── */}
+      <div className={styles.pageHead}>
+        <div className={styles.pageHeadLeft}>
+          <Boxes size={16} className={styles.pageHeadIcon} />
+          <span className={styles.pageHeadTitle}>Каталог</span>
         </div>
-        <div className={styles.headerSub}>
-          Позиции каталога с привязкой к виду деятельности
+
+        <div className={styles.segControl}>
+          <button
+            type="button"
+            className={[styles.segBtn, pageMode === 'products' ? styles.segBtnActive : ''].join(' ')}
+            onClick={() => setPageMode('products')}
+          >
+            <LayoutGrid size={13} />
+            Позиции
+          </button>
+          <button
+            type="button"
+            className={[styles.segBtn, pageMode === 'templates' ? styles.segBtnActive : ''].join(' ')}
+            onClick={() => setPageMode('templates')}
+          >
+            <Settings2 size={13} />
+            Шаблоны
+          </button>
         </div>
+
+        {pageMode === 'products' && (
+          <div className={styles.pageHeadActions}>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setAddOpen(true)}
+              disabled={!activeTemplate}
+            >
+              <Plus size={14} />
+              Добавить
+            </Button>
+
+            <button
+              type="button"
+              className={styles.uploadBtn}
+              disabled={!activeTemplate || downloading}
+              onClick={handleDownloadTemplate}
+              title={activeTemplate ? `Скачать Excel-шаблон для «${activeTemplate.name}»` : 'Сначала выберите вид деятельности'}
+            >
+              <Download size={13} />
+              {downloading ? 'Готовим…' : 'Excel-шаблон'}
+            </button>
+
+            <button
+              type="button"
+              className={styles.uploadBtn}
+              disabled={!activeTemplate || importing}
+              onClick={() => importInputRef.current?.click()}
+              title={activeTemplate ? `Импортировать Excel в каталог «${activeTemplate.name}»` : 'Сначала выберите вид деятельности'}
+            >
+              <Download size={13} style={{ transform: 'rotate(180deg)' }} />
+              {importing ? 'Импортируем…' : 'Импорт'}
+            </button>
+            <input
+              ref={importInputRef}
+              type="file"
+              accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              className={styles.hidden}
+              aria-label="Выбрать Excel-файл для импорта каталога"
+              onChange={handleImportFileChange}
+            />
+          </div>
+        )}
       </div>
 
-      {/* ── Template tabs (вид деятельности) ── */}
-      {!templatesLoading && templates.length > 0 && (
+      {/* ── Template tabs — only in products mode ── */}
+      {pageMode === 'products' && !templatesLoading && templates.length > 0 && (
         <div className={styles.templateTabs}>
           {templates.map((t) => {
             const isActive = effectiveTemplateId === t.id;
@@ -375,10 +631,7 @@ export default function ProductsPage() {
               <button
                 key={t.id}
                 type="button"
-                className={[
-                  styles.templateTab,
-                  isActive ? styles.templateTabActive : '',
-                ].filter(Boolean).join(' ')}
+                className={[styles.templateTab, isActive ? styles.templateTabActive : ''].join(' ')}
                 onClick={() => setSelectedTemplateId(t.id)}
                 title={`Переключить вид деятельности: ${t.name}`}
               >
@@ -390,111 +643,72 @@ export default function ProductsPage() {
         </div>
       )}
 
-      {/* ── Unified toolbar ── */}
-      <div className={styles.toolbar}>
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={() => setAddOpen(true)}
-          disabled={!activeTemplate}
-        >
-          <Plus size={14} />
-          Добавить вручную
-        </Button>
-
-        <button
-          type="button"
-          className={styles.uploadBtn}
-          disabled={!activeTemplate || downloading}
-          onClick={handleDownloadTemplate}
-          title={
-            activeTemplate
-              ? `Скачать Excel-шаблон для «${activeTemplate.name}»`
-              : 'Сначала выберите вид деятельности'
-          }
-        >
-          <Download size={13} />
-          {downloading ? 'Готовим файл…' : 'Скачать шаблон Excel'}
-        </button>
-
-        <button
-          type="button"
-          className={styles.uploadBtn}
-          disabled={!activeTemplate || importing}
-          onClick={() => importInputRef.current?.click()}
-          title={
-            activeTemplate
-              ? `Импортировать Excel в каталог «${activeTemplate.name}»`
-              : 'Сначала выберите вид деятельности'
-          }
-        >
-          <Download size={13} style={{ transform: 'rotate(180deg)' }} />
-          {importing ? 'Импортируем…' : 'Импорт Excel'}
-        </button>
-        <input
-          ref={importInputRef}
-          type="file"
-          accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-          className={styles.hidden}
-          aria-label="Выбрать Excel-файл для импорта каталога"
-          onChange={handleImportFileChange}
-        />
-
-        <div className={styles.toolbarSpacer} />
-
-        <div className={styles.searchWrap}>
-          <SearchInput
-            value={search}
-            onChange={setSearch}
-            placeholder="Поиск по названию позиции…"
-          />
+      {/* ── Toolbar — search, only in products mode ── */}
+      {pageMode === 'products' && (
+        <div className={styles.toolbar}>
+          <div className={styles.searchWrap}>
+            <SearchInput
+              value={search}
+              onChange={setSearch}
+              placeholder="Поиск по названию позиции…"
+            />
+          </div>
+          {activeTemplate && (
+            <span className={styles.toolbarCount}>
+              {products.length} позиц.
+            </span>
+          )}
         </div>
-      </div>
+      )}
 
-      {/* ── Content ── */}
-      <div className={styles.content}>
-        {!activeTemplate && !templatesLoading && (
-          <EmptyState
-            icon={<Boxes size={40} />}
-            title="Нет видов деятельности"
-            description="Сначала создайте хотя бы один шаблон заказа."
-          />
-        )}
-
-        {activeTemplate && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <FieldOptionsBlock template={activeTemplate} />
-
-            {productsLoading && (
-              <div className={styles.empty}>Загрузка позиций…</div>
-            )}
-
-            {!productsLoading && products.length === 0 && (
+      {/* ── Content — conditional on mode ── */}
+      {pageMode === 'products' ? (
+        <div className={styles.catLayout}>
+          <div className={styles.catMain}>
+            {!activeTemplate && !templatesLoading && (
               <EmptyState
-                icon={<Package size={40} />}
-                title={`Каталог по виду деятельности «${templateName}» пуст`}
-                description="Добавьте позиции вручную или загрузите Excel-таблицу (доступно в P2)."
-                action={{ label: 'Добавить вручную', onClick: () => setAddOpen(true) }}
+                icon={<Boxes size={40} />}
+                title="Нет видов деятельности"
+                description="Сначала создайте хотя бы один шаблон заказа."
               />
             )}
 
-            {!productsLoading && products.length > 0 && filteredProducts.length === 0 && (
-              <div className={styles.empty}>По запросу «{search}» ничего не найдено</div>
-            )}
-
-            {filteredProducts.length > 0 && (
+            {activeTemplate && (
               <div className={styles.list}>
+                {productsLoading && (
+                  <div className={styles.empty}>Загрузка позиций…</div>
+                )}
+
+                {!productsLoading && products.length === 0 && (
+                  <EmptyState
+                    icon={<Package size={40} />}
+                    title={`Каталог «${templateName}» пуст`}
+                    description="Добавьте позиции вручную или загрузите Excel-таблицу."
+                    action={{ label: 'Добавить вручную', onClick: () => setAddOpen(true) }}
+                  />
+                )}
+
+                {!productsLoading && products.length > 0 && filteredProducts.length === 0 && (
+                  <div className={styles.empty}>По запросу «{search}» ничего не найдено</div>
+                )}
+
                 {filteredProducts.map((p) => (
                   <ProductRow key={p.id} product={p} />
                 ))}
               </div>
             )}
           </div>
-        )}
-      </div>
 
-      {/* ── Status bar ── */}
-      {activeTemplate && (
+          <CatalogSidePanel template={activeTemplate} />
+        </div>
+      ) : (
+        <div className={styles.content}>
+          <CatalogTemplateSettings />
+        </div>
+      )}
+
+      {/* ── Status bar — products mode only ── */}
+      {pageMode === 'products' && activeTemplate && (
         <div className={styles.statusBar}>
           <span><CheckCircle2 size={13} /> Позиций: {products.length}</span>
           <span><CheckCircle2 size={13} /> Шаблон: {templateName}</span>
@@ -509,7 +723,7 @@ export default function ProductsPage() {
         />
       )}
 
-      {/* ── Template-mismatch modal (P2 import) ── */}
+      {/* ── Template-mismatch modal ── */}
       <Drawer
         open={mismatch !== null}
         onClose={() => setMismatch(null)}
@@ -522,7 +736,7 @@ export default function ProductsPage() {
         }
       >
         {mismatch && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 13, lineHeight: 1.5 }}>
+          <div className={styles.mismatchBody}>
             <div>
               Загруженный файл не соответствует виду деятельности «{mismatch.templateName}».
             </div>
@@ -531,7 +745,7 @@ export default function ProductsPage() {
                 В файле отсутствуют колонки: <b>{mismatch.missingHeaders.join(', ')}</b>.
               </div>
             )}
-            <div>Скачайте корректный шаблон по кнопке «Скачать шаблон Excel».</div>
+            <div>Скачайте корректный шаблон по кнопке «Excel-шаблон».</div>
           </div>
         )}
       </Drawer>

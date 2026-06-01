@@ -27,13 +27,14 @@ interface Result {
 }
 
 const NAV_COMMANDS = [
-  { id: 'go-customers', label: 'Клиенты', sub: 'Перейти', icon: <Users size={14} />, path: '/crm/customers' },
-  { id: 'go-deals', label: 'Сделки', sub: 'Перейти', icon: <Briefcase size={14} />, path: '/crm/deals' },
-  { id: 'go-tasks', label: 'Задачи', sub: 'Перейти', icon: <CheckSquare size={14} />, path: '/crm/tasks' },
-  { id: 'go-templates', label: 'Шаблоны сообщений', sub: 'Перейти', icon: <MessageSquare size={14} />, path: '/settings/templates' },
-  { id: 'go-reports', label: 'Отчёты', sub: 'Перейти', icon: <BarChart2 size={14} />, path: '/reports' },
-  { id: 'go-settings', label: 'Настройки', sub: 'Перейти', icon: <Settings size={14} />, path: '/settings' },
-  { id: 'go-import', label: 'Импорт', sub: 'Перейти', icon: <Upload size={14} />, path: '/crm/customers' },
+  { id: 'go-sales',     label: 'Продажи',  sub: 'Перейти', icon: <Briefcase size={14} />, path: '/sales' },
+  { id: 'go-catalog',  label: 'Каталог',  sub: 'Перейти', icon: <Upload size={14} />,    path: '/products' },
+  { id: 'go-warehouse',label: 'Склад',    sub: 'Перейти', icon: <Upload size={14} />,    path: '/warehouse' },
+  { id: 'go-customers',label: 'Клиенты',  sub: 'Перейти', icon: <Users size={14} />,     path: '/crm/customers' },
+  { id: 'go-tasks',    label: 'Задачи',   sub: 'Перейти', icon: <CheckSquare size={14} />, path: '/crm/tasks' },
+  { id: 'go-reports',  label: 'Отчёты',   sub: 'Перейти', icon: <BarChart2 size={14} />, path: '/reports' },
+  { id: 'go-settings', label: 'Настройки',sub: 'Перейти', icon: <Settings size={14} />,  path: '/settings' },
+  { id: 'go-import',   label: 'Импорт',   sub: 'Перейти', icon: <Upload size={14} />,    path: '/crm/customers' },
 ];
 
 const RECENT_KEY = 'kort:recent-items';

@@ -23,7 +23,29 @@
 .filterDot { width: 5px; height: 5px; background: var(--ch-plat); border-radius: 50%; }
 .newBtn { display: flex; align-items: center; gap: 6px; padding: 8px 16px; background: var(--fill-accent); border: none; border-radius: 8px; color: var(--text-on-accent); font-weight: 700; font-size: 13px; font-family: inherit; cursor: pointer; transition: background 120ms; white-space: nowrap; box-shadow: var(--shadow-accent); }
 .newBtn:hover { background: color-mix(in srgb, var(--fill-accent) 88%, white); }
-.alertsBtn { flex-shrink: 0; min-height: 36px; }
+.alertsBtn {
+  flex-shrink: 0;
+  min-height: 36px;
+  position: relative;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  transition: background 140ms, border-color 140ms, color 140ms;
+}
+.alertsBtn[data-active] {
+  background: rgba(217, 79, 79, 0.1);
+  border-color: rgba(217, 79, 79, 0.25);
+  color: #D94F4F;
+}
 
 /* ── Group toggle ── */
 .groupToggle {
@@ -188,7 +210,9 @@
 }
 .row:hover .rowStripe { opacity: 1; }
 
-.rowNum { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 10px 14px; min-width: 0; }
+.rowNum { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; padding: 10px 14px; min-width: 0; }
+.rowNumTop { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.rowPipeline { max-width: 100%; }
 .rowClient { display: flex; flex-direction: column; gap: 2px; padding: 10px 14px; border-left: 1px solid var(--ch-border); min-width: 0; }
 .rowProduct { display: flex; flex-direction: column; gap: 2px; padding: 10px 14px; border-left: 1px solid var(--ch-border); min-width: 0; overflow: hidden; }
 .rowProduct .cardItemName { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
